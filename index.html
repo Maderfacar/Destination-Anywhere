@@ -18,6 +18,7 @@ input, select, textarea { width: 100%; box-sizing: border-box; background: var(-
 
   <body>
 <div style="width:100%; text-align:center;">
+  <img id="user-avatar" style="width: 80px; height: 80px; border-radius: 50%; border: 2px solid #1D1D1F; margin-bottom: 15px; display: none;" />
 <h1 id="user-greeting">正在載入...</h1>
 <div class="card" style="text-align:left; margin:auto;">
 <div class="grid">
@@ -59,14 +60,24 @@ const ADMIN_UID = "2848216";
 async function init() {
 try {
 await liff.init({ liffId: "2009434590-UHOSSHQI" });
-if (!liff.isLoggedIn()) { liff.login(); }
-else {
+if (!liff.isLoggedIn()) {
+liff.login();
+} else {
 const p = await liff.getProfile();
+const avatarImg = document.getElementById('user-avatar');
+if (p.pictureUrl && avatarImg) {
+avatarImg.src = p.pictureUrl;
+avatarImg.style.display = "inline-block";
+}
 document.getElementById('user-greeting').innerText = "您好，" + p.displayName;
 document.getElementById('contact').value = p.displayName;
-if (p.userId === ADMIN_UID) document.getElementById('admin-link').style.display = "inline-block";
+if (p.userId === ADMIN_UID) {
+document.getElementById('admin-link').style.display = "inline-block";
 }
-} catch (e) { console.error(e); }
+}
+} catch (e) {
+console.error("LIFF 出錯", e);
+}
 }
 
 window.sendRequest = async () => {
@@ -85,10 +96,20 @@ status: "pending",
 createdAt: serverTimestamp()
 };
 try {
+const btn = document.querySelector('.btn');
+btn.disabled = true;
+btn.innerText = "提交中...";
 const ref = await addDoc(collection(db, "orders"), d);
 window.location.href = "success.html?id=" + ref.id;
-} catch (e) { alert("提交失敗"); }
+} catch (e) {
+alert("提交失敗");
+console.error(e);
+const b = document.querySelector('.btn');
+b.disabled = false;
+b.innerText = "確認預約行程";
+}
 };
+
 init();
 </script>
 
