@@ -5,16 +5,39 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Destination Anywhere | 乘客訂車</title>
-<script src=""></script>
-<script type="module">
-import { initializeApp } from "";
-import { getFirestore, collection, addDoc, serverTimestamp } from "";
-
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
+  <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+const firebaseConfig = { apiKey: "AIzaSyCg7ONT1mDIXZplNhTKPHw-cn5UbXFQJyk", authDomain: "destination-anywhere-cfd50.firebaseapp.com", projectId: "destination-anywhere-cfd50", storageBucket: "destination-anywhere-cfd50.firebasestorage.app", messagingSenderId: "718691467645", appId: "1:718691467645:web:fb37ce5fa5708c1f788c14" };
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+async function start() {
+await liff.init({ liffId: "2009434590-UHOSSHQI" });
+if (liff.isLoggedIn()) {
+const p = await liff.getProfile();
+document.getElementById('welcome').innerText = "你好 " + p.displayName;
+document.getElementById('order-form').style.display = "block";
+window.u = p;
+} else { liff.login(); }
+}
+start();
+window.sendOrder = async () => {
+const f = document.getElementById('pickup').value;
+const t = document.getElementById('dropoff').value;
+await addDoc(collection(db, "orders"), { name: window.u.displayName, from: f, to: t, status: "等待接單", time: serverTimestamp() });
+alert("已送出");
+};
+
+
+
+
+  </script>
 <div class="container">
 <h1>🚖 Destination</h1>
-<p id="welcome">連線中...</p>
+<p id="welcome">正在與 LINE 連線中...</p>
 <div id="order-form" style="display:none;">
 <input type="text" id="pickup" placeholder="📍 在哪裡上車？">
 <input type="text" id="dropoff" placeholder="🏁 要去哪裡？">
