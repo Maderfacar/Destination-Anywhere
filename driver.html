@@ -1,34 +1,17 @@
 <!DOCTYPE html>
-<html>
+
+<html lang="zh-TW">
 <head>
-    <title>Destination Anywhere</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>司機接單中心</title>
+<script type="module">
+import { initializeApp } from "";
+import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc } from "";
+
 </head>
-<body>
-    <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyCg7ONT1mDIXZplNhTKPHw-cn5UbXFQJyk",
-    authDomain: "destination-anywhere-cfd50.firebaseapp.com",
-    projectId: "destination-anywhere-cfd50",
-    storageBucket: "destination-anywhere-cfd50.firebasestorage.app",
-    messagingSenderId: "718691467645",
-    appId: "1:718691467645:web:fb37ce5fa5708c1f788c14",
-    measurementId: "G-V6GVNXBN4H"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-</script>
-    <h1>歡迎使用 Destination Anywhere 訂車系統司機端</h1>
-    <p>目前正在連線中...</p>
+<body style="background: #2c3e50; color: white; text-align: center; font-family: sans-serif;">
+<h1>🚖 司機接單中心</h1>
+<div id="list">正在搜尋訂單...</div>
 </body>
 </html>
-
