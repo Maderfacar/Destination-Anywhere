@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>預約成功 | Destination Anywhere</title>
-<script src=""></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root { --apple-bg: #000; --apple-card: #1D1D1F; --apple-green: #30D158; --apple-text: #F5F5F7; --apple-sub: #86868B; --apple-blue: #0071E3; }
 body { background: var(--apple-bg); color: var(--apple-text); font-family: -apple-system, sans-serif; margin: 0; display: flex; justify-content: center; padding: 20px; }
@@ -26,8 +26,8 @@ body { background: var(--apple-bg); color: var(--apple-text); font-family: -appl
 </div>
 
 <script type="module">
-import { initializeApp } from "";
-import { getFirestore, doc, getDoc } from "";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
 apiKey: "AIzaSyCg7ONT1mDIXZplNhTKPHw-cn5UbXFQJyk",
@@ -60,18 +60,9 @@ const docSnap = await getDoc(docRef);
 if (docSnap.exists()) {
 const data = docSnap.data();
 document.getElementById("order-details").innerHTML =
-"<strong>預約日期：</strong>" + data.date + " " + data.time + "
-
-
-" +
-"<strong>上車地點：</strong>" + data.pickup + "
-
-
-" +
-"<strong>下車地點：</strong>" + data.dropoff + "
-
-
-" +
+"<strong>預約日期：</strong>" + data.date + " " + data.time + "<br>" +
+"<strong>上車地點：</strong>" + data.pickup + "<br>" +
+"<strong>下車地點：</strong>" + data.dropoff + "<br>" +
 "<strong>訂單編號：</strong><small>" + orderId + "</small>";
 } else {
 document.getElementById("order-details").innerText = "找不到訂單資料";
