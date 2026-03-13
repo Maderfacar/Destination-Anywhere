@@ -13,41 +13,49 @@
     }
     body { background: var(--bg-color); color: var(--text-main); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; padding-bottom: 80px; }
     
-    /* 分頁標籤樣式 */
-    .tabs { display: flex; background: #E3E3E6; border-radius: 10px; padding: 2px; margin-bottom: 20px; }
-    .tab-btn { flex: 1; border: none; padding: 8px 0; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-sub); transition: 0.2s; }
-    .tab-btn.active { background: white; color: var(--text-main); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    /* 使用者資訊區塊 */
+    .user-section { text-align: center; padding: 10px 0; }
+    #user-avatar { width: 60px; height: 60px; border-radius: 50%; border: 3px solid #FFF; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 8px; }
+    #user-greeting { font-weight: 700; font-size: 17px; }
+    #user-id-box { font-size: 11px; color: #888; margin-top: 5px; cursor: pointer; }
+    #admin-link { display:none; color:var(--apple-blue); text-decoration:none; font-size:13px; border:1px solid var(--apple-blue); padding:4px 12px; border-radius:20px; margin-top: 10px; display: inline-block; }
 
-    .section-title { font-weight: 700; margin: 20px 0 10px 5px; font-size: 15px; color: var(--apple-blue); text-transform: uppercase; }
+    /* 調整後的分頁樣式：更輕量、靠左對齊 */
+    .tabs { display: flex; background: #E3E3E6; border-radius: 8px; padding: 2px; margin-bottom: 15px; }
+    .tab-btn { flex: 1; border: none; padding: 6px 0; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-sub); transition: 0.2s; }
+    .tab-btn.active { background: white; color: var(--text-main); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+    .section-title { font-weight: 700; margin: 25px 0 10px 5px; font-size: 15px; color: var(--apple-blue); text-transform: uppercase; }
     .form-group { background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     
     .input-row { display: flex; align-items: center; margin-bottom: 12px; gap: 10px; }
     .label-txt { width: 85px; font-size: 14px; font-weight: 600; color: #48484A; }
-    .main-input { flex: 1; border: none; border-bottom: 1px solid var(--input-border); padding: 8px 0; font-size: 16px; background: transparent; border-radius: 0; }
+    .main-input { flex: 1; border: none; border-bottom: 1px solid var(--input-border); padding: 8px 0; font-size: 16px; background: transparent; border-radius: 0; color: var(--text-main); }
     .main-input:focus { outline: none; border-bottom: 2px solid var(--apple-blue); }
-    .main-input:disabled { color: var(--text-sub); border-bottom-style: dashed; }
+    .main-input:disabled { color: var(--text-sub); border-bottom-style: dashed; opacity: 1; -webkit-text-fill-color: var(--text-sub); }
 
     .delete-btn { color: var(--apple-red); font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--apple-red); padding: 2px 8px; border-radius: 4px; }
 
     .datetime-container { display: flex; gap: 10px; }
-    input[type="date"], input[type="time"], textarea { border: 1px solid var(--input-border); border-radius: 8px; padding: 12px; width: 100%; box-sizing: border-box; font-size: 15px; appearance: none; }
+    input[type="date"], input[type="time"], textarea { border: 1px solid var(--input-border); border-radius: 8px; padding: 12px; width: 100%; box-sizing: border-box; font-size: 15px; appearance: none; background: #FFF; }
 
     .counter-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .counter-ctrl { display: flex; align-items: center; gap: 15px; }
     .ctrl-btn { background: #F2F2F7; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; font-weight: 600; color: var(--apple-blue); display: flex; align-items: center; justify-content: center; }
 
     .confirm-btn { width: 100%; background: var(--apple-blue); color: white; border: none; border-radius: 14px; padding: 18px; font-size: 18px; font-weight: bold; margin-top: 20px; box-shadow: 0 4px 12px rgba(0,122,255,0.3); }
-    .confirm-btn:active { opacity: 0.8; }
   </style>
 </head>
 
 <body>
 
-<div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('送機', this)">送機</button>
-  <button class="tab-btn" onclick="switchTab('接機', this)">接機</button>
-  <button class="tab-btn" onclick="switchTab('交通趟', this)">交通趟</button>
-  <button class="tab-btn" onclick="switchTab('包車', this)">包車行程</button>
+<div class="user-section">
+  <img id="user-avatar" style="display: none;" />
+  <div id="user-greeting">載入中...</div>
+  <div id="user-id-box" onclick="copyMyID()">
+    ID: <span id="display-userId">讀取中...</span> (點擊複製)
+  </div>
+  <center><a href="admin.html" id="admin-link" style="display:none;">管理入口</a></center>
 </div>
 
 <div class="section-title">👤 聯絡資訊</div>
@@ -63,16 +71,23 @@
 </div>
 
 <div class="section-title">📍 行程站點</div>
-<div class="form-group" id="station-container">
-  <div id="flight-section">
-    <div class="input-row">
-      <span class="label-txt">航班號碼：</span>
-      <input type="text" id="flight-no" class="main-input" placeholder="例如：BR198">
-    </div>
+<div class="form-group">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('送機', this)">送機</button>
+    <button class="tab-btn" onclick="switchTab('接機', this)">接機</button>
+    <button class="tab-btn" onclick="switchTab('交通趟', this)">交通趟</button>
+    <button class="tab-btn" onclick="switchTab('包車', this)">包車</button>
   </div>
 
-  <div id="stops-list">
+  <div id="station-container">
+    <div id="flight-section">
+      <div class="input-row">
+        <span class="label-txt">航班號碼：</span>
+        <input type="text" id="flight-no" class="main-input" placeholder="例如：BR198">
+      </div>
     </div>
+    <div id="stops-list"></div>
+  </div>
 </div>
 <div style="text-align:center; color:var(--apple-blue); font-size:14px; cursor:pointer; font-weight:600;" onclick="addNewStop()">+ 新增停靠點</div>
 
@@ -113,18 +128,15 @@ window.switchTab = (mode, btn) => {
   currentMode = mode;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  
-  // 切換航班欄位顯示
   document.getElementById('flight-section').style.display = (mode === '送機' || mode === '接機') ? 'block' : 'none';
   renderStops();
 };
 
 window.renderStops = () => {
   const list = document.getElementById('stops-list');
-  const flight = document.getElementById('flight-no').value || "(尚未填寫航班)";
+  const flight = document.getElementById('flight-no').value || "(尚未填寫)";
   list.innerHTML = '';
 
-  // 1. 上車點
   const pUp = document.createElement('div');
   pUp.className = 'input-row';
   if (currentMode === '接機') {
@@ -134,7 +146,6 @@ window.renderStops = () => {
   }
   list.appendChild(pUp);
 
-  // 2. 中途點
   midStops.forEach((val, idx) => {
     const mDiv = document.createElement('div');
     mDiv.className = 'input-row';
@@ -142,7 +153,6 @@ window.renderStops = () => {
     list.appendChild(mDiv);
   });
 
-  // 3. 下車點
   const dOff = document.createElement('div');
   dOff.className = 'input-row';
   if (currentMode === '送機') {
@@ -153,7 +163,6 @@ window.renderStops = () => {
   list.appendChild(dOff);
 };
 
-// 監聽航班號碼輸入，即時更新上下車顯示
 document.getElementById('flight-no').oninput = () => renderStops();
 
 window.addNewStop = () => {
@@ -172,13 +181,30 @@ window.removeStop = (idx) => {
 
 window.qty = (id, amt) => { let el = document.getElementById(id); let v = parseInt(el.innerText) + amt; if (v >= 0) el.innerText = v; };
 
+window.copyMyID = () => {
+  const idText = document.getElementById('display-userId').innerText;
+  if (idText && idText !== "讀取中...") {
+    navigator.clipboard.writeText(idText).then(() => alert("已複製 ID: " + idText));
+  }
+};
+
 async function init() {
-  await liff.init({ liffId: CONFIG.LIFF_ID });
-  if (!liff.isLoggedIn()) { liff.login(); return; }
-  const p = await liff.getProfile();
-  document.getElementById('user-greeting').innerText = "您好，" + p.displayName;
-  document.getElementById('contact-name').value = p.displayName;
-  renderStops();
+  try {
+    await liff.init({ liffId: CONFIG.LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    const p = await liff.getProfile();
+    document.getElementById('user-greeting').innerText = "您好，" + p.displayName;
+    document.getElementById('display-userId').innerText = p.userId;
+    document.getElementById('contact-name').value = p.displayName;
+    if (p.pictureUrl) { 
+      const av = document.getElementById('user-avatar');
+      av.src = p.pictureUrl; av.style.display = "inline-block"; 
+    }
+    if (CONFIG.ADMIN_UIDS.includes(p.userId)) {
+      document.getElementById('admin-link').style.display = "inline-block";
+    }
+    renderStops();
+  } catch (e) { console.error(e); }
 }
 
 window.sendRequest = async () => {
@@ -215,7 +241,7 @@ window.sendRequest = async () => {
       createdAt: serverTimestamp()
     });
     window.location.href = "success.html";
-  } catch (e) { alert("系統忙碌中，請檢查網路"); btn.disabled = false; btn.innerText = "確認預約行程"; }
+  } catch (e) { alert("預約失敗"); btn.disabled = false; }
 };
 
 init();
