@@ -48,19 +48,19 @@
 </div>
 
 <div class="header">
-  <div style="font-weight:bold; letter-spacing:2px;">訂車服務</div>
+  <div id="ui-title" style="font-weight:bold; letter-spacing:2px;">訂車服務</div>
   <div id="today-display" style="color: var(--text-sub); font-size: 14px;"></div>
 </div>
 
 <div class="section-title">【行程站點】</div>
 <div id="station-container">
   <div class="station-item">
-    <span>1. 上車：</span>
+    <span id="ui-pickup">1. 上車：</span>
     <input type="text" class="station-input stop-point" placeholder="請輸入起點地址">
     <span>✏️</span>
   </div>
   <div class="station-item">
-    <span>2. 下車：</span>
+    <span id="ui-dropoff">2. 下車：</span>
     <input type="text" class="station-input stop-point" placeholder="請輸入終點地址">
     <span>✏️</span>
   </div>
@@ -93,17 +93,20 @@
 <div id="admin-entrance"><button onclick="location.href='admin.html'" style="background:var(--apple-red); color:white; border:none; padding:15px 22px; border-radius:50px; font-weight:bold; box-shadow:0 4px 15px rgba(255,69,58,0.4);">⚙️ 管理後台</button></div>
 
 <script type="module">
+// ─── 模組化導入 ───
+import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const firebaseConfig = { apiKey: "AIzaSyCg7ONT1mDIXZplNhTKPHw-cn5UbXFQJyk", authDomain: "destination-anywhere-cfd50.firebaseapp.com", projectId: "destination-anywhere-cfd50", appId: "1:718691467645:web:fb37ce5fa5708c1f788c14" };
-const app = initializeApp(firebaseConfig);
+// 初始化 Firebase
+const app = initializeApp(CONFIG.firebaseConfig);
 const db = getFirestore(app);
-const ADMIN_UID = "Uc5716677131e3d507708995b4e9f7b79";
+
+// 提取當前語言包
+const lang = CONFIG.i18n[CONFIG.currentLang];
 
 window.qty = (id, amt) => { let el = document.getElementById(id); let v = parseInt(el.innerText) + amt; if (v >= 0) el.innerText = v; };
 
-// 新增停靠點邏輯
 window.addNewStop = () => {
   const container = document.getElementById('station-container');
   const stops = container.getElementsByClassName('station-item');
@@ -114,27 +117,35 @@ window.addNewStop = () => {
   newDiv.className = 'station-item';
   newDiv.innerHTML = `<span>${nextNum}. 中途：</span><input type="text" class="station-input stop-point" placeholder="輸入地址"><span>✏️</span>`;
   
-  // 插入在最後一個（下車）之前
   container.insertBefore(newDiv, lastStop);
-  
-  // 重新編號最後一個
   lastStop.querySelector('span').innerText = `${nextNum + 1}. 下車：`;
 };
 
 async function init() {
   try {
-    await liff.init({ liffId: "2009434590-UHOSSHQI" });
+    // 語系套用
+    document.getElementById('ui-title').innerText = lang.title;
+    document.getElementById('ui-pickup').innerText = `1. ${lang.pickup}`;
+    document.getElementById('ui-dropoff').innerText = `2. ${lang.dropoff}`;
+    document.getElementById('add-stop').innerText = lang.addStop;
+    document.querySelector('.confirm-btn').innerText = lang.confirmBtn;
+
+    await liff.init({ liffId: CONFIG.LIFF_ID });
     if (!liff.isLoggedIn()) liff.login();
     const p = await liff.getProfile();
     document.getElementById('user-greeting').innerText = "您好，" + p.displayName;
     const av = document.getElementById('user-avatar');
     if (p.pictureUrl) { av.src = p.pictureUrl; av.style.display = "inline-block"; }
-    if (p.userId === ADMIN_UID) { document.getElementById('admin-link').style.display = "inline-block"; document.getElementById('admin-entrance').style.display = "block"; }
+
+    // 管理員判斷 (改用陣列包含判斷)
+    if (CONFIG.ADMIN_UIDS.includes(p.userId)) { 
+      document.getElementById('admin-link').style.display = "inline-block"; 
+      document.getElementById('admin-entrance').style.display = "block"; 
+    }
   } catch (e) { console.error(e); }
 }
 
 window.sendRequest = async () => {
-  // 1. 新增這區塊：先抓取下單者的 LINE 資料 (為了 B 方案自動通知)
   let customerId = "";
   let customerName = "";
   try {
@@ -142,11 +153,9 @@ window.sendRequest = async () => {
     customerId = profile.userId;
     customerName = profile.displayName;
   } catch (err) {
-    console.error("LIFF Profile Error", err);
     return alert("無法取得您的 LINE 資訊，請重新開啟頁面");
   }
 
-  // 2. 抓取網頁上的輸入資料
   const stops = Array.from(document.querySelectorAll('.stop-point')).map(i => i.value.trim());
   const date = document.getElementById('order-date').value;
   const time = document.getElementById('order-time').value;
@@ -155,34 +164,26 @@ window.sendRequest = async () => {
 
   const btn = document.querySelector('.confirm-btn');
   btn.disabled = true; 
-  btn.innerText = "預約傳送中...";
+  btn.innerText = "正在預約...";
 
   try {
-    // 3. 修改這區塊：將 customerId 與 customerName 一併存入 Firebase
     await addDoc(collection(db, "orders"), {
-      stops, 
-      date, 
-      time,
+      stops, date, time,
       adults: document.getElementById('adult-count').innerText,
       children: document.getElementById('child-count').innerText,
       l_large: document.getElementById('l-large').innerText,
       l_mid: document.getElementById('l-mid').innerText,
       l_small: document.getElementById('l-small').innerText,
-      
-      // 這是自動化通知必備的兩行
-      customerId: customerId,
-      customerName: customerName,
-      
+      customerId,
+      customerName,
       status: "pending", 
       createdAt: serverTimestamp()
     });
-    
-    // 4. 跳轉成功頁面
     window.location.href = "success.html";
   } catch (e) { 
     alert("預約出錯，請檢查網路"); 
     btn.disabled = false; 
-    btn.innerText = "確認預約行程";
+    btn.innerText = lang.confirmBtn;
   }
 };
 
