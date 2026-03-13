@@ -208,41 +208,7 @@ document.getElementById('today-display').innerText = new Date().toLocaleDateStri
 init();
 </script>
 
-  <div id="admin-tool" style="padding: 15px; background: #ffebee; border: 2px dashed #f44336; margin: 10px; border-radius: 8px; font-family: monospace;">
-    <p style="margin: 0; color: #f44336; font-weight: bold;">您的 LINE User ID (點擊可複製):</p>
-    <code id="userId-display" style="display: block; background: #fff; padding: 5px; margin-top: 5px; word-break: break-all; cursor: pointer;">正在讀取 ID...</code>
-</div>
+  
 
-<div id="id-display-tool" style="position:fixed; top:0; left:0; width:100%; background:rgba(0,0,0,0.9); color:#00ff00; z-index:99999; padding:15px; text-align:center; font-family:monospace;">
-    <div style="font-size:12px;">你的 LINE 使用者 ID (用於新增管理員):</div>
-    <div id="my-line-id" style="font-size:18px; font-weight:bold; margin:10px 0; color:#fff; word-break:break-all;">取得中...</div>
-    <button onclick="copyId()" style="background:#00ff00; border:none; padding:8px 15px; font-weight:bold; border-radius:5px;">點我複製 ID</button>
-</div>
-
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<script>
-  function copyId() {
-    const id = document.getElementById('my-line-id').innerText;
-    navigator.clipboard.writeText(id).then(() => alert('已複製 ID: ' + id));
-  }
-
-  // 啟動 LIFF 抓取
-  async function startCatcher() {
-    try {
-      // 這裡一定要填入你後台的 LIFF ID (例如 200xxxxxxx-xxxxxxxx)
-      await liff.init({ liffId: "你的_LIFF_ID_填在這裡" }); 
-      
-      if (!liff.isLoggedIn()) {
-        liff.login();
-      } else {
-        const profile = await liff.getProfile();
-        document.getElementById('my-line-id').innerText = profile.userId;
-      }
-    } catch (err) {
-      document.getElementById('my-line-id').innerText = "連線失敗: " + err.message;
-    }
-  }
-  startCatcher();
-</script>
 </body>
 </html>
