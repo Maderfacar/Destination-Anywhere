@@ -64,8 +64,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ！！！暫時先讓它顯示，我們進去後看 Alert ！！！
-const ADMIN_UID = "2848216"; 
+
+const ADMIN_UID = "Uc5716677131e3d507708995b4e9f7b79"; 
 
 async function init() {
   try {
@@ -79,8 +79,7 @@ async function init() {
       const p = await liff.getProfile();
       console.log("登入成功:", p.displayName);
       
-      // 除錯用：直接彈出你的真實 UID
-      alert("你的真實 UID 為：\n" + p.userId);
+      
 
       // 介面更新
       document.getElementById('user-greeting').innerText = "您好，" + p.displayName;
