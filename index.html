@@ -7,55 +7,35 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root { 
-      --bg-color: #F2F2F2; 
-      --card-bg: #FFFFFF;
-      --text-main: #1D1D1F; 
-      --text-sub: #666666; 
-      --apple-blue: #0071E3; 
-      --apple-red: #FF453A;
-      --border-color: #D2D2D7;
+      --bg-color: #F2F2F2; --card-bg: #FFFFFF; --text-main: #1D1D1F; 
+      --text-sub: #666666; --apple-blue: #0071E3; --apple-red: #FF453A;
     }
-    body { background: var(--bg-color); color: var(--text-main); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; padding-bottom: 100px; }
+    body { background: var(--bg-color); color: var(--text-main); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; padding-bottom: 50px; }
     
-    /* 用戶資訊區 */
-    .user-section { text-align: center; padding: 20px 0; }
-    #user-avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #FFF; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 10px; }
-    #user-greeting { font-size: 18px; font-weight: 600; }
-
+    .user-section { text-align: center; padding: 15px 0; }
+    #user-avatar { width: 65px; height: 65px; border-radius: 50%; border: 3px solid #FFF; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 8px; }
+    
     .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #CCC; padding-bottom: 10px; margin-bottom: 20px; }
     .section-title { font-weight: bold; margin: 25px 0 12px 0; font-size: 16px; }
     .divider { border: 0; border-top: 1px solid #CCC; margin: 15px 0; }
 
-    /* 行程站點樣式 (仿截圖) */
     .station-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
-    .station-input { border: none; background: transparent; font-size: 16px; border-bottom: 1px solid #BBB; padding: 5px; width: 65%; color: var(--text-main); }
+    .station-input { border: none; background: transparent; font-size: 16px; border-bottom: 1px solid #BBB; padding: 5px; width: 70%; color: var(--text-main); }
     .station-input:focus { outline: none; border-bottom: 2px solid var(--apple-blue); }
 
-    /* 數量增減控制 */
     .counter-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; font-size: 15px; }
-    .counter-ctrl { display: flex; align-items: center; gap: 15px; }
-    .ctrl-btn { background: #FFF; border: 1px solid #AAA; border-radius: 6px; width: 34px; height: 34px; cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-    .ctrl-btn:active { background: #EEE; }
+    .counter-ctrl { display: flex; align-items: center; gap: 12px; }
+    .ctrl-btn { background: #FFF; border: 1px solid #AAA; border-radius: 6px; width: 34px; height: 34px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; }
     
-    /* 時間輸入優化 */
     input[type="date"], input[type="time"] { border: 1px solid #CCC; border-radius: 8px; padding: 10px; font-size: 15px; background: white; width: 48%; box-sizing: border-box; }
-
-    /* 車款推薦卡片 (仿截圖 0620) */
-    .car-card { display: flex; gap: 15px; margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.5); border-radius: 12px; border: 1px solid #DDD; }
-    .car-info b { font-size: 15px; display: block; margin-bottom: 4px; }
-    .car-info p { margin: 0; font-size: 13px; color: var(--text-sub); line-height: 1.4; }
-    .car-price { font-weight: bold; margin-top: 8px; font-size: 16px; display: flex; align-items: center; gap: 10px; }
 
     .confirm-btn { 
       width: 100%; background: var(--apple-blue); color: white; border: none; 
       border-radius: 12px; padding: 18px; font-size: 18px; font-weight: bold; 
-      margin-top: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,113,227,0.3);
+      margin-top: 30px; cursor: pointer;
     }
-    .confirm-btn:disabled { background: #AAA; }
-    
-    /* 管理員專用按鈕 */
-    #admin-entrance { display:none; position:fixed; bottom:30px; right:20px; z-index:999; }
-    #admin-link { display:none; color:var(--apple-blue); text-decoration:none; font-size:13px; border:1px solid var(--apple-blue); padding:4px 12px; border-radius:20px; margin-top: 8px; display: inline-block; }
+    #admin-entrance { display:none; position:fixed; bottom:30px; right:20px; z-index:99; }
+    #admin-link { display:none; color:var(--apple-blue); text-decoration:none; font-size:13px; border:1px solid var(--apple-blue); padding:4px 12px; border-radius:20px; margin-top: 5px; }
   </style>
 </head>
 
@@ -63,32 +43,33 @@
 
 <div class="user-section">
   <img id="user-avatar" style="display: none;" />
-  <div id="user-greeting">正在載入服務...</div>
+  <div id="user-greeting" style="font-weight:600;">載入中...</div>
   <center><a href="admin.html" id="admin-link">管理入口</a></center>
 </div>
 
 <div class="header">
-  <div style="font-weight:bold; letter-spacing:2px;">訂車</div>
-  <div id="today-display" style="font-family: monospace; color: var(--text-sub);">2026/03/14</div>
+  <div style="font-weight:bold; letter-spacing:2px;">訂車服務</div>
+  <div id="today-display" style="color: var(--text-sub); font-size: 14px;"></div>
 </div>
 
-<div class="section-title">【行程站點】(可拖曳排序)</div>
-<div class="station-item">
-  <span>1. 上車：</span>
-  <input type="text" id="pickup" class="station-input" placeholder="請輸入起點地址">
-  <span>✏️</span>
+<div class="section-title">【行程站點】</div>
+<div id="station-container">
+  <div class="station-item">
+    <span>1. 上車：</span>
+    <input type="text" class="station-input stop-point" placeholder="請輸入起點地址">
+    <span>✏️</span>
+  </div>
+  <div class="station-item">
+    <span>2. 下車：</span>
+    <input type="text" class="station-input stop-point" placeholder="請輸入終點地址">
+    <span>✏️</span>
+  </div>
 </div>
-<div class="station-item">
-  <span>2. 下車：</span>
-  <input type="text" id="dropoff" class="station-input" placeholder="請輸入終點地址">
-  <span>✏️</span>
-</div>
-<div style="color:var(--apple-blue); font-size:14px; cursor:pointer; font-weight: 500;">[ + 新增停靠點 ] <span style="color:#888; font-weight: normal;">(點此可加中途站)</span></div>
+<div id="add-stop" style="color:var(--apple-blue); font-size:14px; cursor:pointer; font-weight: 500;" onclick="addNewStop()">[ + 新增停靠點 ]</div>
 
 <hr class="divider">
 
 <div class="section-title">時間</div>
-<div style="margin-bottom: 10px; font-size: 15px;">預約日期與時段：</div>
 <div style="display:flex; justify-content: space-between;">
   <input type="date" id="order-date">
   <input type="time" id="order-time">
@@ -97,155 +78,86 @@
 <hr class="divider">
 
 <div class="section-title">乘客</div>
-<div class="counter-row">
-  <span style="color:var(--text-sub);">成人</span>
-  <div class="counter-ctrl">
-    <b id="adult-count">2</b>
-    <button class="ctrl-btn" onclick="changeQty('adult-count', 1)">+</button>
-    <button class="ctrl-btn" onclick="changeQty('adult-count', -1)">-</button>
-  </div>
-</div>
-<div class="counter-row">
-  <span style="color:var(--text-sub);">兒童</span>
-  <div class="counter-ctrl">
-    <b id="child-count">0</b>
-    <button class="ctrl-btn" onclick="changeQty('child-count', 1)">+</button>
-    <button class="ctrl-btn" onclick="changeQty('child-count', -1)">-</button>
-  </div>
-</div>
+<div class="counter-row"><span>成人</span><div class="counter-ctrl"><b id="adult-count">2</b><button class="ctrl-btn" onclick="qty('adult-count',1)">+</button><button class="ctrl-btn" onclick="qty('adult-count',-1)">-</button></div></div>
+<div class="counter-row"><span>兒童</span><div class="counter-ctrl"><b id="child-count">0</b><button class="ctrl-btn" onclick="qty('child-count',1)">+</button><button class="ctrl-btn" onclick="qty('child-count',-1)">-</button></div></div>
 
 <hr class="divider">
 
-<div class="section-title">行李配置 ▼(已展開)</div>
-<div class="counter-row">
-  <span style="color:var(--text-sub);">🧳 29吋 大型</span>
-  <div class="counter-ctrl">
-    <b id="luggage-large">2</b> 件
-    <button class="ctrl-btn" onclick="changeQty('luggage-large', 1)">+</button>
-    <button class="ctrl-btn" onclick="changeQty('luggage-large', -1)">-</button>
-  </div>
-</div>
-<div class="counter-row">
-  <span style="color:var(--text-sub);">🧳 24吋 中型</span>
-  <div class="counter-ctrl">
-    <b id="luggage-mid">1</b> 件
-    <button class="ctrl-btn" onclick="changeQty('luggage-mid', 1)">+</button>
-    <button class="ctrl-btn" onclick="changeQty('luggage-mid', -1)">-</button>
-  </div>
-</div>
+<div class="section-title">行李配置 ▼</div>
+<div class="counter-row"><span>🧳 大型 (28吋以上)</span><div class="counter-ctrl"><b id="l-large">2</b><button class="ctrl-btn" onclick="qty('l-large',1)">+</button><button class="ctrl-btn" onclick="qty('l-large',-1)">-</button></div></div>
+<div class="counter-row"><span>🧳 中型 (24-28吋)</span><div class="counter-ctrl"><b id="l-mid">1</b><button class="ctrl-btn" onclick="qty('l-mid',1)">+</button><button class="ctrl-btn" onclick="qty('l-mid',-1)">-</button></div></div>
+<div class="counter-row"><span>🧳 小型 (登機箱/手提)</span><div class="counter-ctrl"><b id="l-small">0</b><button class="ctrl-btn" onclick="qty('l-small',1)">+</button><button class="ctrl-btn" onclick="qty('l-small',-1)">-</button></div></div>
 
-<div id="suggest-label" style="font-weight:bold; margin-top:15px; font-size: 14px;">
-  總計建議 → 建議 MPV / 廂型車
-</div>
+<button class="confirm-btn" onclick="sendRequest()">確認預約行程</button>
 
-<hr class="divider">
-
-<div class="section-title">即時推薦車款 (已自動匹配行李需求)</div>
-<div class="car-card">
-  <span style="font-size: 24px;">🚐</span>
-  <div class="car-info">
-    <b>Mercedes-Benz V-Class (進口廂型)</b>
-    <p>適合多人旅遊，行李空間完美匹配</p>
-    <div class="car-price">NT$ 1,650 <span style="font-size:12px; color:green; font-weight: normal;">✔️ 空間充足</span></div>
-  </div>
-</div>
-
-<button class="confirm-btn" onclick="sendRequest()">【確認預約行程】</button>
-
-<div id="admin-entrance">
-  <button onclick="location.href='admin.html'" style="background:var(--apple-red); color:white; border:none; padding:15px 22px; border-radius:50px; font-weight:bold; box-shadow: 0 4px 15px rgba(255,69,58,0.4); cursor:pointer;">⚙️ 管理後台</button>
-</div>
+<div id="admin-entrance"><button onclick="location.href='admin.html'" style="background:var(--apple-red); color:white; border:none; padding:15px 22px; border-radius:50px; font-weight:bold; box-shadow:0 4px 15px rgba(255,69,58,0.4);">⚙️ 管理後台</button></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCg7ONT1mDIXZplNhTKPHw-cn5UbXFQJyk",
-  authDomain: "destination-anywhere-cfd50.firebaseapp.com",
-  projectId: "destination-anywhere-cfd50",
-  appId: "1:718691467645:web:fb37ce5fa5708c1f788c14"
-};
-
+const firebaseConfig = { apiKey: "AIzaSyCg7ONT1mDIXZplNhTKPHw-cn5UbXFQJyk", authDomain: "destination-anywhere-cfd50.firebaseapp.com", projectId: "destination-anywhere-cfd50", appId: "1:718691467645:web:fb37ce5fa5708c1f788c14" };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-// 你的正確 UID
 const ADMIN_UID = "Uc5716677131e3d507708995b4e9f7b79";
 
-// 數值增減邏輯
-window.changeQty = (id, amount) => {
-  const el = document.getElementById(id);
-  let current = parseInt(el.innerText);
-  if (current + amount >= 0) {
-    el.innerText = current + amount;
-  }
+window.qty = (id, amt) => { let el = document.getElementById(id); let v = parseInt(el.innerText) + amt; if (v >= 0) el.innerText = v; };
+
+// 新增停靠點邏輯
+window.addNewStop = () => {
+  const container = document.getElementById('station-container');
+  const stops = container.getElementsByClassName('station-item');
+  const nextNum = stops.length + 1;
+  const lastStop = stops[stops.length - 1];
+  
+  const newDiv = document.createElement('div');
+  newDiv.className = 'station-item';
+  newDiv.innerHTML = `<span>${nextNum}. 中途：</span><input type="text" class="station-input stop-point" placeholder="輸入地址"><span>✏️</span>`;
+  
+  // 插入在最後一個（下車）之前
+  container.insertBefore(newDiv, lastStop);
+  
+  // 重新編號最後一個
+  lastStop.querySelector('span').innerText = `${nextNum + 1}. 下車：`;
 };
 
 async function init() {
   try {
     await liff.init({ liffId: "2009434590-UHOSSHQI" });
-    if (!liff.isLoggedIn()) {
-      liff.login();
-    } else {
-      const p = await liff.getProfile();
-      
-      // 更新用戶區
-      document.getElementById('user-greeting').innerText = "您好，" + p.displayName;
-      const avatarImg = document.getElementById('user-avatar');
-      if (p.pictureUrl) {
-        avatarImg.src = p.pictureUrl;
-        avatarImg.style.display = "inline-block";
-      }
-
-      // 權限檢查
-      if (p.userId === ADMIN_UID) {
-        document.getElementById('admin-link').style.display = "inline-block";
-        document.getElementById('admin-entrance').style.display = "block";
-      }
-    }
+    if (!liff.isLoggedIn()) liff.login();
+    const p = await liff.getProfile();
+    document.getElementById('user-greeting').innerText = "您好，" + p.displayName;
+    const av = document.getElementById('user-avatar');
+    if (p.pictureUrl) { av.src = p.pictureUrl; av.style.display = "inline-block"; }
+    if (p.userId === ADMIN_UID) { document.getElementById('admin-link').style.display = "inline-block"; document.getElementById('admin-entrance').style.display = "block"; }
   } catch (e) { console.error(e); }
 }
 
 window.sendRequest = async () => {
-  // 防呆：必填欄位
-  const pickup = document.getElementById('pickup').value.trim();
-  const dropoff = document.getElementById('dropoff').value.trim();
+  const stops = Array.from(document.querySelectorAll('.stop-point')).map(i => i.value.trim());
   const date = document.getElementById('order-date').value;
   const time = document.getElementById('order-time').value;
 
-  if (!pickup || !dropoff || !date || !time) {
-    alert("❌ 請完整填寫行程地點、日期與時間唷！");
-    return;
-  }
+  if (stops.some(s => !s) || !date || !time) return alert("❌ 請完整填寫所有站點與時間！");
 
   const btn = document.querySelector('.confirm-btn');
-  btn.disabled = true;
-  btn.innerText = "正在提交預約...";
-
-  const orderData = {
-    pickup, dropoff, date, time,
-    adults: document.getElementById('adult-count').innerText,
-    children: document.getElementById('child-count').innerText,
-    luggage_large: document.getElementById('luggage-large').innerText,
-    luggage_mid: document.getElementById('luggage-mid').innerText,
-    status: "pending",
-    createdAt: serverTimestamp()
-  };
+  btn.disabled = true; btn.innerText = "提交中...";
 
   try {
-    const ref = await addDoc(collection(db, "orders"), orderData);
-    window.location.href = "success.html?id=" + ref.id;
-  } catch (e) {
-    alert("提交失敗，請檢查網路連線");
-    btn.disabled = false;
-    btn.innerText = "【確認預約行程】";
-  }
+    await addDoc(collection(db, "orders"), {
+      stops, date, time,
+      adults: document.getElementById('adult-count').innerText,
+      children: document.getElementById('child-count').innerText,
+      l_large: document.getElementById('l-large').innerText,
+      l_mid: document.getElementById('l-mid').innerText,
+      l_small: document.getElementById('l-small').innerText,
+      status: "pending", createdAt: serverTimestamp()
+    });
+    window.location.href = "success.html";
+  } catch (e) { alert("出錯了"); btn.disabled = false; }
 };
 
-// 顯示今天的日期
 document.getElementById('today-display').innerText = new Date().toLocaleDateString();
-
 init();
 </script>
 </body>
