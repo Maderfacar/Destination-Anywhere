@@ -44,6 +44,9 @@
 <div class="user-section">
   <img id="user-avatar" style="display: none;" />
   <div id="user-greeting" style="font-weight:600;">載入中...</div>
+  <div id="user-id-box" style="font-size: 11px; color: #888; margin-top: 5px; cursor: pointer;" onclick="copyMyID()">
+    ID: <span id="display-userId">讀取中...</span>
+  </div>
   <center><a href="admin.html" id="admin-link">管理入口</a></center>
 </div>
 
@@ -121,22 +124,30 @@ window.addNewStop = () => {
   lastStop.querySelector('span').innerText = `${nextNum + 1}. 下車：`;
 };
 
+// 新增點擊複製功能
+window.copyMyID = () => {
+  const idText = document.getElementById('display-userId').innerText;
+  if (idText && idText !== "讀取中...") {
+    navigator.clipboard.writeText(idText);
+    alert("已複製 ID: " + idText);
+  }
+};
+
 async function init() {
   try {
-    // 1. 初始化 LIFF
     await liff.init({ liffId: CONFIG.LIFF_ID });
 
-    // 2. 檢查是否登入
     if (!liff.isLoggedIn()) {
-      // 確保在登入時不帶入混亂的 URL 參數
       liff.login({ redirectUri: window.location.href.split('?')[0] });
       return;
     }
 
-    // 3. 獲取 Profile
     const p = await liff.getProfile();
-    // ... 剩下的 UI 更新邏輯 ...
     
+    // --- 關鍵修改：在這裡顯示 User ID ---
+    document.getElementById('display-userId').innerText = p.userId;
+    // ----------------------------------
+
     // 語系套用
     document.getElementById('ui-title').innerText = lang.title;
     document.getElementById('ui-pickup').innerText = `1. ${lang.pickup}`;
@@ -154,7 +165,7 @@ async function init() {
     }
   } catch (e) { 
     console.error("LIFF Init Error:", e);
-    // 如果是 400 錯誤，強制清除一次 Session 並重新登入
+    document.getElementById('display-userId').innerText = "取得失敗";
     if (e.toString().includes("400")) {
       liff.logout();
       liff.login();
