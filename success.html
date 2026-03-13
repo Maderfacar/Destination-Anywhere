@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>預約成功 | Destination Anywhere</title>
+<script src=""></script>
+<style>
+:root { --apple-bg: #000; --apple-card: #1D1D1F; --apple-green: #30D158; --apple-text: #F5F5F7; --apple-sub: #86868B; --apple-blue: #0071E3; }
+body { background: var(--apple-bg); color: var(--apple-text); font-family: -apple-system, sans-serif; margin: 0; display: flex; justify-content: center; padding: 20px; }
+.card { background: var(--apple-card); border-radius: 20px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; }
+.qr-container { background: white; padding: 15px; border-radius: 15px; display: inline-block; margin: 20px 0; }
+.info-box { text-align: left; background: #2C2C2E; padding: 15px; border-radius: 12px; margin-top: 20px; font-size: 14px; line-height: 1.6; }
+.back-btn { display: block; margin-top: 25px; color: var(--apple-blue); text-decoration: none; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="card">
+<div style="font-size: 50px; color: var(--apple-green);">✓</div>
+<h2 style="margin: 10px 0;">預約已送出</h2>
+<p style="color: var(--apple-sub); font-size: 14px;">請截圖保存下方憑證，司機將依此聯繫</p>
+<div class="qr-container" id="qrcode"></div>
+<div id="order-details" class="info-box">讀取訂單資料中...</div>
+<a href="index.html" class="back-btn">返回預約首頁</a>
+</div>
+
+<script type="module">
+import { initializeApp } from "";
+import { getFirestore, doc, getDoc } from "";
+
+const firebaseConfig = {
+apiKey: "AIzaSyCg7ONT1mDIXZplNhTKPHw-cn5UbXFQJyk",
+authDomain: "destination-anywhere-cfd50.firebaseapp.com",
+projectId: "destination-anywhere-cfd50",
+appId: "1:718691467645:web:fb37ce5fa5708c1f788c14"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const urlParams = new URLSearchParams(window.location.search);
+const orderId = urlParams.get("id");
+
+if (orderId) {
+// 產生 QR Code
+new QRCode(document.getElementById("qrcode"), {
+text: orderId,
+width: 160,
+height: 160,
+colorDark: "#000000",
+colorLight: "#ffffff"
+});
+
+// 抓取 Firestore 資料
+const getOrder = async () => {
+try {
+const docRef = doc(db, "orders", orderId);
+const docSnap = await getDoc(docRef);
+if (docSnap.exists()) {
+const data = docSnap.data();
+document.getElementById("order-details").innerHTML =
+"<strong>預約日期：</strong>" + data.date + " " + data.time + "
+
+
+" +
+"<strong>上車地點：</strong>" + data.pickup + "
+
+
+" +
+"<strong>下車地點：</strong>" + data.dropoff + "
+
+
+" +
+"<strong>訂單編號：</strong><small>" + orderId + "</small>";
+} else {
+document.getElementById("order-details").innerText = "找不到訂單資料";
+}
+} catch (e) {
+console.error("讀取失敗", e);
+document.getElementById("order-details").innerText = "資料加載失敗";
+}
+};
+getOrder();
+}
+</script>
+
+</body>
+</html>
