@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Destination Anywhere | 專業訂車服務</title>
+  <title>Destination Anywhere | 專業接送預約</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root { 
@@ -11,41 +11,34 @@
       --text-sub: #666666; --apple-blue: #0071E3; --apple-red: #FF453A;
       --input-border: #D2D2D7;
     }
-    body { background: var(--bg-color); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 15px; padding-bottom: 80px; }
+    body { background: var(--bg-color); color: var(--text-main); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; padding-bottom: 80px; }
     
-    .user-section { text-align: center; padding: 20px 0; }
-    #user-avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #FFF; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 10px; }
+    .user-section { text-align: center; padding: 15px 0; }
+    #user-avatar { width: 60px; height: 60px; border-radius: 50%; border: 2px solid #FFF; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
     
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #CCC; padding-bottom: 12px; margin-bottom: 20px; }
-    .section-title { font-weight: 700; margin: 25px 0 12px 0; font-size: 17px; color: var(--apple-blue); }
-    .divider { border: 0; border-top: 1px solid #DDD; margin: 20px 0; }
+    .section-title { font-weight: 700; margin: 20px 0 10px 5px; font-size: 16px; color: var(--apple-blue); }
+    .form-group { background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    
+    .input-row { display: flex; align-items: center; margin-bottom: 10px; gap: 10px; }
+    .label-txt { width: 80px; font-size: 14px; font-weight: 600; color: var(--text-sub); }
+    .main-input { flex: 1; border: none; border-bottom: 1px solid var(--input-border); padding: 8px 0; font-size: 16px; background: transparent; }
+    .main-input:focus { outline: none; border-bottom: 2px solid var(--apple-blue); }
 
-    /* 欄位設計優化 */
-    .form-group { background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .station-item { display: flex; align-items: center; margin-bottom: 12px; }
-    .station-label { width: 85px; font-size: 14px; font-weight: 600; color: var(--text-sub); }
-    .station-input { flex: 1; border: none; background: transparent; font-size: 16px; border-bottom: 1px solid var(--input-border); padding: 8px 5px; color: var(--text-main); }
-    .station-input:focus { outline: none; border-bottom: 2px solid var(--apple-blue); }
+    .delete-btn { color: var(--apple-red); font-size: 12px; cursor: pointer; padding: 5px; border: 1px solid var(--apple-red); border-radius: 4px; margin-left: 5px; }
 
-    .counter-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; font-size: 16px; }
-    .counter-ctrl { display: flex; align-items: center; gap: 15px; }
-    .ctrl-btn { background: #F5F5F7; border: 1px solid #D2D2D7; border-radius: 8px; width: 38px; height: 38px; cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-    .ctrl-btn:active { background: #E8E8ED; transform: scale(0.95); }
-    
-    .datetime-container { display: flex; justify-content: space-between; gap: 10px; }
-    input[type="date"], input[type="time"], input[type="tel"] { 
-      border: 1px solid var(--input-border); border-radius: 10px; padding: 12px; font-size: 15px; 
-      background: white; width: 100%; box-sizing: border-box; appearance: none;
+    .datetime-container { display: flex; gap: 10px; }
+    input[type="date"], input[type="time"], textarea { 
+      border: 1px solid var(--input-border); border-radius: 8px; padding: 10px; width: 100%; box-sizing: border-box; font-size: 15px;
     }
+
+    .counter-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .counter-ctrl { display: flex; align-items: center; gap: 12px; }
+    .ctrl-btn { background: #F5F5F7; border: 1px solid #CCC; border-radius: 6px; width: 34px; height: 34px; font-size: 20px; display: flex; align-items: center; justify-content: center; }
 
     .confirm-btn { 
       width: 100%; background: var(--apple-blue); color: white; border: none; 
-      border-radius: 14px; padding: 20px; font-size: 18px; font-weight: bold; 
-      margin-top: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,113,227,0.3);
+      border-radius: 12px; padding: 18px; font-size: 18px; font-weight: bold; margin-top: 20px;
     }
-    .confirm-btn:disabled { background: #B2D7FF; cursor: not-allowed; }
-
-    #admin-link { display:none; color:var(--apple-blue); text-decoration:none; font-size:13px; border:1px solid var(--apple-blue); padding:5px 15px; border-radius:20px; margin-top: 8px; font-weight: 500; }
   </style>
 </head>
 
@@ -53,40 +46,37 @@
 
 <div class="user-section">
   <img id="user-avatar" style="display: none;" />
-  <div id="user-greeting" style="font-weight:700; font-size: 18px;">載入中...</div>
-  <div id="user-id-box" style="font-size: 11px; color: #888; margin-top: 5px; cursor: pointer;" onclick="copyMyID()">
-    您的 ID: <span id="display-userId">讀取中...</span> (點擊複製)
-  </div>
-  <center><a href="admin.html" id="admin-link">進入管理員模式</a></center>
+  <div id="user-greeting" style="font-weight:600; margin-top: 5px;">載入中...</div>
 </div>
 
-<div class="header">
-  <div id="ui-title" style="font-weight:bold; letter-spacing:1px; font-size: 20px;">訂車服務</div>
-  <div id="today-display" style="color: var(--text-sub); font-size: 14px;"></div>
-</div>
-
-<div class="section-title">【乘客資訊】</div>
+<div class="section-title">【乘客與聯絡資訊】</div>
 <div class="form-group">
-  <div class="station-item">
-    <span class="station-label">聯絡電話：</span>
-    <input type="tel" id="customer-phone" class="station-input" placeholder="例如：0912345678" pattern="[0-9]*">
+  <div class="input-row">
+    <span class="label-txt">聯絡人：</span>
+    <input type="text" id="contact-name" class="main-input" placeholder="乘客姓名">
+  </div>
+  <div class="input-row">
+    <span class="label-txt">電話：</span>
+    <input type="tel" id="contact-phone" class="main-input" placeholder="09xx-xxx-xxx">
   </div>
 </div>
 
 <div class="section-title">【行程站點】</div>
 <div class="form-group" id="station-container">
-  <div class="station-item">
-    <span class="station-label" id="ui-pickup">1. 上車：</span>
-    <input type="text" class="station-input stop-point" placeholder="請輸入完整起點地址">
-    <span>📍</span>
+  <div class="input-row station-item">
+    <span class="label-txt">1. 上車：</span>
+    <input type="text" class="main-input stop-point" placeholder="地址或機場航廈">
   </div>
-  <div class="station-item">
-    <span class="station-label" id="ui-dropoff">2. 下車：</span>
-    <input type="text" class="station-input stop-point" placeholder="請輸入完整終點地址">
-    <span>🏁</span>
+  <div class="input-row">
+    <span class="label-txt">航班號碼：</span>
+    <input type="text" id="flight-no" class="main-input" placeholder="接機請填(如：BR198)">
+  </div>
+  <div class="input-row station-item">
+    <span class="label-txt">2. 下車：</span>
+    <input type="text" class="main-input stop-point" placeholder="目的地地址">
   </div>
 </div>
-<div id="add-stop" style="color:var(--apple-blue); font-size:14px; cursor:pointer; font-weight: 600; text-align: center;" onclick="addNewStop()">+ 新增停靠點</div>
+<div style="text-align:center; color:var(--apple-blue); font-size:14px; cursor:pointer;" onclick="addNewStop()">+ 新增停靠點</div>
 
 <div class="section-title">【預約時間】</div>
 <div class="form-group datetime-container">
@@ -94,18 +84,21 @@
   <input type="time" id="order-time">
 </div>
 
-<div class="section-title">【乘客與行李】</div>
+<div class="section-title">【人數與行李】</div>
 <div class="form-group">
-  <div class="counter-row"><span>成人 (位)</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('adult-count',-1)">-</button><b id="adult-count">1</b><button class="ctrl-btn" onclick="qty('adult-count',1)">+</button></div></div>
-  <div class="counter-row"><span>兒童 (位)</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('child-count',-1)">-</button><b id="child-count">0</b><button class="ctrl-btn" onclick="qty('child-count',1)">+</button></div></div>
-  
-  <hr style="border: 0; border-top: 1px solid #EEE; margin: 15px 0;">
-  
-  <div class="counter-row"><span>大型行李 (28吋+)</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('l-large',-1)">-</button><b id="l-large">0</b><button class="ctrl-btn" onclick="qty('l-large',1)">+</button></div></div>
-  <div class="counter-row"><span>中小型行李</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('l-mid',-1)">-</button><b id="l-mid">1</b><button class="ctrl-btn" onclick="qty('l-mid',1)">+</button></div></div>
+  <div class="counter-row"><span>成人</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('adult-count',-1)">-</button><b id="adult-count">1</b><button class="ctrl-btn" onclick="qty('adult-count',1)">+</button></div></div>
+  <div class="counter-row"><span>兒童</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('child-count',-1)">-</button><b id="child-count">0</b><button class="ctrl-btn" onclick="qty('child-count',1)">+</button></div></div>
+  <hr style="border:0; border-top:1px solid #EEE; margin:10px 0;">
+  <div class="counter-row"><span>大型 (28吋+)</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('l-large',-1)">-</button><b id="l-large">0</b><button class="ctrl-btn" onclick="qty('l-large',1)">+</button></div></div>
+  <div class="counter-row"><span>中小型 (24吋或以下)</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('l-small',-1)">-</button><b id="l-small">1</b><button class="ctrl-btn" onclick="qty('l-small',1)">+</button></div></div>
 </div>
 
-<button class="confirm-btn" onclick="sendRequest()">立即確認預約</button>
+<div class="section-title">【特殊備註】</div>
+<div class="form-group">
+  <textarea id="order-note" rows="3" placeholder="如有推車、輪椅或其他大型物件，請在此描述尺寸或需求..."></textarea>
+</div>
+
+<button class="confirm-btn" onclick="sendRequest()">確認預約</button>
 
 <script type="module">
 import { CONFIG } from './config.js';
@@ -114,105 +107,78 @@ import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.g
 
 const app = initializeApp(CONFIG.firebaseConfig);
 const db = getFirestore(app);
-const lang = CONFIG.i18n[CONFIG.currentLang];
 
-window.qty = (id, amt) => { 
-  let el = document.getElementById(id); 
-  let v = parseInt(el.innerText) + amt; 
-  if (v >= 0) el.innerText = v; 
-};
+window.qty = (id, amt) => { let el = document.getElementById(id); let v = parseInt(el.innerText) + amt; if (v >= 0) el.innerText = v; };
 
 window.addNewStop = () => {
   const container = document.getElementById('station-container');
-  const stops = container.getElementsByClassName('station-item');
-  const nextNum = stops.length + 1;
-  const lastStop = stops[stops.length - 1];
+  const items = container.getElementsByClassName('station-item');
+  const lastItem = items[items.length - 1];
   
   const newDiv = document.createElement('div');
-  newDiv.className = 'station-item';
-  newDiv.innerHTML = `<span class="station-label">${nextNum}. 中途：</span><input type="text" class="station-input stop-point" placeholder="輸入地址"><span>📍</span>`;
-  
-  container.insertBefore(newDiv, lastStop);
-  lastStop.querySelector('.station-label').innerText = `${nextNum + 1}. 下車：`;
+  newDiv.className = 'input-row station-item';
+  newDiv.innerHTML = `
+    <span class="label-txt">中途點：</span>
+    <input type="text" class="main-input stop-point" placeholder="輸入地址">
+    <span class="delete-btn" onclick="this.parentElement.remove(); reIndexStops();">刪除</span>
+  `;
+  container.insertBefore(newDiv, lastItem);
+  reIndexStops();
 };
 
-window.copyMyID = () => {
-  const idText = document.getElementById('display-userId').innerText;
-  if (idText && idText !== "讀取中...") {
-    navigator.clipboard.writeText(idText).then(() => alert("已複製您的專屬 ID"));
-  }
+window.reIndexStops = () => {
+  const labels = document.querySelectorAll('.station-item .label-txt');
+  labels.forEach((label, index) => {
+    if (index === 0) label.innerText = "1. 上車：";
+    else if (index === labels.length - 1) label.innerText = `${index + 1}. 下車：`;
+    else label.innerText = "中途點：";
+  });
 };
 
 async function init() {
-  try {
-    await liff.init({ liffId: CONFIG.LIFF_ID });
-    if (!liff.isLoggedIn()) {
-      liff.login({ redirectUri: window.location.href.split('?')[0] });
-      return;
-    }
-
-    const p = await liff.getProfile();
-    document.getElementById('display-userId').innerText = p.userId;
-    document.getElementById('user-greeting').innerText = "您好，" + p.displayName;
-    
-    if (p.pictureUrl) {
-      const av = document.getElementById('user-avatar');
-      av.src = p.pictureUrl;
-      av.style.display = "inline-block";
-    }
-
-    if (CONFIG.ADMIN_UIDS.includes(p.userId)) { 
-      document.getElementById('admin-link').style.display = "inline-block"; 
-    }
-  } catch (e) { 
-    console.error("LIFF Init Error:", e);
-  }
+  await liff.init({ liffId: CONFIG.LIFF_ID });
+  if (!liff.isLoggedIn()) { liff.login(); return; }
+  const p = await liff.getProfile();
+  document.getElementById('user-greeting').innerText = "您好，" + p.displayName;
+  if (p.pictureUrl) { const av = document.getElementById('user-avatar'); av.src = p.pictureUrl; av.style.display = "inline-block"; }
+  // 預填聯絡人姓名
+  document.getElementById('contact-name').value = p.displayName;
 }
 
 window.sendRequest = async () => {
-  const phone = document.getElementById('customer-phone').value.trim();
+  const name = document.getElementById('contact-name').value;
+  const phone = document.getElementById('contact-phone').value;
   const stops = Array.from(document.querySelectorAll('.stop-point')).map(i => i.value.trim());
   const date = document.getElementById('order-date').value;
   const time = document.getElementById('order-time').value;
 
-  if (!phone) return alert("❌ 請輸入聯絡電話！");
-  if (stops.some(s => !s) || !date || !time) return alert("❌ 請完整填寫所有地點與時間！");
+  if (!name || !phone || stops.some(s => !s) || !date || !time) return alert("❌ 請填寫完整資訊！");
 
   const btn = document.querySelector('.confirm-btn');
-  btn.disabled = true; btn.innerText = "正在為您傳送...";
+  btn.disabled = true; btn.innerText = "處理中...";
 
   try {
     const profile = await liff.getProfile();
-    
-    // 這裡的資料結構會對應到 Make.com 的彩色標籤
-    const orderData = {
-      customerName: profile.displayName,
-      customerId: profile.userId,
-      customerPhone: phone,
-      pickupAddress: stops[0], // 第 1 個是起點
-      dropoffAddress: stops[stops.length - 1], // 最後一個是終點
-      allStops: stops.join(' -> '), // 串接所有站點
+    await addDoc(collection(db, "orders"), {
+      contactName: name,
+      contactPhone: phone,
+      flightNo: document.getElementById('flight-no').value,
+      pickupAddress: stops[0],
+      dropoffAddress: stops[stops.length - 1],
+      allStops: stops.join(' -> '),
       appointmentTime: `${date} ${time}`,
-      adults: document.getElementById('adult-count').innerText,
-      children: document.getElementById('child-count').innerText,
-      luggage: `大:${document.getElementById('l-large').innerText} / 中小:${document.getElementById('l-mid').innerText}`,
+      passengers: `${document.getElementById('adult-count').innerText}大${document.getElementById('child-count').innerText}小`,
+      luggage: `大:${document.getElementById('l-large').innerText} / 中小:${document.getElementById('l-small').innerText}`,
+      note: document.getElementById('order-note').value,
+      customerId: profile.userId,
       status: "pending",
       createdAt: serverTimestamp()
-    };
-
-    await addDoc(collection(db, "orders"), orderData);
-    
-    // 成功後跳轉
+    });
     window.location.href = "success.html";
-  } catch (e) { 
-    alert("預約出錯，請稍後再試"); 
-    btn.disabled = false; btn.innerText = "立即確認預約";
-  }
+  } catch (e) { alert("出錯了，請檢查網路"); btn.disabled = false; }
 };
 
-document.getElementById('today-display').innerText = "今天日期：" + new Date().toLocaleDateString();
 init();
 </script>
-
 </body>
 </html>
