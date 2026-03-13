@@ -134,6 +134,19 @@ async function init() {
 }
 
 window.sendRequest = async () => {
+  // 1. 新增這區塊：先抓取下單者的 LINE 資料 (為了 B 方案自動通知)
+  let customerId = "";
+  let customerName = "";
+  try {
+    const profile = await liff.getProfile();
+    customerId = profile.userId;
+    customerName = profile.displayName;
+  } catch (err) {
+    console.error("LIFF Profile Error", err);
+    return alert("無法取得您的 LINE 資訊，請重新開啟頁面");
+  }
+
+  // 2. 抓取網頁上的輸入資料
   const stops = Array.from(document.querySelectorAll('.stop-point')).map(i => i.value.trim());
   const date = document.getElementById('order-date').value;
   const time = document.getElementById('order-time').value;
@@ -141,20 +154,36 @@ window.sendRequest = async () => {
   if (stops.some(s => !s) || !date || !time) return alert("❌ 請完整填寫所有站點與時間！");
 
   const btn = document.querySelector('.confirm-btn');
-  btn.disabled = true; btn.innerText = "提交中...";
+  btn.disabled = true; 
+  btn.innerText = "預約傳送中...";
 
   try {
+    // 3. 修改這區塊：將 customerId 與 customerName 一併存入 Firebase
     await addDoc(collection(db, "orders"), {
-      stops, date, time,
+      stops, 
+      date, 
+      time,
       adults: document.getElementById('adult-count').innerText,
       children: document.getElementById('child-count').innerText,
       l_large: document.getElementById('l-large').innerText,
       l_mid: document.getElementById('l-mid').innerText,
       l_small: document.getElementById('l-small').innerText,
-      status: "pending", createdAt: serverTimestamp()
+      
+      // 這是自動化通知必備的兩行
+      customerId: customerId,
+      customerName: customerName,
+      
+      status: "pending", 
+      createdAt: serverTimestamp()
     });
+    
+    // 4. 跳轉成功頁面
     window.location.href = "success.html";
-  } catch (e) { alert("出錯了"); btn.disabled = false; }
+  } catch (e) { 
+    alert("預約出錯，請檢查網路"); 
+    btn.disabled = false; 
+    btn.innerText = "確認預約行程";
+  }
 };
 
 document.getElementById('today-display').innerText = new Date().toLocaleDateString();
