@@ -1,45 +1,53 @@
 <!DOCTYPE html>
-
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destination Anywhere | 乘客訂車</title>
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<style>
-:root { --apple-bg: #000; --apple-card: #1D1D1F; --apple-input: #2D2D2F; --apple-blue: #0071E3; --apple-text: #F5F5F7; --apple-sub: #86868B; }
-body { background: var(--apple-bg); color: var(--apple-text); font-family: sans-serif; margin: 0; display: flex; justify-content: center; padding: 20px; }
-.card { background: var(--apple-card); border-radius: 20px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 500px; }
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-input, select, textarea { width: 100%; box-sizing: border-box; background: var(--apple-input); border: none; border-radius: 12px; color: #fff; padding: 14px; font-size: 16px; margin-top: 5px; }
-.btn { width: 100%; background: var(--apple-blue); color: white; border: none; border-radius: 25px; padding: 18px; font-size: 17px; font-weight: 600; cursor: pointer; margin-top: 20px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Destination Anywhere | 乘客訂車</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    :root { --apple-bg: #000; --apple-card: #1D1D1F; --apple-input: #2D2D2F; --apple-blue: #0071E3; --apple-text: #F5F5F7; --apple-sub: #86868B; }
+    body { background: var(--apple-bg); color: var(--apple-text); font-family: -apple-system, sans-serif; margin: 0; display: flex; justify-content: center; padding: 20px; }
+    .card { background: var(--apple-card); border-radius: 20px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 500px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+    input, select, textarea { width: 100%; box-sizing: border-box; background: var(--apple-input); border: none; border-radius: 12px; color: #fff; padding: 14px; font-size: 16px; margin-top: 5px; }
+    .btn { width: 100%; background: var(--apple-blue); color: white; border: none; border-radius: 25px; padding: 18px; font-size: 17px; font-weight: 600; cursor: pointer; margin-top: 20px; }
+    #admin-entrance { display:none; position:fixed; bottom:30px; right:20px; z-index:9999; }
+  </style>
 </head>
 
-  <body>
+<body>
 <div style="width:100%; text-align:center;">
   <img id="user-avatar" style="width: 80px; height: 80px; border-radius: 50%; border: 2px solid #1D1D1F; margin-bottom: 15px; display: none;" />
-<h1 id="user-greeting">正在載入...</h1>
-<div class="card" style="text-align:left; margin:auto;">
-<div class="grid">
-<div><label style="color:var(--apple-sub); font-size:12px;">日期</label><input type="date" id="date"></div>
-<div><label style="color:var(--apple-sub); font-size:12px;">時間</label><input type="time" id="time"></div>
-</div>
-<input type="text" id="contact" placeholder="聯絡姓名">
-<input type="tel" id="phone" placeholder="聯絡電話">
-<input type="text" id="flight" placeholder="航班編號 (選填)">
-<input type="text" id="pickup" placeholder="上車地址">
-<input type="text" id="dropoff" placeholder="下車地址">
-<div class="grid">
-<select id="people"><option value="1">1人</option><option value="2">2人</option><option value="3">3人</option><option value="4+">4人以上</option></select>
-<input type="number" id="luggage" value="0" placeholder="行李">
-</div>
-<textarea id="note" rows="3" placeholder="備註需求"></textarea>
-<button class="btn" onclick="sendRequest()">確認預約行程</button>
+  <h1 id="user-greeting">正在載入服務...</h1>
+  
+  <div class="card" style="text-align:left; margin:auto;">
+    <div class="grid">
+      <div><label style="color:var(--apple-sub); font-size:12px;">日期</label><input type="date" id="date"></div>
+      <div><label style="color:var(--apple-sub); font-size:12px;">時間</label><input type="time" id="time"></div>
+    </div>
+    <input type="text" id="contact" placeholder="聯絡姓名">
+    <input type="tel" id="phone" placeholder="聯絡電話">
+    <input type="text" id="flight" placeholder="航班編號 (選填)">
+    <input type="text" id="pickup" placeholder="上車地址">
+    <input type="text" id="dropoff" placeholder="下車地址">
+    <div class="grid">
+      <select id="people"><option value="1">1人</option><option value="2">2人</option><option value="3">3人</option><option value="4+">4人以上</option></select>
+      <input type="number" id="luggage" value="0" placeholder="行李">
+    </div>
+    <textarea id="note" rows="3" placeholder="備註需求"></textarea>
+    <button class="btn" onclick="sendRequest()">確認預約行程</button>
+  </div>
+
+  <center style="margin-top:20px;">
+    <a href="admin.html" id="admin-link" style="display:none; color:var(--apple-sub); text-decoration:none; font-size:13px; border:1px solid #333; padding:5px 15px; border-radius:20px;">管理入口</a>
+  </center>
 </div>
 
-
-<center><a href="admin.html" id="admin-link" style="display:none; color:var(--apple-sub); text-decoration:none; font-size:13px; border:1px solid #333; padding:5px 15px; border-radius:20px;">管理入口</a></center>
+<div id="admin-entrance">
+  <button onclick="location.href='admin.html'" style="background:#FF453A; color:white; border:none; padding:15px 20px; border-radius:50px; font-weight:bold; box-shadow: 0 4px 15px rgba(255,69,58,0.4); cursor:pointer; display:flex; align-items:center; gap:8px;">
+    <span>⚙️</span> 管理後台
+  </button>
 </div>
 
 <script type="module">
@@ -47,87 +55,84 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-apiKey: "AIzaSyCg7ONT1mDIXZplNhTKPHw-cn5UbXFQJyk",
-authDomain: "destination-anywhere-cfd50.firebaseapp.com",
-projectId: "destination-anywhere-cfd50",
-appId: "1:718691467645:web:fb37ce5fa5708c1f788c14"
+  apiKey: "AIzaSyCg7ONT1mDIXZplNhTKPHw-cn5UbXFQJyk",
+  authDomain: "destination-anywhere-cfd50.firebaseapp.com",
+  projectId: "destination-anywhere-cfd50",
+  appId: "1:718691467645:web:fb37ce5fa5708c1f788c14"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const ADMIN_UID = "2848216";
+
+// ！！！暫時先讓它顯示，我們進去後看 Alert ！！！
+const ADMIN_UID = "2848216"; 
 
 async function init() {
-try {
-await liff.init({ liffId: "2009434590-UHOSSHQI" });
-if (!liff.isLoggedIn()) {
-liff.login();
-} else {
-const p = await liff.getProfile();
-const avatarImg = document.getElementById('user-avatar');
-if (p.pictureUrl && avatarImg) {
-avatarImg.src = p.pictureUrl;
-avatarImg.style.display = "inline-block";
-}
-document.getElementById('user-greeting').innerText = "您好，" + p.displayName;
-document.getElementById('contact').value = p.displayName;
-if (p.userId === ADMIN_UID) {
-document.getElementById('admin-link').style.display = "inline-block";
-}
-}
-} catch (e) {
-console.error("LIFF 出錯", e);
-}
+  try {
+    console.log("LIFF 初始化開始...");
+    await liff.init({ liffId: "2009434590-UHOSSHQI" });
+    
+    if (!liff.isLoggedIn()) {
+      console.log("未登入，跳轉登入...");
+      liff.login();
+    } else {
+      const p = await liff.getProfile();
+      console.log("登入成功:", p.displayName);
+      
+      // 除錯用：直接彈出你的真實 UID
+      alert("你的真實 UID 為：\n" + p.userId);
+
+      // 介面更新
+      document.getElementById('user-greeting').innerText = "您好，" + p.displayName;
+      document.getElementById('contact').value = p.displayName;
+      const avatarImg = document.getElementById('user-avatar');
+      if (p.pictureUrl) {
+        avatarImg.src = p.pictureUrl;
+        avatarImg.style.display = "inline-block";
+      }
+
+      // 權限判斷
+      if (p.userId === ADMIN_UID || p.userId.includes("2848216")) {
+        document.getElementById('admin-link').style.display = "inline-block";
+        document.getElementById('admin-entrance').style.display = "flex";
+      }
+    }
+  } catch (e) {
+    alert("程式發生錯誤: " + e.message);
+    console.error(e);
+  }
 }
 
 window.sendRequest = async () => {
-const d = {
-date: document.getElementById('date').value,
-time: document.getElementById('time').value,
-contact: document.getElementById('contact').value,
-phone: document.getElementById('phone').value,
-flight: document.getElementById('flight').value,
-pickup: document.getElementById('pickup').value,
-dropoff: document.getElementById('dropoff').value,
-people: document.getElementById('people').value,
-luggage: document.getElementById('luggage').value,
-note: document.getElementById('note').value,
-status: "pending",
-createdAt: serverTimestamp()
-};
-try {
-const btn = document.querySelector('.btn');
-btn.disabled = true;
-btn.innerText = "提交中...";
-const ref = await addDoc(collection(db, "orders"), d);
-window.location.href = "success.html?id=" + ref.id;
-} catch (e) {
-alert("提交失敗");
-console.error(e);
-const b = document.querySelector('.btn');
-b.disabled = false;
-b.innerText = "確認預約行程";
-}
+  const d = {
+    date: document.getElementById('date').value,
+    time: document.getElementById('time').value,
+    contact: document.getElementById('contact').value,
+    phone: document.getElementById('phone').value,
+    flight: document.getElementById('flight').value,
+    pickup: document.getElementById('pickup').value,
+    dropoff: document.getElementById('dropoff').value,
+    people: document.getElementById('people').value,
+    luggage: document.getElementById('luggage').value,
+    note: document.getElementById('note').value,
+    status: "pending",
+    createdAt: serverTimestamp()
+  };
+  try {
+    const btn = document.querySelector('.btn');
+    btn.disabled = true;
+    btn.innerText = "提交中...";
+    const ref = await addDoc(collection(db, "orders"), d);
+    window.location.href = "success.html?id=" + ref.id;
+  } catch (e) {
+    alert("提交失敗: " + e.message);
+    const b = document.querySelector('.btn');
+    b.disabled = false;
+    b.innerText = "確認預約行程";
+  }
 };
 
-init(alert(p.userId););
-</script>
-<div id="admin-entrance" style="display:none; position:fixed; bottom:30px; right:20px; z-index:9999;">
-  <button onclick="location.href='admin.html'" style="background:#FF453A; color:white; border:none; padding:15px 20px; border-radius:50px; font-weight:bold; box-shadow: 0 4px 15px rgba(255,69,58,0.4); cursor:pointer; display:flex; align-items:center; gap:8px;">
-    <span>⚙️</span> 管理後台
-  </button>
-</div>
-
-<script>
-  // 請找到你 index.html 裡面原本處理 liff.getProfile() 的地方
-  // 在取得 profile 後，加入這幾行判斷：
-  liff.getProfile().then(profile => {
-    const userUid = profile.userId;
-    if (userUid === "2848216") { // 你的 UID
-      document.getElementById('admin-entrance').style.display = 'block';
-    }
-  }).catch(err => console.error(err));
+init();
 </script>
 </body>
 </html>
-    
