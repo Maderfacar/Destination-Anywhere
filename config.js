@@ -11,8 +11,8 @@ export const CONFIG = {
   // 管理員設定
   ADMIN_UIDS: [
     "Uc5716677131e3d507708995b4e9f7b79", // 你本人 (超級管理員)
-    "",              // 一般管理員 A
-    ""               // 一般管理員 B
+    "U56239f33a1cb65c8b1b880f87ea0c2ac",              // 一般管理員 識翔
+    "U84c34631256a829d5fd8dceed8bd38f3"               // 一般管理員 33
   ],
 
   LIFF_ID: "2009434590-UHOSSHQI",
