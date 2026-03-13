@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>管理後台 | Destination Anywhere</title>
-<script src=""></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
 :root { --apple-bg: #000; --apple-card: #1C1C1E; --apple-blue: #0A84FF; --apple-green: #30D158; --apple-red: #FF453A; --apple-text: #FFFFFF; --apple-sub: #8E8E93; }
 body { background: var(--apple-bg); color: var(--apple-text); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
@@ -13,101 +12,103 @@ body { background: var(--apple-bg); color: var(--apple-text); font-family: -appl
 .card { background: var(--apple-card); border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 5px solid var(--apple-blue); }
 .order-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 8px; }
 .order-body { font-size: 14px; color: var(--apple-sub); line-height: 1.6; }
-.status-badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; }
+.status-badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; text-transform: uppercase; }
 .pending { background: #5E5E17; color: #FFD60A; }
 .confirmed { background: #1C3D1C; color: var(--apple-green); }
 .btn-group { margin-top: 10px; display: flex; gap: 10px; }
 button { background: #3A3A3C; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
 .admin-only { border: 1px solid var(--apple-red); padding: 10px; border-radius: 10px; margin-bottom: 20px; display: none; }
-#single-order-view { display: none; }
-#admin-list-view { display: none; }
 </style>
 </head>
 <body>
-
 <div id="auth-loading">權限校驗中...</div>
-
 <div id="main-content" style="display:none;">
 <div class="header">
-<h2 id="view-title">訂單總表</h2>
-<button onclick="location.href='index.html'" style="font-size:12px;">返回首頁</button>
+<h2 id="view-title">訂單管理</h2>
+<button onclick="location.href='index.html'">返回首頁</button>
 </div>
-
 <div id="super-admin-zone" class="admin-only">
-<h4 style="margin:0 0 10px 0; color:var(--apple-red);">超級管理權限：管理員名單</h4>
-<div id="admin-list-display">載入中...</div>
-<input type="text" id="new-admin-uid" placeholder="貼上 U 開頭的 UID" style="width:70%; background:#2C2C2E; color:white; border:none; padding:8px; border-radius:5px;">
-<button onclick="addAdmin()" style="background:var(--apple-blue);">新增</button>
+<h4 style="margin:0 0 10px 0; color:var(--apple-red);">超級管理權限</h4>
+<div style="font-size: 12px; color: var(--apple-sub);">您目前以超級管理員身分登入</div>
 </div>
-
 <div id="order-list"></div>
-
-<div id="single-order-view">
-<div class="card" id="detail-card">
-<div id="detail-content">讀取中...</div>
-<div id="privacy-notice" style="color:var(--apple-red); font-size:12px; margin-top:10px; display:none;">⚠️ 隱私資訊已隱藏，掃描權限不足。</div>
-<button onclick="window.location.href=''" style="width:100%; background:var(--apple-green); margin-top:15px;">聯繫官方客服</button>
+<div id="single-order-view" style="display:none;">
+<div class="card">
+<div id="detail-content"></div>
+<div id="privacy-notice" style="color:var(--apple-red); font-size:12px; margin-top:10px; display:none;">⚠️ 隱私資訊已隱藏，權限不足。</div>
+<button onclick="window.location.href='https://line.me/ti/p/@你的ID'" style="width:100%; background:var(--apple-green); margin-top:15px; color:white; border-radius:10px; padding:12px;">聯繫官方客服</button>
 </div>
 </div>
 </div>
-
-  <script type="module">
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, doc, getDoc, getDocs, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
 const firebaseConfig = {
-apiKey: "AIzaSyCg7ONT1mDIXZplNhTKPHw-cn5UbXFQJyk",
-authDomain: "destination-anywhere-cfd50.firebaseapp.com",
-projectId: "destination-anywhere-cfd50",
-appId: "1:718691467645:web:fb37ce5fa5708c1f788c14"
+  apiKey: "AIzaSyCg7ONT1mDIXZplNhTKPHw-cn5UbXFQJyk",
+  authDomain: "destination-anywhere-cfd50.firebaseapp.com",
+  projectId: "destination-anywhere-cfd50",
+  appId: "1:718691467645:web:fb37ce5fa5708c1f788c14"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const SUPER_ADMIN = "2848216"; // 你的 UID
+const SUPER_ADMIN = "2848216"; 
 
 async function init() {
-try {
-await liff.init({ liffId: "2009434590-UHOSSHQI" });
-if (!liff.isLoggedIn()) { liff.login(); return; }
+  try {
+    await liff.init({ liffId: "2009434590-UHOSSHQI" });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    
+    const p = await liff.getProfile();
+    const userUid = p.userId;
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId = urlParams.get("id");
 
-} catch (e) { console.error(e); }
+    const adminDoc = await getDoc(doc(db, "admins", userUid));
+    const isAdmin = adminDoc.exists() || userUid === SUPER_ADMIN;
+    
+    document.getElementById('auth-loading').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+
+    if (orderId) {
+      showSingleOrder(orderId, isAdmin);
+    } else if (isAdmin) {
+      showAdminDashboard(userUid);
+    } else {
+      document.getElementById('order-list').innerHTML = "權限不足，無法查看。";
+    }
+  } catch (e) { console.error(e); }
 }
-
-// 顯示單筆訂單 (給司機或一般人掃碼)
 async function showSingleOrder(id, isAdmin) {
-const snap = await getDoc(doc(db, "orders", id));
-if (!snap.exists()) { document.getElementById('detail-content').innerText = "訂單不存在"; return; }
-
-const d = snap.data();
-document.getElementById('view-title').innerText = "訂單詳情";
-document.getElementById('order-list').style.display = 'none';
-document.getElementById('single-order-view').style.display = 'block';
-
-let html = &lt;b&gt;日期：&lt;/b&gt;${d.date} ${d.time}<br>&lt;b&gt;航班：&lt;/b&gt;${d.flight || &#39;無&#39;}<br>;
-
-if (isAdmin) {
-// 管理員或白名單司機看全部
-html += &lt;b&gt;上車：&lt;/b&gt;${d.pickup}<br>&lt;b&gt;下車：&lt;/b&gt;${d.dropoff}<br>&lt;b&gt;電話：&lt;/b&gt;${d.phone}<br>&lt;b&gt;姓名：&lt;/b&gt;${d.contact};
-} else {
-// 一般人看去識別化資訊
-html += &lt;b&gt;上車區域：&lt;/b&gt;${d.pickup.substring(0,6)}...<br>&lt;b&gt;狀態：&lt;/b&gt;已預約;
-document.getElementById('privacy-notice').style.display = 'block';
-}
-document.getElementById('detail-content').innerHTML = html;
+  const snap = await getDoc(doc(db, "orders", id));
+  if (!snap.exists()) { document.getElementById('detail-content').innerText = "訂單不存在"; return; }
+  const d = snap.data();
+  document.getElementById('order-list').style.display = 'none';
+  document.getElementById('single-order-view').style.display = 'block';
+  document.getElementById('view-title').innerText = "訂單詳情";
+  
+  let html = "<b>日期：</b>" + d.date + " " + d.time + "<br><b>航班：</b>" + (d.flight || "無") + "<br>";
+  if (isAdmin) {
+    html += "<b>上車：</b>" + d.pickup + "<br><b>下車：</b>" + d.dropoff + "<br><b>電話：</b>" + d.phone + "<br><b>姓名：</b>" + d.contact;
+  } else {
+    html += "<b>上車區域：</b>" + d.pickup.substring(0,6) + "...<br><b>狀態：</b>已預約";
+    document.getElementById('privacy-notice').style.display = 'block';
+  }
+  document.getElementById('detail-content').innerHTML = html;
 }
 
-// 顯示管理員總表
 async function showAdminDashboard(uid) {
-if (uid === SUPER_ADMIN) document.getElementById('super-admin-zone').style.display = 'block';
-
-const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
-const querySnapshot = await getDocs(q);
-let html = "";
-querySnapshot.forEach((doc) => {
-const d = doc.data();
-html +=  &lt;div class=&quot;card&quot;&gt; &lt;div class=&quot;order-header&quot;&gt; &lt;span&gt;${d.date} ${d.time}&lt;/span&gt; &lt;span class=&quot;status-badge ${d.status}&quot;&gt;${d.status}&lt;/span&gt; &lt;/div&gt; &lt;div class=&quot;order-body&quot;&gt; 客：${d.contact} / ${d.phone}<br> 從：${d.pickup}<br>到：${d.dropoff} &lt;/div&gt; &lt;div class=&quot;btn-group&quot;&gt; &lt;button onclick=&quot;updateStatus(&#39;${doc.id}&#39;, &#39;confirmed&#39;)&quot;&gt;確認&lt;/button&gt; &lt;button onclick=&quot;deleteOrder(&#39;${doc.id}&#39;)&quot; style=&quot;color:var(--apple-red)&quot;&gt;刪除&lt;/button&gt; &lt;/div&gt; &lt;/div&gt;;
-});
-document.getElementById('order-list').innerHTML = html;
+  if (uid === SUPER_ADMIN) document.getElementById('super-admin-zone').style.display = 'block';
+  const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+  const querySnapshot = await getDocs(q);
+  let html = "";
+  querySnapshot.forEach((docSnap) => {
+    const d = docSnap.data();
+    const status = d.status || "pending";
+    html += '<div class="card"><div class="order-header"><span>' + d.date + ' ' + d.time + '</span><span class="status-badge ' + status + '">' + status + '</span></div><div class="order-body">客：' + d.contact + ' / ' + d.phone + '<br>從：' + d.pickup + '<br>到：' + d.dropoff + '</div><div class="btn-group"><button onclick="updateStatus(\'' + docSnap.id + '\', \'confirmed\')">確認</button><button onclick="deleteOrder(\'' + docSnap.id + '\')" style="color:var(--apple-red)">刪除</button></div></div>';
+  });
+  document.getElementById('order-list').innerHTML = html || "目前尚無訂單";
 }
 
 window.deleteOrder = async (id) => { if(confirm('確定刪除?')) { await deleteDoc(doc(db, "orders", id)); location.reload(); } };
@@ -115,6 +116,5 @@ window.updateStatus = async (id, s) => { await updateDoc(doc(db, "orders", id), 
 
 init();
 </script>
-
 </body>
 </html>
