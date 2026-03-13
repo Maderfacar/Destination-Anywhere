@@ -123,6 +123,20 @@ window.addNewStop = () => {
 
 async function init() {
   try {
+    // 1. 初始化 LIFF
+    await liff.init({ liffId: CONFIG.LIFF_ID });
+
+    // 2. 檢查是否登入
+    if (!liff.isLoggedIn()) {
+      // 確保在登入時不帶入混亂的 URL 參數
+      liff.login({ redirectUri: window.location.href.split('?')[0] });
+      return;
+    }
+
+    // 3. 獲取 Profile
+    const p = await liff.getProfile();
+    // ... 剩下的 UI 更新邏輯 ...
+    
     // 語系套用
     document.getElementById('ui-title').innerText = lang.title;
     document.getElementById('ui-pickup').innerText = `1. ${lang.pickup}`;
@@ -130,19 +144,22 @@ async function init() {
     document.getElementById('add-stop').innerText = lang.addStop;
     document.querySelector('.confirm-btn').innerText = lang.confirmBtn;
 
-    await liff.init({ liffId: CONFIG.LIFF_ID });
-    if (!liff.isLoggedIn()) liff.login();
-    const p = await liff.getProfile();
     document.getElementById('user-greeting').innerText = "您好，" + p.displayName;
     const av = document.getElementById('user-avatar');
     if (p.pictureUrl) { av.src = p.pictureUrl; av.style.display = "inline-block"; }
 
-    // 管理員判斷 (改用陣列包含判斷)
     if (CONFIG.ADMIN_UIDS.includes(p.userId)) { 
       document.getElementById('admin-link').style.display = "inline-block"; 
       document.getElementById('admin-entrance').style.display = "block"; 
     }
-  } catch (e) { console.error(e); }
+  } catch (e) { 
+    console.error("LIFF Init Error:", e);
+    // 如果是 400 錯誤，強制清除一次 Session 並重新登入
+    if (e.toString().includes("400")) {
+      liff.logout();
+      liff.login();
+    }
+  }
 }
 
 window.sendRequest = async () => {
