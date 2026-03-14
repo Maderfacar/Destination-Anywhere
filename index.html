@@ -206,23 +206,31 @@ async function init() {
 }
 
 window.sendRequest = async () => {
-  const flight = document.getElementById('flight-no').value;
-  const start = document.getElementById('p-start')?.value || `機場 (${flight})`;
-  const end = document.getElementById('p-end')?.value || `機場 (${flight})`;
-  const mids = Array.from(document.querySelectorAll('.mid-input')).map(i => i.value);
   const name = document.getElementById('contact-name').value;
   const phone = document.getElementById('contact-phone').value;
   const date = document.getElementById('order-date').value;
   const time = document.getElementById('order-time').value;
+  const flight = document.getElementById('flight-no').value || "無";
+  const start = document.getElementById('p-start')?.value || `機場 (${flight})`;
+  const end = document.getElementById('p-end')?.value || `機場 (${flight})`;
+  const mids = Array.from(document.querySelectorAll('.mid-input')).map(i => i.value || "");
 
-  if (!name || !phone || !date || !time || !start || !end) return alert("❌ 請填寫完整資訊！");
+  // 1. 基礎驗證
+  if (!name || !phone || !date || !time) return alert("❌ 請填寫完整聯絡資訊與時間！");
 
   const btn = document.querySelector('.confirm-btn');
-  btn.disabled = true; btn.innerText = "正在傳送預約...";
+  btn.disabled = true; 
+  btn.innerText = "正在傳送預約...";
 
   try {
-    const profile = await liff.getProfile();
-    
+    // 2. 取得 Profile (防禦性處理：若失敗則用 anonymous/unknown 代替)
+    let profile = { userId: "unknown" };
+    try {
+      profile = await liff.getProfile();
+    } catch (profileErr) {
+      console.warn("無法取得 Profile，繼續執行流程", profileErr);
+    }
+
     const orderData = {
       tripType: currentMode,
       contactName: name,
@@ -230,38 +238,36 @@ window.sendRequest = async () => {
       flightNo: flight,
       pickupAddress: start,
       dropoffAddress: end,
-      allStops: [start, ...mids, end].join(' -> '),
+      allStops: [start, ...mids, end].filter(s => s).join(' -> '),
       appointmentTime: `${date} ${time}`,
       passengers: `${document.getElementById('adult-count').innerText}大${document.getElementById('child-count').innerText}小`,
       luggage: `大:${document.getElementById('l-large').innerText} / 中小:${document.getElementById('l-small').innerText}`,
-      note: document.getElementById('order-note').value,
+      note: document.getElementById('order-note').value || "無",
       customerId: profile.userId,
       status: "pending"
     };
 
-    // 1. 確保存入 Firebase (await 確保資料入庫)
-    await addDoc(collection(db, "orders"), {
+    // 3. 同時啟動 Webhook 發送與 Firebase 寫入
+    const webhookRequest = fetch("https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(orderData)
+    });
+
+    const firebaseRequest = addDoc(collection(db, "orders"), {
       ...orderData,
       createdAt: serverTimestamp()
     });
 
-    // 2. 非同步發送 Webhook
-    // 移除 await，避免 Make 的握手延遲卡住網頁跳轉
-    // 使用 'cors' 確保內容類型正確，但不等待 promise
-    fetch("https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(orderData)
-    }).catch(err => console.error("Webhook Background Error:", err));
+    // 4. 等待兩者處理完畢 (allSettled 確保不論成功失敗都會往下跑)
+    await Promise.allSettled([webhookRequest, firebaseRequest]);
 
-    // 3. 給予 500 毫秒緩衝後跳轉，確保背景 fetch 已經由瀏覽器發射
-    setTimeout(() => {
-      window.location.href = "success.html";
-    }, 500);
+    // 5. 成功跳轉
+    window.location.href = "success.html";
 
   } catch (e) { 
     console.error("提交異常:", e);
-    alert("預約失敗，請檢查網路狀態"); 
+    alert("預約過程發生錯誤，請截圖聯絡客服"); 
     btn.disabled = false; 
     btn.innerText = "確認預約行程";
   }
