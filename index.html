@@ -13,14 +13,12 @@
     }
     body { background: var(--bg-color); color: var(--text-main); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; padding-bottom: 80px; }
     
-    /* 使用者資訊區塊 */
     .user-section { text-align: center; padding: 10px 0; }
     #user-avatar { width: 60px; height: 60px; border-radius: 50%; border: 3px solid #FFF; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 8px; }
     #user-greeting { font-weight: 700; font-size: 17px; }
     #user-id-box { font-size: 11px; color: #888; margin-top: 5px; cursor: pointer; }
     #admin-link { display:none; color:var(--apple-blue); text-decoration:none; font-size:13px; border:1px solid var(--apple-blue); padding:4px 12px; border-radius:20px; margin-top: 10px; display: inline-block; }
 
-    /* 調整後的分頁樣式：更輕量、靠左對齊 */
     .tabs { display: flex; background: #E3E3E6; border-radius: 8px; padding: 2px; margin-bottom: 15px; }
     .tab-btn { flex: 1; border: none; padding: 6px 0; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-sub); transition: 0.2s; }
     .tab-btn.active { background: white; color: var(--text-main); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -224,7 +222,9 @@ window.sendRequest = async () => {
 
   try {
     const profile = await liff.getProfile();
-    await addDoc(collection(db, "orders"), {
+    
+    // 整理要發送的資料包裹
+    const orderData = {
       tripType: currentMode,
       contactName: name,
       contactPhone: phone,
@@ -237,11 +237,29 @@ window.sendRequest = async () => {
       luggage: `大:${document.getElementById('l-large').innerText} / 中小:${document.getElementById('l-small').innerText}`,
       note: document.getElementById('order-note').value,
       customerId: profile.userId,
-      status: "pending",
+      status: "pending"
+    };
+
+    // A. 存入 Firebase
+    await addDoc(collection(db, "orders"), {
+      ...orderData,
       createdAt: serverTimestamp()
     });
+
+    // B. 發送到 Make Webhook (幫你填好了！)
+    await fetch("https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(orderData)
+    });
+
     window.location.href = "success.html";
-  } catch (e) { alert("預約失敗"); btn.disabled = false; }
+  } catch (e) { 
+    console.error(e);
+    alert("預約失敗"); 
+    btn.disabled = false; 
+    btn.innerText = "確認預約行程";
+  }
 };
 
 init();
