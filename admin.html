@@ -7,170 +7,201 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root { 
-      --bg-color: #F2F2F2; --card-bg: #FFFFFF; --text-main: #1D1D1F; 
-      --text-sub: #86868B; --apple-blue: #0071E3; --apple-red: #FF3B30; --border: #D2D2D7;
+      --bg-color: #F2F2F7; --card-bg: #FFFFFF; --text-main: #1D1D1F; 
+      --text-sub: #86868B; --apple-blue: #0071E3; --apple-red: #FF3B30; 
+      --apple-green: #34C759; --border: #D2D2D7;
     }
-    body { background: var(--bg-color); color: var(--text-main); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; }
+    body { background: var(--bg-color); color: var(--text-main); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; padding-bottom: 50px; }
     .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #CCC; }
-    .admin-card { background: var(--card-bg); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .order-item { border-bottom: 1px solid #EEE; padding: 15px 0; }
-    .order-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 8px; }
-    .order-detail { font-size: 14px; color: var(--text-sub); line-height: 1.6; }
-    .badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+    .admin-card { background: var(--card-bg); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05); }
+    
+    .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .badge { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; }
     .badge-pending { background: #FFF4E5; color: #FF9500; }
-    .badge-done { background: #E5F9E5; color: #34C759; }
-    .dispatch-zone { background: #F9F9F9; border-radius: 12px; padding: 15px; margin-top: 10px; border: 1px dashed #CCC; }
-    .dispatch-zone input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; box-sizing: border-box; }
-    .btn { padding: 14px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; }
+    .badge-done { background: #E5F9E5; color: var(--apple-green); }
+    .badge-cancel { background: #F2F2F7; color: #8E8E93; }
+
+    .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .input-label { font-size: 11px; color: var(--text-sub); margin-bottom: 2px; display: block; }
+    input, textarea, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; box-sizing: border-box; background: #FAFAFA; }
+    textarea { resize: none; font-family: inherit; }
+
+    .dispatch-zone { background: #F2F7FF; border-radius: 14px; padding: 15px; margin-top: 15px; border: 1px solid rgba(0,113,227,0.1); }
+    .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    
+    .btn { padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
     .btn-blue { background: var(--apple-blue); color: white; }
-    .super-zone { background: #FFF; border: 1px solid var(--apple-red); border-radius: 12px; padding: 15px; margin-top: 30px; }
+    .btn-green { background: var(--apple-green); color: white; }
+    .btn-outline { background: white; border: 1.5px solid var(--apple-blue); color: var(--apple-blue); }
+    .btn-red { background: white; border: 1.5px solid var(--apple-red); color: var(--apple-red); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .super-zone { background: #FFF; border: 2px solid var(--apple-red); border-radius: 16px; padding: 15px; margin-top: 40px; }
   </style>
 </head>
 
 <body>
 
 <div class="header">
-  <div style="font-weight:bold; font-size:20px;">管理後台</div>
-  <button onclick="location.href='index.html'" style="background:none; border:1px solid #666; padding:5px 12px; border-radius:20px;">返回下單</button>
+  <div style="font-weight:bold; font-size:22px;">DA 管理調度</div>
+  <button onclick="location.href='index.html'" style="background:none; border:1px solid #666; padding:6px 16px; border-radius:20px; font-size:13px;">返回下單</button>
 </div>
 
-<div id="order-list-section">
-  <h3 style="margin-top:25px;">🚗 訂單調度中心</h3>
-  <div id="orders-container">
-    <div style="text-align:center; padding:40px; color:#999;">正在連線至資料庫...</div>
-  </div>
+<div id="orders-container">
+  <div style="text-align:center; padding:100px 0; color:#999;">正在連線至雲端資料庫...</div>
 </div>
 
 <div id="super-admin-zone" style="display:none;" class="super-zone">
-  <h4 style="margin:0; color:var(--apple-red);">🛡️ 超級權限：授權新管理員</h4>
-  <input type="text" id="new-admin-uid" placeholder="請貼上對方的 LINE UID">
-  <button class="btn btn-blue" onclick="grantAdmin()" style="background:var(--apple-red);">確認授權管理員</button>
+  <h4 style="margin:0 0 10px 0; color:var(--apple-red);">🛡️ 超級管理：新增權限</h4>
+  <input type="text" id="new-admin-uid" placeholder="貼上對方的 LINE UID">
+  <button class="btn btn-blue" onclick="grantAdmin()" style="background:var(--apple-red); margin-top:10px;">授權為管理員</button>
 </div>
 
 <script type="module">
+import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const firebaseConfig = { 
-  apiKey: "AIzaSyCg7ONT1mDIXZplNhTKPHw-cn5UbXFQJyk", 
-  authDomain: "destination-anywhere-cfd50.firebaseapp.com", 
-  projectId: "destination-anywhere-cfd50", 
-  appId: "1:718691467645:web:fb37ce5fa5708c1f788c14" 
-};
-
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(CONFIG.firebaseConfig);
 const db = getFirestore(app);
 const SUPER_UID = "Uc5716677131e3d507708995b4e9f7b79";
+const ADMIN_WEBHOOK = "https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis"; // 這裡請改為您的「管理中心」Webhook
 
 async function init() {
   try {
-    await liff.init({ liffId: "2009434590-UHOSSHQI" });
-    if (!liff.isLoggedIn()) {
-      liff.login();
-    } else {
-      const p = await liff.getProfile();
-      console.log("登入成功:", p.userId);
-      
-      // 顯示超級管理區
-      if (p.userId === SUPER_UID) {
-        document.getElementById('super-admin-zone').style.display = "block";
+    await liff.init({ liffId: CONFIG.LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    const p = await liff.getProfile();
+    if (p.userId === SUPER_UID) document.getElementById('super-admin-zone').style.display = "block";
+    
+    // 監聽訂單
+    const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snapshot) => {
+      const container = document.getElementById('orders-container');
+      if (snapshot.empty) {
+        container.innerHTML = '<div style="text-align:center; padding:50px; color:#999;">📭 目前暫無預約訂單</div>';
+        return;
       }
-      
-      // 開始監聽訂單
-      loadOrders();
-    }
-  } catch (e) { 
-    console.error("LIFF 初始化失敗", e);
-    document.getElementById('orders-container').innerHTML = "系統錯誤，請在 LINE 中開啟";
-  }
+      container.innerHTML = "";
+      snapshot.forEach(d => renderOrderCard(d.id, d.data()));
+    });
+  } catch (e) { console.error(e); }
 }
 
-function loadOrders() {
+function renderOrderCard(id, data) {
   const container = document.getElementById('orders-container');
-  // 指向你 index.html 寫入的 "orders" 集合
-  const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+  const card = document.createElement('div');
+  card.className = 'admin-card';
   
-  onSnapshot(q, (snapshot) => {
-    if (snapshot.empty) {
-      container.innerHTML = '<div style="text-align:center; padding:40px; color:#999;">目前尚無訂單資料</div>';
-      return;
-    }
+  const statusLabels = { 'pending': '⏳ 待處理', 'dispatched': '✅ 已派車', 'completed': '🏁 已完成', 'cancelled': '❌ 已取消' };
+  const statusClass = data.status === 'completed' ? 'badge-done' : (data.status === 'pending' ? 'badge-pending' : 'badge-cancel');
 
-    container.innerHTML = "";
-    snapshot.forEach(d => {
-      const data = d.data();
-      const orderId = d.id;
+  card.innerHTML = `
+    <div class="order-header">
+      <div>
+        <div style="font-size:12px; color:var(--apple-blue); font-weight:bold;">${data.tripType || '一般接送'}</div>
+        <div style="font-size:17px; font-weight:700; margin-top:2px;">${data.appointmentTime || '未定時間'}</div>
+      </div>
+      <span class="badge ${statusClass}">${statusLabels[data.status] || '未知'}</span>
+    </div>
+
+    <div class="edit-grid">
+      <div><label class="input-label">乘客姓名</label><input type="text" id="name-${id}" value="${data.contactName || ''}"></div>
+      <div><label class="input-label">連絡電話</label><input type="tel" id="phone-${id}" value="${data.contactPhone || ''}"></div>
+      <div><label class="input-label">航班號碼</label><input type="text" id="flight-${id}" value="${data.flightNo || ''}"></div>
+      <div><label class="input-label">人數行李</label><input type="text" id="ppl-${id}" value="${data.passengers || ''} / ${data.luggage || ''}"></div>
+    </div>
+
+    <div style="margin-top:10px;">
+      <label class="input-label">行程站點 (修改後請按更新)</label>
+      <textarea id="stops-${id}" rows="2">${data.allStops || ''}</textarea>
+    </div>
+
+    <div class="dispatch-zone">
+      <div style="font-weight:bold; margin-bottom:8px; font-size:13px; color:var(--apple-blue);">🚖 派車調度資訊</div>
+      <div class="edit-grid">
+        <input type="text" id="drvName-${id}" placeholder="司機姓名" value="${data.driverName || ''}">
+        <input type="tel" id="drvPhone-${id}" placeholder="司機電話" value="${data.driverPhone || ''}">
+        <input type="text" id="carPlate-${id}" placeholder="車牌號碼" value="${data.carPlate || ''}">
+        <select id="status-${id}">
+          <option value="pending" ${data.status==='pending'?'selected':''}>待處理</option>
+          <option value="dispatched" ${data.status==='dispatched'?'selected':''}>已派車</option>
+          <option value="completed" ${data.status==='completed'?'selected':''}>已完成</option>
+          <option value="cancelled" ${data.status==='cancelled'?'selected':''}>已取消</option>
+        </select>
+      </div>
       
-      // 處理多個停靠點 (如果沒有 stops 則回退顯示 pickup/dropoff)
-      let stopsHtml = "";
-      if (data.stops && Array.isArray(data.stops)) {
-        stopsHtml = data.stops.map((s, idx) => `<div>${idx+1}. ${s}</div>`).join('');
-      } else {
-        stopsHtml = `<div>1. 上車：${data.pickup || '未填'}</div><div>2. 下車：${data.dropoff || '未填'}</div>`;
-      }
-
-      const statusBadge = data.status === 'dispatched' 
-        ? '<span class="badge badge-done">✅ 已派車</span>' 
-        : '<span class="badge badge-pending">⏳ 待處理</span>';
-
-      const card = document.createElement('div');
-      card.className = 'admin-card';
-      card.innerHTML = `
-        <div class="order-header">
-          <span>📅 ${data.date || '未定'} ${data.time || ''}</span>
-          ${statusBadge}
-        </div>
-        <div class="order-detail">
-          <div style="background:#F2F2F2; padding:12px; border-radius:10px; margin:10px 0; color:#333; line-height:1.8;">
-            ${stopsHtml}
-          </div>
-          <p>👥 乘客：${data.adults || 0}大 ${data.children || 0}小</p>
-          <p>🧳 行李：大:${data.l_large || 0} / 中:${data.l_mid || 0} / 小:${data.l_small || 0}</p>
-        </div>
-
-        <div class="dispatch-zone">
-          <div style="font-weight:bold; margin-bottom:8px; font-size:13px; color:var(--apple-blue);">✍️ 填寫派車資訊</div>
-          <input type="text" id="driver-${orderId}" placeholder="司機姓名" value="${data.driver || ''}">
-          <input type="text" id="carNum-${orderId}" placeholder="車牌號碼" value="${data.carNum || ''}">
-          <input type="text" id="carModel-${orderId}" placeholder="車種/顏色 (例: 黑賓士 V250)" value="${data.carModel || ''}">
-          <input type="tel" id="driverPhone-${orderId}" placeholder="司機聯絡電話" value="${data.driverPhone || ''}">
-          <button class="btn btn-blue" onclick="updateDispatch('${orderId}')">更新資料並通知乘客</button>
-        </div>
-      `;
-      container.appendChild(card);
-    });
-  }, (error) => {
-    console.error("讀取資料庫失敗:", error);
-    container.innerHTML = `<div style="color:red; text-align:center; padding:20px;">資料庫讀取失敗<br>請檢查 Firebase Rules 權限</div>`;
-  });
+      <div class="btn-group">
+        <button class="btn btn-outline" onclick="triggerAction('${id}', 'notify_customer')">📢 通知乘客</button>
+        <button class="btn btn-outline" onclick="triggerAction('${id}', 'notify_driver')">📱 通知司機</button>
+      </div>
+      <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="saveChanges('${id}')">💾 儲存所有修改內容</button>
+    </div>
+  `;
+  container.appendChild(card);
 }
 
-window.updateDispatch = async (id) => {
+// 儲存修改至 Firebase
+window.saveChanges = async (id) => {
   const btn = event.target;
-  const driver = document.getElementById(`driver-${id}`).value;
-  const carNum = document.getElementById(`carNum-${id}`).value;
-  const carModel = document.getElementById(`carModel-${id}`).value;
-  const driverPhone = document.getElementById(`driverPhone-${id}`).value;
+  const updateData = {
+    contactName: document.getElementById(`name-${id}`).value,
+    contactPhone: document.getElementById(`phone-${id}`).value,
+    flightNo: document.getElementById(`flight-${id}`).value,
+    allStops: document.getElementById(`stops-${id}`).value,
+    driverName: document.getElementById(`drvName-${id}`).value,
+    driverPhone: document.getElementById(`drvPhone-${id}`).value,
+    carPlate: document.getElementById(`carPlate-${id}`).value,
+    status: document.getElementById(`status-${id}`).value,
+    updatedAt: serverTimestamp()
+  };
 
-  if (!driver || !carNum) return alert("請至少輸入司機姓名與車牌唷！");
-
-  btn.disabled = true;
-  btn.innerText = "正在更新...";
-
+  btn.disabled = true; btn.innerText = "正在儲存...";
   try {
-    await updateDoc(doc(db, "orders", id), {
-      driver, carNum, carModel, driverPhone,
-      status: "dispatched",
-      updatedAt: new Date()
-    });
-    alert("✅ 派車資訊已更新成功！");
-  } catch (e) {
-    alert("更新失敗，請檢查權限");
-  } finally {
-    btn.disabled = false;
-    btn.innerText = "更新資料並通知乘客";
-  }
+    await updateDoc(doc(db, "orders", id), updateData);
+    alert("✅ 訂單內容已更新");
+  } catch (e) { alert("儲存失敗"); }
+  btn.disabled = false; btn.innerText = "💾 儲存所有修改內容";
 };
+
+// 觸發 Make.com Webhook (情境 B)
+window.triggerAction = async (id, actionType) => {
+  const btn = event.target;
+  const originalText = btn.innerText;
+  
+  // 準備發送給 Make 的完整資料
+  const payload = {
+    action: actionType,
+    orderId: id,
+    contactName: document.getElementById(`name-${id}`).value,
+    contactPhone: document.getElementById(`phone-${id}`).value,
+    appointmentTime: document.querySelector(`#name-${id}`).closest('.admin-card').querySelector('.order-header div div:nth-child(2)').innerText,
+    flightNo: document.getElementById(`flight-${id}`).value,
+    allStops: document.getElementById(`stops-${id}`).value,
+    driverName: document.getElementById(`drvName-${id}`).value,
+    driverPhone: document.getElementById(`drvPhone-${id}`).value,
+    carPlate: document.getElementById(`carPlate-${id}`).value,
+    customerId: (await getOrderCustomerId(id)) // 從資料庫補抓 UID
+  };
+
+  btn.disabled = true; btn.innerText = "發送中...";
+  try {
+    await fetch(ADMIN_WEBHOOK, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    alert("🚀 訊息已送往 Make 調度中心");
+  } catch (e) { alert("發送失敗，請檢查網路"); }
+  btn.disabled = false; btn.innerText = originalText;
+};
+
+// 輔助函式：從 DB 抓取該訂單的 Customer UID 確保發送準確
+async function getOrderCustomerId(id) {
+  const { getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+  const snap = await getDoc(doc(db, "orders", id));
+  return snap.exists() ? snap.data().customerId : "unknown";
+}
 
 init();
 </script>
