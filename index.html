@@ -116,6 +116,7 @@ import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// 使用優化後的 CONFIG 變數
 const app = initializeApp(CONFIG.firebaseConfig);
 const db = getFirestore(app);
 
@@ -188,6 +189,7 @@ window.copyMyID = () => {
 
 async function init() {
   try {
+    // 連結到 CONFIG.LIFF_ID
     await liff.init({ liffId: CONFIG.LIFF_ID });
     if (!liff.isLoggedIn()) { liff.login(); return; }
     const p = await liff.getProfile();
@@ -198,6 +200,7 @@ async function init() {
       const av = document.getElementById('user-avatar');
       av.src = p.pictureUrl; av.style.display = "inline-block"; 
     }
+    // 使用 CONFIG.ADMIN_UIDS 判斷權限
     if (CONFIG.ADMIN_UIDS.includes(p.userId)) {
       document.getElementById('admin-link').style.display = "inline-block";
     }
@@ -215,7 +218,6 @@ window.sendRequest = async () => {
   const end = document.getElementById('p-end')?.value || `機場 (${flight})`;
   const mids = Array.from(document.querySelectorAll('.mid-input')).map(i => i.value || "");
 
-  // 1. 基礎驗證
   if (!name || !phone || !date || !time) return alert("❌ 請填寫完整聯絡資訊與時間！");
 
   const btn = document.querySelector('.confirm-btn');
@@ -223,13 +225,8 @@ window.sendRequest = async () => {
   btn.innerText = "正在傳送預約...";
 
   try {
-    // 2. 取得 Profile (防禦性處理：若失敗則用 anonymous/unknown 代替)
     let profile = { userId: "unknown" };
-    try {
-      profile = await liff.getProfile();
-    } catch (profileErr) {
-      console.warn("無法取得 Profile，繼續執行流程", profileErr);
-    }
+    try { profile = await liff.getProfile(); } catch (profileErr) { console.warn(profileErr); }
 
     const orderData = {
       tripType: currentMode,
@@ -247,8 +244,8 @@ window.sendRequest = async () => {
       status: "pending"
     };
 
-    // 3. 同時啟動 Webhook 發送與 Firebase 寫入
-    const webhookRequest = fetch("https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis", {
+    // 連結到 CONFIG.webhooks.newOrder
+    const webhookRequest = fetch(CONFIG.webhooks.newOrder, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(orderData)
@@ -259,10 +256,7 @@ window.sendRequest = async () => {
       createdAt: serverTimestamp()
     });
 
-    // 4. 等待兩者處理完畢 (allSettled 確保不論成功失敗都會往下跑)
     await Promise.allSettled([webhookRequest, firebaseRequest]);
-
-    // 5. 成功跳轉
     window.location.href = "success.html";
 
   } catch (e) { 
