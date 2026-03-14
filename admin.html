@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DA 管理調度 | 運力與訂單中心</title>
+  <title>DA 管理調度 | 運力與首頁管理</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root { 
@@ -12,6 +12,14 @@
       --apple-green: #34C759; --border: #D2D2D7;
     }
     body { background: var(--bg-color); color: var(--text-main); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; padding-bottom: 50px; }
+    
+    /* Tab 切換樣式 */
+    .tabs { display: flex; gap: 10px; margin: 10px 0 20px; }
+    .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 12px; background: #D2D2D7; font-weight: 600; cursor: pointer; transition: 0.3s; }
+    .tab-btn.active { background: var(--apple-blue); color: white; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
     .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #CCC; }
     .section-title { font-weight: 700; margin: 25px 0 10px 5px; font-size: 18px; color: var(--text-main); border-left: 4px solid var(--apple-blue); padding-left: 10px; }
     
@@ -25,8 +33,7 @@
     .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
     .input-label { font-size: 11px; color: var(--text-sub); margin-bottom: 2px; display: block; font-weight: bold; }
     input, textarea, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; box-sizing: border-box; background: #FAFAFA; }
-    textarea { resize: none; font-family: inherit; }
-
+    
     .dispatch-zone { background: #F2F7FF; border-radius: 14px; padding: 15px; margin-top: 15px; border: 1px solid rgba(0,113,227,0.1); }
     .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
     
@@ -42,26 +49,60 @@
 <body>
 
 <div class="header">
-  <div style="font-weight:bold; font-size:22px;">DA 管理調度</div>
-  <button onclick="location.href='index.html'" style="background:none; border:1px solid #666; padding:6px 16px; border-radius:20px; font-size:13px;">返回下單</button>
+  <div style="font-weight:bold; font-size:22px;">DA 管理中樞</div>
+  <button onclick="location.href='index.html'" style="background:none; border:1px solid #666; padding:6px 16px; border-radius:20px; font-size:13px;">返回首頁</button>
 </div>
 
-<div class="section-title">📇 司機名單管理</div>
-<div class="admin-card">
-  <div class="edit-grid">
-    <div><label class="input-label">司機姓名</label><input type="text" id="new-drv-name" placeholder="例: 王小明"></div>
-    <div><label class="input-label">聯絡電話</label><input type="tel" id="new-drv-phone" placeholder="0912..."></div>
-    <div><label class="input-label">車牌號碼</label><input type="text" id="new-drv-plate" placeholder="ABC-1234"></div>
-    <div><label class="input-label">車型顏色</label><input type="text" id="new-drv-model" placeholder="黑賓士 V250"></div>
-    <div style="grid-column: span 2;"><label class="input-label">司機 LINE UID</label><input type="text" id="new-drv-uid" placeholder="Uxxxx..."></div>
-  </div>
-  <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="addDriver()">➕ 新增司機至資料庫</button>
-  <div id="driver-list" style="margin-top:15px; border-top: 1px solid #EEE; max-height: 150px; overflow-y: auto;"></div>
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('dispatch', this)">🚕 調度中心</button>
+  <button class="tab-btn" onclick="switchTab('design', this)">🎨 首頁裝修</button>
 </div>
 
-<div class="section-title">🚗 訂單詳細管理中心</div>
-<div id="orders-container">
-  <div style="text-align:center; padding:100px 0; color:#999;">正在讀取訂單...</div>
+<div id="panel-dispatch" class="panel active">
+    <div class="section-title">📇 司機名單管理</div>
+    <div class="admin-card">
+      <div class="edit-grid">
+        <div><label class="input-label">司機姓名</label><input type="text" id="new-drv-name" placeholder="例: 王小明"></div>
+        <div><label class="input-label">聯絡電話</label><input type="tel" id="new-drv-phone" placeholder="0912..."></div>
+        <div><label class="input-label">車牌號碼</label><input type="text" id="new-drv-plate" placeholder="ABC-1234"></div>
+        <div><label class="input-label">車型顏色</label><input type="text" id="new-drv-model" placeholder="黑賓士 V250"></div>
+        <div style="grid-column: span 2;"><label class="input-label">司機 LINE UID</label><input type="text" id="new-drv-uid" placeholder="Uxxxx..."></div>
+      </div>
+      <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="addDriver()">➕ 新增司機至資料庫</button>
+      <div id="driver-list" style="margin-top:15px; border-top: 1px solid #EEE; max-height: 150px; overflow-y: auto;"></div>
+    </div>
+
+    <div class="section-title">🚗 訂單詳細管理中心</div>
+    <div id="orders-container">
+      <div style="text-align:center; padding:100px 0; color:#999;">正在讀取訂單...</div>
+    </div>
+</div>
+
+<div id="panel-design" class="panel">
+    <div class="section-title">🖼️ 首頁視覺管理</div>
+    <div class="admin-card">
+      <div style="margin-bottom: 20px;">
+        <h3 style="font-size:15px; margin-bottom:10px; color:var(--apple-blue);">頂部歡迎詞 (Hero)</h3>
+        <label class="input-label">首頁副標題文字</label>
+        <input type="text" id="edit-hero-sub" placeholder="探索未知，隨心所行">
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h3 style="font-size:15px; margin-bottom:10px; color:var(--apple-blue);">快速預約區 (Bento Main)</h3>
+        <label class="input-label">區塊標題</label>
+        <input type="text" id="edit-booking-title">
+        <label class="input-label">背景圖片網址 (建議用 Unsplash)</label>
+        <input type="text" id="edit-booking-bg" placeholder="https://...">
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h3 style="font-size:15px; margin-bottom:10px; color:var(--apple-blue);">行程規劃區 (Bento Blue)</h3>
+        <label class="input-label">背景圖片網址</label>
+        <input type="text" id="edit-itinerary-bg" placeholder="https://...">
+      </div>
+
+      <button class="btn btn-blue" style="width:100%;" onclick="saveDesignSettings()">💾 儲存並更新首頁</button>
+    </div>
 </div>
 
 <script type="module">
@@ -69,38 +110,39 @@ import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 初始化 Firebase
 const app = initializeApp(CONFIG.firebaseConfig);
 const db = getFirestore(app);
+
+// 分頁切換邏輯
+window.switchTab = (target, btn) => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + target).classList.add('active');
+    if(target === 'design') loadCurrentDesign();
+};
 
 async function init() {
   try {
     await liff.init({ liffId: CONFIG.LIFF_ID });
     if (!liff.isLoggedIn()) { liff.login(); return; }
     
-    // 安全檢查：非管理員禁止進入
     const profile = await liff.getProfile();
     if (!CONFIG.ADMIN_UIDS.includes(profile.userId)) {
-      alert("⚠️ 權限不足，即將離開管理系統");
+      alert("⚠️ 權限不足");
       liff.closeWindow();
       return;
     }
     
-    // 監聽司機資料
     onSnapshot(collection(db, "drivers"), (snap) => {
       const list = document.getElementById('driver-list');
       list.innerHTML = "";
       snap.forEach(d => {
         const dv = d.data();
-        list.innerHTML += `
-          <div class="driver-item">
-            <span><b>${dv.name}</b> (${dv.plate})</span>
-            <button class="btn-red" onclick="deleteDriver('${d.id}')">刪除</button>
-          </div>`;
+        list.innerHTML += `<div class="driver-item"><span><b>${dv.name}</b> (${dv.plate})</span><button class="btn-red" onclick="deleteDriver('${d.id}')">刪除</button></div>`;
       });
     });
 
-    // 監聽訂單資料
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snapshot) => {
       const container = document.getElementById('orders-container');
@@ -111,7 +153,48 @@ async function init() {
   } catch (e) { console.error("初始化失敗:", e); }
 }
 
-// --- 司機管理 ---
+// --- [新增] 載入首頁設定 ---
+async function loadCurrentDesign() {
+    const docSnap = await getDoc(doc(db, "siteConfig", "homePage"));
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        document.getElementById('edit-hero-sub').value = data.hero?.sub || "";
+        document.getElementById('edit-booking-title').value = data.bento_booking?.title || "";
+        document.getElementById('edit-booking-bg').value = data.bento_booking?.bgUrl || "";
+        document.getElementById('edit-itinerary-bg').value = data.bento_itinerary?.bgUrl || "";
+    }
+}
+
+// --- [新增] 儲存首頁設定 ---
+window.saveDesignSettings = async () => {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerText = "正在儲存...";
+    
+    const newSettings = {
+        hero: { sub: document.getElementById('edit-hero-sub').value, title: "您好，旅伴" },
+        bento_booking: {
+            title: document.getElementById('edit-booking-title').value,
+            sub: "點擊立即呼叫專業司機",
+            bgUrl: document.getElementById('edit-booking-bg').value
+        },
+        bento_itinerary: {
+            title: "行程規劃 🗺️",
+            sub: "智慧路徑優化",
+            bgUrl: document.getElementById('edit-itinerary-bg').value
+        },
+        bento_mileage: { title: "我的里程 💎", sub: "查看累積回饋" }
+    };
+
+    try {
+        await setDoc(doc(db, "siteConfig", "homePage"), newSettings);
+        alert("✅ 首頁設定更新成功！");
+    } catch (e) { alert("儲存失敗: " + e.message); }
+    btn.disabled = false;
+    btn.innerText = "💾 儲存並更新首頁";
+};
+
+// --- 司機管理 (原有功能) ---
 window.addDriver = async () => {
   const name = document.getElementById('new-drv-name').value;
   const uid = document.getElementById('new-drv-uid').value;
@@ -124,17 +207,15 @@ window.addDriver = async () => {
     createdAt: serverTimestamp()
   });
   alert("司機資料已存入");
-  document.querySelectorAll('.admin-card input').forEach(i => i.value="");
 };
 
 window.deleteDriver = async (id) => { if(confirm("確定刪除此司機資料？")) await deleteDoc(doc(db, "drivers", id)); };
 
-// --- 訂單渲染 ---
+// --- 訂單渲染 (原有功能) ---
 function renderOrderCard(id, data) {
   const container = document.getElementById('orders-container');
   const card = document.createElement('div');
   card.className = 'admin-card';
-  
   const statusLabels = { 'pending': '⏳ 待處理', 'dispatched': '✅ 已派車', 'completed': '🏁 已完成', 'cancelled': '❌ 已取消' };
   const statusClass = data.status === 'completed' || data.status === 'dispatched' ? 'badge-done' : (data.status === 'pending' ? 'badge-pending' : 'badge-cancel');
 
@@ -146,28 +227,18 @@ function renderOrderCard(id, data) {
       </div>
       <span class="badge ${statusClass}">${statusLabels[data.status] || data.status}</span>
     </div>
-
     <div class="edit-grid">
       <div><label class="input-label">乘客姓名</label><input type="text" id="name-${id}" value="${data.contactName || ''}"></div>
       <div><label class="input-label">連絡電話</label><input type="tel" id="phone-${id}" value="${data.contactPhone || ''}"></div>
       <div><label class="input-label">航班號碼</label><input type="text" id="flight-${id}" value="${data.flightNo || ''}"></div>
       <div><label class="input-label">人數/行李</label><input type="text" id="ppl-${id}" value="${data.passengers || ''} / ${data.luggage || ''}"></div>
     </div>
-
-    <div style="margin-top:10px;">
-      <label class="input-label">行程站點 (包含上下車地點)</label>
-      <textarea id="stops-${id}" rows="3">${data.allStops || ''}</textarea>
-    </div>
-
+    <div style="margin-top:10px;"><label class="input-label">行程站點</label><textarea id="stops-${id}" rows="3">${data.allStops || ''}</textarea></div>
     <div class="dispatch-zone">
       <div style="font-weight:bold; margin-bottom:8px; font-size:13px; color:var(--apple-blue);">🚖 派車調度執行</div>
       <div class="edit-grid">
-        <div>
-          <label class="input-label">指派司機 (輸入姓名)</label>
-          <input type="text" id="drvName-${id}" placeholder="手寫或關聯" value="${data.driverName || ''}">
-        </div>
-        <div>
-          <label class="input-label">變更狀態</label>
+        <div><label class="input-label">指派司機</label><input type="text" id="drvName-${id}" value="${data.driverName || ''}"></div>
+        <div><label class="input-label">變更狀態</label>
           <select id="status-${id}">
             <option value="pending" ${data.status==='pending'?'selected':''}>待處理</option>
             <option value="dispatched" ${data.status==='dispatched'?'selected':''}>已派車</option>
@@ -176,24 +247,21 @@ function renderOrderCard(id, data) {
           </select>
         </div>
       </div>
-      
       <div class="btn-group">
         <button class="btn btn-outline" onclick="triggerAction('${id}', 'notify_customer')">📢 通知乘客</button>
         <button class="btn btn-outline" onclick="notifyDriver('${id}')">📱 通知司機</button>
       </div>
-      <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="saveChanges('${id}')">💾 儲存所有欄位修改</button>
+      <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="saveChanges('${id}')">💾 儲存欄位修改</button>
     </div>
   `;
   container.appendChild(card);
 }
 
-// 儲存邏輯
 window.saveChanges = async (id) => {
   const btn = event.target;
   const dName = document.getElementById(`drvName-${id}`).value;
   const dSnap = await getDoc(doc(db, "drivers", dName));
   const dData = dSnap.exists() ? dSnap.data() : {};
-
   const updateData = {
     appointmentTime: document.getElementById(`time-${id}`).value,
     contactName: document.getElementById(`name-${id}`).value,
@@ -206,49 +274,31 @@ window.saveChanges = async (id) => {
     status: document.getElementById(`status-${id}`).value,
     updatedAt: serverTimestamp()
   };
-
-  btn.disabled = true;
-  try {
-    await updateDoc(doc(db, "orders", id), updateData);
-    alert("✅ 儲存成功");
-  } catch (e) { alert("儲存失敗"); }
-  btn.disabled = false;
+  try { await updateDoc(doc(db, "orders", id), updateData); alert("✅ 儲存成功"); } catch (e) { alert("儲存失敗"); }
 };
 
-// 觸發通知 (引用 CONFIG.webhooks.adminAction)
 window.triggerAction = async (id, actionType) => {
   const btn = event.target;
-  btn.disabled = true;
   try {
     const oSnap = await getDoc(doc(db, "orders", id));
     const order = oSnap.data();
     const dName = document.getElementById(`drvName-${id}`).value;
     const dSnap = await getDoc(doc(db, "drivers", dName));
     const driver = dSnap.exists() ? dSnap.data() : {};
-
     const payload = {
-      action: actionType,
-      orderId: id,
-      ...order, // 傳送現有訂單資料
+      action: actionType, orderId: id, ...order,
       contactName: document.getElementById(`name-${id}`).value,
       appointmentTime: document.getElementById(`time-${id}`).value,
       allStops: document.getElementById(`stops-${id}`).value,
-      driverName: dName,
-      driverPhone: driver.phone || "",
-      carPlate: driver.plate || "",
-      driverLineId: driver.uid || "",
-      customerId: order.customerId
+      driverName: dName, driverPhone: driver.phone || "", carPlate: driver.plate || "",
+      driverLineId: driver.uid || "", customerId: order.customerId
     };
-
     await fetch(CONFIG.webhooks.adminAction, { method: "POST", body: JSON.stringify(payload) });
     alert("🚀 訊號已送至 Make.com");
   } catch (e) { alert("發送失敗"); }
-  btn.disabled = false;
 };
 
-// 司機通知專用（封裝 triggerAction）
 window.notifyDriver = (id) => window.triggerAction(id, 'notify_driver');
-
 init();
 </script>
 </body>
