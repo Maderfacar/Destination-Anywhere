@@ -56,8 +56,7 @@
     <div style="grid-column: span 2;"><label class="input-label">司機 LINE UID</label><input type="text" id="new-drv-uid" placeholder="Uxxxx..."></div>
   </div>
   <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="addDriver()">➕ 新增司機至資料庫</button>
-  <div id="driver-list" style="margin-top:15px; border-top: 1px solid #EEE; max-height: 150px; overflow-y: auto;">
-    </div>
+  <div id="driver-list" style="margin-top:15px; border-top: 1px solid #EEE; max-height: 150px; overflow-y: auto;"></div>
 </div>
 
 <div class="section-title">🚗 訂單詳細管理中心</div>
@@ -70,14 +69,22 @@ import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// 初始化 Firebase
 const app = initializeApp(CONFIG.firebaseConfig);
 const db = getFirestore(app);
-const ADMIN_WEBHOOK = "https://hook.us2.make.com/te3nqlpvmiekxglqy9jt0xp2org17q5v";
 
 async function init() {
   try {
     await liff.init({ liffId: CONFIG.LIFF_ID });
     if (!liff.isLoggedIn()) { liff.login(); return; }
+    
+    // 安全檢查：非管理員禁止進入
+    const profile = await liff.getProfile();
+    if (!CONFIG.ADMIN_UIDS.includes(profile.userId)) {
+      alert("⚠️ 權限不足，即將離開管理系統");
+      liff.closeWindow();
+      return;
+    }
     
     // 監聽司機資料
     onSnapshot(collection(db, "drivers"), (snap) => {
@@ -101,7 +108,7 @@ async function init() {
       container.innerHTML = "";
       snapshot.forEach(d => renderOrderCard(d.id, d.data()));
     });
-  } catch (e) { console.error(e); }
+  } catch (e) { console.error("初始化失敗:", e); }
 }
 
 // --- 司機管理 ---
@@ -122,7 +129,7 @@ window.addDriver = async () => {
 
 window.deleteDriver = async (id) => { if(confirm("確定刪除此司機資料？")) await deleteDoc(doc(db, "drivers", id)); };
 
-// --- 訂單渲染 (回歸全功能修改版本) ---
+// --- 訂單渲染 ---
 function renderOrderCard(id, data) {
   const container = document.getElementById('orders-container');
   const card = document.createElement('div');
@@ -172,7 +179,7 @@ function renderOrderCard(id, data) {
       
       <div class="btn-group">
         <button class="btn btn-outline" onclick="triggerAction('${id}', 'notify_customer')">📢 通知乘客</button>
-        <button class="btn btn-outline" onclick="triggerAction('${id}', 'notify_driver')">📱 通知司機</button>
+        <button class="btn btn-outline" onclick="notifyDriver('${id}')">📱 通知司機</button>
       </div>
       <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="saveChanges('${id}')">💾 儲存所有欄位修改</button>
     </div>
@@ -180,12 +187,10 @@ function renderOrderCard(id, data) {
   container.appendChild(card);
 }
 
-// 儲存所有欄位 (包含訂單細節與司機)
+// 儲存邏輯
 window.saveChanges = async (id) => {
   const btn = event.target;
   const dName = document.getElementById(`drvName-${id}`).value;
-  
-  // 自動嘗試從司機庫抓取關聯資料（如果有匹配到的話）
   const dSnap = await getDoc(doc(db, "drivers", dName));
   const dData = dSnap.exists() ? dSnap.data() : {};
 
@@ -196,7 +201,7 @@ window.saveChanges = async (id) => {
     flightNo: document.getElementById(`flight-${id}`).value,
     allStops: document.getElementById(`stops-${id}`).value,
     driverName: dName,
-    driverPhone: dData.phone || document.getElementById(`drvPhone-${id}`)?.value || "", // 若庫裡沒人則保留原值
+    driverPhone: dData.phone || "",
     carPlate: dData.plate || "",
     status: document.getElementById(`status-${id}`).value,
     updatedAt: serverTimestamp()
@@ -205,19 +210,18 @@ window.saveChanges = async (id) => {
   btn.disabled = true;
   try {
     await updateDoc(doc(db, "orders", id), updateData);
-    alert("✅ 訂單與派車資訊已全部更新");
+    alert("✅ 儲存成功");
   } catch (e) { alert("儲存失敗"); }
   btn.disabled = false;
 };
 
+// 觸發通知 (引用 CONFIG.webhooks.adminAction)
 window.triggerAction = async (id, actionType) => {
   const btn = event.target;
   btn.disabled = true;
   try {
     const oSnap = await getDoc(doc(db, "orders", id));
     const order = oSnap.data();
-    
-    // 發送時重新抓取畫面上的即時值
     const dName = document.getElementById(`drvName-${id}`).value;
     const dSnap = await getDoc(doc(db, "drivers", dName));
     const driver = dSnap.exists() ? dSnap.data() : {};
@@ -225,6 +229,7 @@ window.triggerAction = async (id, actionType) => {
     const payload = {
       action: actionType,
       orderId: id,
+      ...order, // 傳送現有訂單資料
       contactName: document.getElementById(`name-${id}`).value,
       appointmentTime: document.getElementById(`time-${id}`).value,
       allStops: document.getElementById(`stops-${id}`).value,
@@ -235,11 +240,14 @@ window.triggerAction = async (id, actionType) => {
       customerId: order.customerId
     };
 
-    await fetch(ADMIN_WEBHOOK, { method: "POST", body: JSON.stringify(payload) });
-    alert("訊號已發送！");
+    await fetch(CONFIG.webhooks.adminAction, { method: "POST", body: JSON.stringify(payload) });
+    alert("🚀 訊號已送至 Make.com");
   } catch (e) { alert("發送失敗"); }
   btn.disabled = false;
 };
+
+// 司機通知專用（封裝 triggerAction）
+window.notifyDriver = (id) => window.triggerAction(id, 'notify_driver');
 
 init();
 </script>
