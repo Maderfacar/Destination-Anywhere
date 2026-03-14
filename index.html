@@ -223,7 +223,6 @@ window.sendRequest = async () => {
   try {
     const profile = await liff.getProfile();
     
-    // 整理要發送的資料包裹
     const orderData = {
       tripType: currentMode,
       contactName: name,
@@ -240,23 +239,29 @@ window.sendRequest = async () => {
       status: "pending"
     };
 
-    // A. 存入 Firebase
+    // 1. 確保存入 Firebase (await 確保資料入庫)
     await addDoc(collection(db, "orders"), {
       ...orderData,
       createdAt: serverTimestamp()
     });
 
-    // B. 發送到 Make Webhook (幫你填好了！)
-    await fetch("https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis", {
+    // 2. 非同步發送 Webhook
+    // 移除 await，避免 Make 的握手延遲卡住網頁跳轉
+    // 使用 'cors' 確保內容類型正確，但不等待 promise
+    fetch("https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(orderData)
-    });
+    }).catch(err => console.error("Webhook Background Error:", err));
 
-    window.location.href = "success.html";
+    // 3. 給予 500 毫秒緩衝後跳轉，確保背景 fetch 已經由瀏覽器發射
+    setTimeout(() => {
+      window.location.href = "success.html";
+    }, 500);
+
   } catch (e) { 
-    console.error(e);
-    alert("預約失敗"); 
+    console.error("提交異常:", e);
+    alert("預約失敗，請檢查網路狀態"); 
     btn.disabled = false; 
     btn.innerText = "確認預約行程";
   }
