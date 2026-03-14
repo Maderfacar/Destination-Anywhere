@@ -3,192 +3,211 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Destination Anywhere | 探索未知，隨心所行</title>
+  <title>Destination Anywhere | 探索未知</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root {
-      --apple-bg: #FFFFFF;
-      --apple-secondary: #F5F5F7;
+      --apple-bg: #F5F5F7; /* 稍微帶點灰色調，讓白色卡片更跳脫 */
       --apple-blue: #007AFF;
       --apple-text: #1D1D1F;
       --apple-sub: #86868B;
-      --card-shadow: 0 8px 24px rgba(0,0,0,0.04);
+      --glass: rgba(255, 255, 255, 0.7);
     }
 
     body {
       background: var(--apple-bg);
       color: var(--apple-text);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0; padding: 0;
     }
 
-    /* Hero Section */
+    /* Hero Section 優化：加入頭像 */
     .hero {
-      padding: 40px 20px 20px;
-      text-align: left;
-    }
-    .hero h1 {
-      font-size: 32px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      margin-bottom: 8px;
-    }
-    .hero p {
-      color: var(--apple-sub);
-      font-size: 17px;
-    }
-
-    /* Bento Grid Layout */
-    .bento-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      padding: 0 20px 30px;
-    }
-
-    .bento-item {
-      background: var(--apple-secondary);
-      border-radius: 20px;
-      padding: 20px;
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.3s ease;
-    }
-    .bento-item:active { transform: scale(0.96); }
-
-    .bento-main { grid-column: span 2; background: #1D1D1F; color: white; min-height: 120px; }
-    .bento-blue { background: var(--apple-blue); color: white; }
-    
-    .item-title { font-weight: 600; font-size: 18px; display: block; }
-    .item-sub { font-size: 13px; opacity: 0.8; margin-top: 4px; display: block; }
-
-    /* Discovery (Blog Style) */
-    .section-header {
-      padding: 0 20px 15px;
+      padding: 50px 25px 30px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .section-header h2 { font-size: 22px; font-weight: 700; }
+    .hero-text h1 { font-size: 28px; font-weight: 700; margin: 0; }
+    .hero-text p { color: var(--apple-sub); margin: 5px 0 0; font-size: 16px; }
     
+    #user-avatar {
+      width: 55px; height: 55px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      background: #EEE;
+    }
+
+    /* Bento Grid 優化：漸層與陰影 */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 0 20px 30px;
+    }
+
+    .bento-item {
+      background: white;
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(0,0,0,0.02);
+    }
+
+    /* 黑色大卡片優化：加入微漸層 */
+    .bento-main { 
+      grid-column: span 2; 
+      background: linear-gradient(135deg, #2C2C2E 0%, #000000 100%);
+      color: white; 
+      min-height: 130px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    /* 藍色卡片優化 */
+    .bento-blue { 
+      background: linear-gradient(135deg, #007AFF 0%, #0051FF 100%); 
+      color: white; 
+    }
+    
+    .item-title { font-weight: 700; font-size: 18px; margin-bottom: 5px; display: block; }
+    .item-sub { font-size: 13px; opacity: 0.8; }
+
+    /* 景點卡片優化：圓角與文字疊加層次 */
+    .section-header { padding: 0 25px 15px; display: flex; justify-content: space-between; align-items: baseline; }
+    .section-header h2 { font-size: 22px; margin: 0; }
+
     .scroll-container {
       display: flex;
       overflow-x: auto;
       padding: 0 20px 40px;
-      gap: 15px;
-      scrollbar-width: none;
+      gap: 18px;
+      scroll-snap-type: x mandatory;
     }
     .scroll-container::-webkit-scrollbar { display: none; }
 
     .spot-card {
-      min-width: 260px;
-      height: 340px;
-      background: #EEE;
-      border-radius: 24px;
+      min-width: 280px;
+      height: 380px;
+      border-radius: 28px;
       position: relative;
       overflow: hidden;
       background-size: cover;
       background-position: center;
+      scroll-snap-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
     .spot-overlay {
       position: absolute;
-      bottom: 0; width: 100%;
-      padding: 20px;
-      background: linear-gradient(transparent, rgba(0,0,0,0.7));
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.8));
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 25px;
       color: white;
-      box-sizing: border-box;
     }
 
-    /* Booking Modal Overlay */
+    /* Booking Modal：毛玻璃效果 */
     #booking-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: white;
+      background: var(--apple-bg);
       z-index: 1000;
       transform: translateY(100%);
-      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      overflow-y: auto;
-      padding-bottom: 50px;
+      transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
     #booking-overlay.active { transform: translateY(0); }
-    .close-btn {
-      position: sticky; top: 15px; left: 15px;
-      background: rgba(0,0,0,0.05);
-      border: none; border-radius: 50%;
-      width: 36px; height: 36px; font-size: 20px;
-      z-index: 1001; cursor: pointer;
+    
+    .modal-nav {
+        display: flex; align-items: center; padding: 15px 20px;
+        background: rgba(255,255,255,0.8);
+        backdrop-filter: blur(10px); /* iOS 毛玻璃 */
+        position: sticky; top: 0; z-index: 10;
     }
-
-    /* 這裡可以放入你原本的訂車 CSS... 為了節省篇幅先省略 */
+    .modal-title { flex: 1; text-align: center; font-weight: 700; }
   </style>
 </head>
 <body>
 
   <div id="home-view">
-    <section class="hero">
-      <h1>您好，<span id="user-name">旅伴</span></h1>
-      <p>今天要前往哪裡探索？</p>
-    </section>
+    <header class="hero">
+      <div class="hero-text">
+        <p>探索未知，隨心所行</p>
+        <h1>您好，<span id="user-name">旅伴</span></h1>
+      </div>
+      <img id="user-avatar" src="" alt="">
+    </header>
 
     <div class="bento-grid">
       <div class="bento-item bento-main" onclick="openBooking()">
-        <span class="item-title">快速預約接送</span>
-        <span class="item-sub">即時呼叫專業司機，享受高品質旅程</span>
-        <div style="margin-top:20px; font-size:24px;">🚕 →</div>
+        <span class="item-title">快速預約接送 🚕</span>
+        <span class="item-sub">點擊立即呼叫專業司機</span>
       </div>
 
       <div class="bento-item bento-blue" onclick="alert('Google API 行程規劃即將上線')">
-        <span class="item-title">規劃行程</span>
+        <span class="item-title">行程規劃</span>
         <span class="item-sub">智慧路徑優化</span>
       </div>
 
       <div class="bento-item">
         <span class="item-title">我的里程</span>
-        <span id="mileage-val" class="item-sub">累積 0 KM</span>
+        <span id="mileage-val" style="font-size: 20px; font-weight: 800; color: var(--apple-blue);">0 <small style="font-size:12px; font-weight:400; color:var(--apple-sub);">KM</small></span>
       </div>
     </div>
 
     <div class="section-header">
-      <h2>精選景點</h2>
-      <span style="color:var(--apple-blue); font-size:14px;">查看全部</span>
+      <h2>推薦景點</h2>
+      <span style="color:var(--apple-blue); font-size:14px; font-weight: 600;">更多</span>
     </div>
 
     <div class="scroll-container">
-      <div class="spot-card" style="background-image: url('https://images.unsplash.com/photo-1571471811631-9b4c88bb47f3?q=80&w=500');">
+      <div class="spot-card" style="background-image: url('https://images.unsplash.com/photo-1571471811631-9b4c88bb47f3?q=80&w=600');">
         <div class="spot-overlay">
-          <b style="font-size:18px;">九份山城</b>
-          <p style="font-size:12px; opacity:0.8;">沈浸在宮崎駿般的奇幻氛圍</p>
+          <span style="font-size:12px; text-transform:uppercase; letter-spacing:1px; opacity:0.8;">New Taipei City</span>
+          <b style="font-size:22px; margin: 5px 0;">九份山城</b>
+          <p style="font-size:14px; opacity:0.9; margin:0;">宮崎駿般的幻境，茶香與石階的浪漫。</p>
         </div>
       </div>
-      <div class="spot-card" style="background-image: url('https://images.unsplash.com/photo-1547900596-eb5260f95d4e?q=80&w=500');">
+      <div class="spot-card" style="background-image: url('https://images.unsplash.com/photo-1547900596-eb5260f95d4e?q=80&w=600');">
         <div class="spot-overlay">
-          <b style="font-size:18px;">太魯閣峽谷</b>
-          <p style="font-size:12px; opacity:0.8;">見證大自然的鬼斧神工</p>
+          <span style="font-size:12px; text-transform:uppercase; letter-spacing:1px; opacity:0.8;">Hualien</span>
+          <b style="font-size:22px; margin: 5px 0;">太魯閣峽谷</b>
+          <p style="font-size:14px; opacity:0.9; margin:0;">見證大自然萬年刻劃的鬼斧神工。</p>
         </div>
       </div>
     </div>
   </div>
 
   <div id="booking-overlay">
-    <button class="close-btn" onclick="closeBooking()">✕</button>
-    <div style="padding: 20px;">
-        <h2 style="margin-top:0;">預約行程</h2>
-        <iframe src="booking.html" style="width:100%; height:85vh; border:none;"></iframe>
+    <div class="modal-nav">
+        <button onclick="closeBooking()" style="border:none; background:none; font-size:18px;">✕</button>
+        <div class="modal-title">行程預約</div>
+        <div style="width:20px;"></div>
     </div>
+    <iframe id="booking-iframe" src="booking.html" style="width:100%; height:calc(100% - 60px); border:none;"></iframe>
   </div>
 
   <script type="module">
     import { CONFIG } from './config.js';
 
-    // 初始化 LIFF
     async function init() {
       try {
         await liff.init({ liffId: CONFIG.LIFF_ID });
         if (!liff.isLoggedIn()) { liff.login(); return; }
         const p = await liff.getProfile();
+        
+        // 渲染個人化資訊
         document.getElementById('user-name').innerText = p.displayName;
+        const avatar = document.getElementById('user-avatar');
+        if (p.pictureUrl) {
+            avatar.src = p.pictureUrl;
+        } else {
+            avatar.style.display = 'none';
+        }
       } catch (e) { console.error(e); }
     }
 
