@@ -31,9 +31,7 @@
     
     .btn { padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
     .btn-blue { background: var(--apple-blue); color: white; }
-    .btn-green { background: var(--apple-green); color: white; }
     .btn-outline { background: white; border: 1.5px solid var(--apple-blue); color: var(--apple-blue); }
-    .btn-red { background: white; border: 1.5px solid var(--apple-red); color: var(--apple-red); }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .super-zone { background: #FFF; border: 2px solid var(--apple-red); border-radius: 16px; padding: 15px; margin-top: 40px; }
@@ -60,12 +58,14 @@
 <script type="module">
 import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const app = initializeApp(CONFIG.firebaseConfig);
 const db = getFirestore(app);
 const SUPER_UID = "Uc5716677131e3d507708995b4e9f7b79";
-const ADMIN_WEBHOOK = "https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis"; // 這裡請改為您的「管理中心」Webhook
+
+// 更新後的管理中心 Webhook URL
+const ADMIN_WEBHOOK = "https://hook.us2.make.com/te3nqlpvmiekxglqy9jt0xp2org17q5v";
 
 async function init() {
   try {
@@ -74,7 +74,6 @@ async function init() {
     const p = await liff.getProfile();
     if (p.userId === SUPER_UID) document.getElementById('super-admin-zone').style.display = "block";
     
-    // 監聽訂單
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snapshot) => {
       const container = document.getElementById('orders-container');
@@ -94,7 +93,7 @@ function renderOrderCard(id, data) {
   card.className = 'admin-card';
   
   const statusLabels = { 'pending': '⏳ 待處理', 'dispatched': '✅ 已派車', 'completed': '🏁 已完成', 'cancelled': '❌ 已取消' };
-  const statusClass = data.status === 'completed' ? 'badge-done' : (data.status === 'pending' ? 'badge-pending' : 'badge-cancel');
+  const statusClass = data.status === 'completed' ? 'badge-done' : (data.status === 'pending' ? 'badge-pending' : (data.status === 'dispatched' ? 'badge-done' : 'badge-cancel'));
 
   card.innerHTML = `
     <div class="order-header">
@@ -113,7 +112,7 @@ function renderOrderCard(id, data) {
     </div>
 
     <div style="margin-top:10px;">
-      <label class="input-label">行程站點 (修改後請按更新)</label>
+      <label class="input-label">行程站點</label>
       <textarea id="stops-${id}" rows="2">${data.allStops || ''}</textarea>
     </div>
 
@@ -124,10 +123,10 @@ function renderOrderCard(id, data) {
         <input type="tel" id="drvPhone-${id}" placeholder="司機電話" value="${data.driverPhone || ''}">
         <input type="text" id="carPlate-${id}" placeholder="車牌號碼" value="${data.carPlate || ''}">
         <select id="status-${id}">
-          <option value="pending" ${data.status==='pending'?'selected':''}>待處理</option>
-          <option value="dispatched" ${data.status==='dispatched'?'selected':''}>已派車</option>
-          <option value="completed" ${data.status==='completed'?'selected':''}>已完成</option>
-          <option value="cancelled" ${data.status==='cancelled'?'selected':''}>已取消</option>
+          <option value="pending" ${data.status==='pending'?'selected':''}>⏳ 待處理</option>
+          <option value="dispatched" ${data.status==='dispatched'?'selected':''}>✅ 已派車</option>
+          <option value="completed" ${data.status==='completed'?'selected':''}>🏁 已完成</option>
+          <option value="cancelled" ${data.status==='cancelled'?'selected':''}>❌ 已取消</option>
         </select>
       </div>
       
@@ -135,13 +134,13 @@ function renderOrderCard(id, data) {
         <button class="btn btn-outline" onclick="triggerAction('${id}', 'notify_customer')">📢 通知乘客</button>
         <button class="btn btn-outline" onclick="triggerAction('${id}', 'notify_driver')">📱 通知司機</button>
       </div>
-      <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="saveChanges('${id}')">💾 儲存所有修改內容</button>
+      <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="saveChanges('${id}')">💾 儲存並同步狀態</button>
     </div>
   `;
   container.appendChild(card);
 }
 
-// 儲存修改至 Firebase
+// 1. 儲存修改至 Firebase
 window.saveChanges = async (id) => {
   const btn = event.target;
   const updateData = {
@@ -159,49 +158,56 @@ window.saveChanges = async (id) => {
   btn.disabled = true; btn.innerText = "正在儲存...";
   try {
     await updateDoc(doc(db, "orders", id), updateData);
-    alert("✅ 訂單內容已更新");
-  } catch (e) { alert("儲存失敗"); }
-  btn.disabled = false; btn.innerText = "💾 儲存所有修改內容";
+    alert("✅ 內容已成功儲存至資料庫");
+  } catch (e) { console.error(e); alert("儲存失敗，請檢查權限"); }
+  btn.disabled = false; btn.innerText = "💾 儲存並同步狀態";
 };
 
-// 觸發 Make.com Webhook (情境 B)
+// 2. 觸發 Make.com Webhook (傳送訊號)
 window.triggerAction = async (id, actionType) => {
   const btn = event.target;
   const originalText = btn.innerText;
   
-  // 準備發送給 Make 的完整資料
-  const payload = {
-    action: actionType,
-    orderId: id,
-    contactName: document.getElementById(`name-${id}`).value,
-    contactPhone: document.getElementById(`phone-${id}`).value,
-    appointmentTime: document.querySelector(`#name-${id}`).closest('.admin-card').querySelector('.order-header div div:nth-child(2)').innerText,
-    flightNo: document.getElementById(`flight-${id}`).value,
-    allStops: document.getElementById(`stops-${id}`).value,
-    driverName: document.getElementById(`drvName-${id}`).value,
-    driverPhone: document.getElementById(`drvPhone-${id}`).value,
-    carPlate: document.getElementById(`carPlate-${id}`).value,
-    customerId: (await getOrderCustomerId(id)) // 從資料庫補抓 UID
-  };
+  btn.disabled = true; btn.innerText = "傳送中...";
 
-  btn.disabled = true; btn.innerText = "發送中...";
   try {
-    await fetch(ADMIN_WEBHOOK, {
+    // 先獲取最新訂單快照，確保 customerId 存在
+    const snap = await getDoc(doc(db, "orders", id));
+    if (!snap.exists()) throw new Error("找不到訂單");
+    const orderData = snap.data();
+
+    const payload = {
+      action: actionType,
+      orderId: id,
+      contactName: document.getElementById(`name-${id}`).value,
+      contactPhone: document.getElementById(`phone-${id}`).value,
+      appointmentTime: orderData.appointmentTime,
+      flightNo: document.getElementById(`flight-${id}`).value,
+      allStops: document.getElementById(`stops-${id}`).value,
+      driverName: document.getElementById(`drvName-${id}`).value,
+      driverPhone: document.getElementById(`drvPhone-${id}`).value,
+      carPlate: document.getElementById(`carPlate-${id}`).value,
+      customerId: orderData.customerId || "unknown"
+    };
+
+    const res = await fetch(ADMIN_WEBHOOK, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    alert("🚀 訊息已送往 Make 調度中心");
-  } catch (e) { alert("發送失敗，請檢查網路"); }
-  btn.disabled = false; btn.innerText = originalText;
-};
 
-// 輔助函式：從 DB 抓取該訂單的 Customer UID 確保發送準確
-async function getOrderCustomerId(id) {
-  const { getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-  const snap = await getDoc(doc(db, "orders", id));
-  return snap.exists() ? snap.data().customerId : "unknown";
-}
+    if (res.ok) {
+      alert("🚀 訊號已發送！請檢查 LINE 通知。");
+    } else {
+      alert("發送失敗，Make 回傳錯誤。");
+    }
+  } catch (e) { 
+    console.error(e);
+    alert("發生錯誤，請查看控制台輸出。"); 
+  } finally {
+    btn.disabled = false; btn.innerText = originalText;
+  }
+};
 
 init();
 </script>
