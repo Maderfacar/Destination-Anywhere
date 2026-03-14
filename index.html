@@ -11,7 +11,6 @@
       --apple-blue: #007AFF;
       --apple-text: #1D1D1F;
       --apple-sub: #86868B;
-      --glass: rgba(255, 255, 255, 0.7);
     }
 
     body {
@@ -31,6 +30,15 @@
     .hero-text h1 { font-size: 28px; font-weight: 700; margin: 0; }
     .hero-text p { color: var(--apple-sub); margin: 5px 0 0; font-size: 16px; }
     
+    /* [新增] ID 顯示樣式 */
+    #display-id { 
+      font-size: 10px; 
+      color: #BBB; 
+      word-break: break-all; 
+      margin-top: 4px;
+      display: block;
+    }
+
     .profile-wrap { text-align: right; }
     #user-avatar {
       width: 55px; height: 55px;
@@ -38,8 +46,8 @@
       border: 2px solid white;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       background: #EEE;
-      cursor: pointer;
     }
+    
     #admin-btn {
       display: none;
       margin-top: 8px;
@@ -50,6 +58,7 @@
       border-radius: 10px;
       font-size: 12px;
       font-weight: 600;
+      cursor: pointer;
     }
 
     /* Bento Grid */
@@ -65,7 +74,6 @@
       border-radius: 24px;
       padding: 22px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-      transition: all 0.3s ease;
       border: 1px solid rgba(0,0,0,0.02);
     }
 
@@ -87,7 +95,7 @@
     .item-title { font-weight: 700; font-size: 18px; margin-bottom: 5px; display: block; }
     .item-sub { font-size: 13px; opacity: 0.8; }
 
-    /* 景點卡片 */
+    /* 景點卡片與 Modal 保持不變 */
     .section-header { padding: 0 25px 15px; display: flex; justify-content: space-between; align-items: baseline; }
     .section-header h2 { font-size: 22px; margin: 0; }
 
@@ -101,8 +109,7 @@
     .scroll-container::-webkit-scrollbar { display: none; }
 
     .spot-card {
-      min-width: 280px;
-      height: 380px;
+      min-width: 280px; height: 380px;
       border-radius: 28px;
       position: relative;
       overflow: hidden;
@@ -112,17 +119,12 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
     .spot-overlay {
-      position: absolute;
-      inset: 0;
+      position: absolute; inset: 0;
       background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.8));
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 25px;
-      color: white;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 25px; color: white;
     }
 
-    /* Booking Modal */
     #booking-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -149,6 +151,7 @@
       <div class="hero-text">
         <p>探索未知，隨心所行</p>
         <h1>您好，<span id="user-name">旅伴</span></h1>
+        <code id="display-id">正在取得系統 ID...</code>
       </div>
       <div class="profile-wrap">
         <img id="user-avatar" src="" alt="">
@@ -215,24 +218,23 @@
         
         const p = await liff.getProfile();
         
-        // 1. 抓取 ID 並顯示在 Console (方便除錯)
-        console.log("Current User ID:", p.userId);
+        // [關鍵] 將 ID 顯示在網頁畫面上
+        document.getElementById('display-id').innerText = "ID: " + p.userId;
 
-        // 2. 渲染個人化資訊
+        // 渲染個人名字與頭像
         document.getElementById('user-name').innerText = p.displayName;
         const avatar = document.getElementById('user-avatar');
-        if (p.pictureUrl) {
-            avatar.src = p.pictureUrl;
-        } else {
-            avatar.src = "https://cdn-icons-png.flaticon.com/512/147/147144.png";
-        }
+        avatar.src = p.pictureUrl || "https://cdn-icons-png.flaticon.com/512/147/147144.png";
 
-        // 3. 管理者登入功能：檢查 ID 是否在名單內
+        // 管理者權限檢查
         if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(p.userId)) {
           document.getElementById('admin-btn').style.display = 'block';
         }
 
-      } catch (e) { console.error("LIFF Init Error:", e); }
+      } catch (e) { 
+        console.error(e); 
+        document.getElementById('display-id').innerText = "取得 ID 失敗";
+      }
     }
 
     window.openBooking = () => {
