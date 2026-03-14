@@ -7,7 +7,7 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root {
-      --apple-bg: #F5F5F7; /* 稍微帶點灰色調，讓白色卡片更跳脫 */
+      --apple-bg: #F5F5F7;
       --apple-blue: #007AFF;
       --apple-text: #1D1D1F;
       --apple-sub: #86868B;
@@ -21,7 +21,7 @@
       margin: 0; padding: 0;
     }
 
-    /* Hero Section 優化：加入頭像 */
+    /* Hero Section */
     .hero {
       padding: 50px 25px 30px;
       display: flex;
@@ -31,15 +31,28 @@
     .hero-text h1 { font-size: 28px; font-weight: 700; margin: 0; }
     .hero-text p { color: var(--apple-sub); margin: 5px 0 0; font-size: 16px; }
     
+    .profile-wrap { text-align: right; }
     #user-avatar {
       width: 55px; height: 55px;
       border-radius: 50%;
       border: 2px solid white;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       background: #EEE;
+      cursor: pointer;
+    }
+    #admin-btn {
+      display: none;
+      margin-top: 8px;
+      background: var(--apple-blue);
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
     }
 
-    /* Bento Grid 優化：漸層與陰影 */
+    /* Bento Grid */
     .bento-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -56,7 +69,6 @@
       border: 1px solid rgba(0,0,0,0.02);
     }
 
-    /* 黑色大卡片優化：加入微漸層 */
     .bento-main { 
       grid-column: span 2; 
       background: linear-gradient(135deg, #2C2C2E 0%, #000000 100%);
@@ -67,7 +79,6 @@
       justify-content: center;
     }
     
-    /* 藍色卡片優化 */
     .bento-blue { 
       background: linear-gradient(135deg, #007AFF 0%, #0051FF 100%); 
       color: white; 
@@ -76,7 +87,7 @@
     .item-title { font-weight: 700; font-size: 18px; margin-bottom: 5px; display: block; }
     .item-sub { font-size: 13px; opacity: 0.8; }
 
-    /* 景點卡片優化：圓角與文字疊加層次 */
+    /* 景點卡片 */
     .section-header { padding: 0 25px 15px; display: flex; justify-content: space-between; align-items: baseline; }
     .section-header h2 { font-size: 22px; margin: 0; }
 
@@ -111,7 +122,7 @@
       color: white;
     }
 
-    /* Booking Modal：毛玻璃效果 */
+    /* Booking Modal */
     #booking-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -125,7 +136,7 @@
     .modal-nav {
         display: flex; align-items: center; padding: 15px 20px;
         background: rgba(255,255,255,0.8);
-        backdrop-filter: blur(10px); /* iOS 毛玻璃 */
+        backdrop-filter: blur(10px);
         position: sticky; top: 0; z-index: 10;
     }
     .modal-title { flex: 1; text-align: center; font-weight: 700; }
@@ -139,7 +150,10 @@
         <p>探索未知，隨心所行</p>
         <h1>您好，<span id="user-name">旅伴</span></h1>
       </div>
-      <img id="user-avatar" src="" alt="">
+      <div class="profile-wrap">
+        <img id="user-avatar" src="" alt="">
+        <button id="admin-btn" onclick="location.href='admin.html'">管理入口</button>
+      </div>
     </header>
 
     <div class="bento-grid">
@@ -198,17 +212,27 @@
       try {
         await liff.init({ liffId: CONFIG.LIFF_ID });
         if (!liff.isLoggedIn()) { liff.login(); return; }
+        
         const p = await liff.getProfile();
         
-        // 渲染個人化資訊
+        // 1. 抓取 ID 並顯示在 Console (方便除錯)
+        console.log("Current User ID:", p.userId);
+
+        // 2. 渲染個人化資訊
         document.getElementById('user-name').innerText = p.displayName;
         const avatar = document.getElementById('user-avatar');
         if (p.pictureUrl) {
             avatar.src = p.pictureUrl;
         } else {
-            avatar.style.display = 'none';
+            avatar.src = "https://cdn-icons-png.flaticon.com/512/147/147144.png";
         }
-      } catch (e) { console.error(e); }
+
+        // 3. 管理者登入功能：檢查 ID 是否在名單內
+        if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(p.userId)) {
+          document.getElementById('admin-btn').style.display = 'block';
+        }
+
+      } catch (e) { console.error("LIFF Init Error:", e); }
     }
 
     window.openBooking = () => {
