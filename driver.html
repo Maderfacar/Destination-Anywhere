@@ -22,19 +22,18 @@
     .btn-blue { background: var(--apple-blue); color: white; }
     .btn-outline { background: white; border: 1.5px solid var(--apple-blue); color: var(--apple-blue); }
     
-    /* 狀態按鈕組 */
     .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
-    .btn-status { font-size: 13px; padding: 10px; background: #F2F2F7; color: #1D1D1F; border: 1px solid #D2D2D7; }
+    .btn-status { font-size: 13px; padding: 10px; background: #F2F2F7; color: #1D1D1F; border: 1px solid #D2D2D7; border-radius: 8px; cursor: pointer; }
     .btn-status.active { background: var(--apple-green); color: white; border-color: var(--apple-green); }
 
     .order-info { font-size: 14px; line-height: 1.6; border-bottom: 1px solid #EEE; padding-bottom: 10px; margin-bottom: 10px; }
-    .hide { display: none; }
+    .hide { display: none !important; }
     #loading { text-align: center; padding-top: 100px; color: var(--text-sub); }
   </style>
 </head>
 <body>
 
-<div id="loading">🚀 正在啟動 DA 系統...</div>
+<div id="loading">🚀 正在啟動 DA 司機系統...</div>
 
 <div id="section-register" class="hide">
   <div class="section-title">📝 司機加盟申請</div>
@@ -54,7 +53,7 @@
     <div style="font-size: 48px; margin-bottom: 15px;">⌛</div>
     <h3 style="margin: 0;">申請審核中</h3>
     <p style="color: var(--text-sub); font-size: 14px;">您的資料已提交成功。請靜候管理員核准，通過後即可開始接單。</p>
-    <button class="btn btn-outline" onclick="location.reload()">重新整理</button>
+    <button class="btn btn-outline" onclick="location.reload()" style="margin-top: 20px;">重新整理</button>
   </div>
 </div>
 
@@ -82,14 +81,18 @@ import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where,
 const app = initializeApp(CONFIG.firebaseConfig);
 const db = getFirestore(app);
 let myUID = "";
-let myName = "";
 
 async function init() {
   try {
-    // 🔴 關鍵更新：使用司機專屬的 LIFF ID
-    await liff.init({ liffId: CONFIG.LIFF_IDS.DRIVER });
+    // 🔴 使用 CONFIG.LIFF_IDS.DRIVER 確保 ID 正確
+    const driverLiffId = CONFIG.LIFF_IDS ? CONFIG.LIFF_IDS.DRIVER : CONFIG.LIFF_ID;
     
-    if (!liff.isLoggedIn()) { liff.login(); return; }
+    await liff.init({ liffId: driverLiffId });
+    
+    if (!liff.isLoggedIn()) { 
+      liff.login(); 
+      return; 
+    }
 
     const profile = await liff.getProfile();
     myUID = profile.userId;
@@ -102,8 +105,6 @@ async function init() {
       document.getElementById('section-register').classList.remove('hide');
     } else {
       const drvData = drvSnap.data();
-      myName = drvData.name;
-      
       if (drvData.status === 'pending') {
         document.getElementById('section-pending').classList.remove('hide');
       } else if (drvData.status === 'approved') {
@@ -112,42 +113,50 @@ async function init() {
         loadMyOrders(drvData.name);
       }
     }
-  } catch (err) { console.error(err); }
+  } catch (err) { 
+    console.error("LIFF Init Error:", err);
+    document.getElementById('loading').innerText = "系統初始化失敗，請確認網路連線。";
+  }
 }
 
-// --- 司機註冊與資料管理 ---
-
+// 註冊函數掛載到 window
 window.handleRegister = async () => {
-  const name = document.getElementById('reg-name').value;
-  const phone = document.getElementById('reg-phone').value;
-  const plate = document.getElementById('reg-plate').value;
+  const name = document.getElementById('reg-name').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const plate = document.getElementById('reg-plate').value.trim();
   if(!name || !phone || !plate) return alert("請填寫完整資訊");
 
-  await setDoc(doc(db, "drivers", myUID), {
-    uid: myUID, name, phone, plate,
-    status: 'pending',
-    createdAt: serverTimestamp()
-  });
-  alert("申請成功，請等待審核");
-  location.reload();
+  try {
+    await setDoc(doc(db, "drivers", myUID), {
+      uid: myUID, name, phone, plate,
+      status: 'pending',
+      createdAt: serverTimestamp()
+    });
+    alert("申請成功，請等待審核");
+    location.reload();
+  } catch (e) {
+    alert("提交失敗，請檢查權限");
+  }
 };
 
 function loadDriverProfile(data) {
-  document.getElementById('edit-name').value = data.name;
-  document.getElementById('edit-phone').value = data.phone;
-  document.getElementById('edit-plate').value = data.plate;
+  document.getElementById('edit-name').value = data.name || "";
+  document.getElementById('edit-phone').value = data.phone || "";
+  document.getElementById('edit-plate').value = data.plate || "";
 }
 
 window.updateDriverProfile = async () => {
-  await updateDoc(doc(db, "drivers", myUID), {
-    name: document.getElementById('edit-name').value,
-    phone: document.getElementById('edit-phone').value,
-    plate: document.getElementById('edit-plate').value
-  });
-  alert("資料已更新");
+  try {
+    await updateDoc(doc(db, "drivers", myUID), {
+      name: document.getElementById('edit-name').value,
+      phone: document.getElementById('edit-phone').value,
+      plate: document.getElementById('edit-plate').value
+    });
+    alert("資料已更新");
+  } catch (e) {
+    alert("更新失敗");
+  }
 };
-
-// --- 行程與狀態回報邏輯 ---
 
 function loadMyOrders(driverName) {
   const q = query(collection(db, "orders"), where("driverName", "==", driverName));
@@ -167,7 +176,7 @@ function loadMyOrders(driverName) {
         { key: 'completed', label: '🏁 行程結束' }
       ];
 
-      let buttonsHtml = statusSteps.map(step => `
+      const buttonsHtml = statusSteps.map(step => `
         <button class="btn btn-status ${ord.status === step.key ? 'active' : ''}" 
                 onclick="updateOrderStatus('${d.id}', '${step.key}')">
           ${step.label}
@@ -176,12 +185,12 @@ function loadMyOrders(driverName) {
 
       card.innerHTML = `
         <div class="order-info">
-          <div style="font-weight:bold; color:var(--apple-blue); font-size:16px;">${ord.appointmentTime}</div>
-          <div>👤 乘客：${ord.contactName}</div>
-          <div>📞 電話：<a href="tel:${ord.contactPhone}">${ord.contactPhone}</a></div>
+          <div style="font-weight:bold; color:var(--apple-blue); font-size:16px;">${ord.appointmentTime || '未定時間'}</div>
+          <div>👤 乘客：${ord.contactName || '匿名'}</div>
+          <div>📞 電話：<a href="tel:${ord.contactPhone}">${ord.contactPhone || '無'}</a></div>
           <div style="margin-top:5px; padding:8px; background:#F8F8F8; border-radius:8px; font-size:13px;">
-            <div>🟢 起：${ord.pickupLocation}</div>
-            <div>🔴 終：${ord.dropoffLocation}</div>
+            <div>🟢 起：${ord.pickupLocation || '未提供'}</div>
+            <div>🔴 終：${ord.dropoffLocation || '未提供'}</div>
           </div>
         </div>
         <div class="input-label">回報訂單狀態</div>
@@ -198,7 +207,10 @@ window.updateOrderStatus = async (orderId, newStatus) => {
       status: newStatus,
       updatedAt: serverTimestamp()
     });
-  } catch (e) { alert("更新失敗"); }
+  } catch (e) { 
+    console.error(e);
+    alert("狀態更新失敗"); 
+  }
 };
 
 init();
