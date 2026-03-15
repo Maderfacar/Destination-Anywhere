@@ -39,10 +39,12 @@
       <label class="input-label">🪪 駕照正反面照片</label>
       <input type="file" id="file-license" accept="image/*">
     </div>
+    
     <div class="file-group">
       <label class="input-label">🚗 行照照片</label>
       <input type="file" id="file-registration" accept="image/*">
     </div>
+    
     <div class="file-group">
       <label class="input-label">🛡️ 保險證明照片</label>
       <input type="file" id="file-insurance" accept="image/*">
@@ -137,7 +139,7 @@
       btn.innerText = "正在上傳資料...";
 
       try {
-        // 上傳駕照
+        // 1. 上傳駕照
         let licenseUrl = "";
         const fileLic = document.getElementById('file-license').files[0];
         if (fileLic) {
@@ -146,7 +148,7 @@
           licenseUrl = await getDownloadURL(sRef);
         }
 
-        // 上傳行照
+        // 2. 上傳行照
         let registrationUrl = "";
         const fileReg = document.getElementById('file-registration').files[0];
         if (fileReg) {
@@ -155,7 +157,7 @@
           registrationUrl = await getDownloadURL(sRef);
         }
 
-        // 上傳保險
+        // 3. 上傳保險
         let insuranceUrl = "";
         const fileIns = document.getElementById('file-insurance').files[0];
         if (fileIns) {
@@ -164,17 +166,20 @@
           insuranceUrl = await getDownloadURL(sRef);
         }
 
+        // 寫入資料庫
         await setDoc(doc(db, "drivers", uid), {
           name, phone, 
           plate: document.getElementById('reg-plate').value,
           model: document.getElementById('reg-model').value,
           color: document.getElementById('reg-color').value,
           licenseImg: licenseUrl,
-          registrationImg: registrationUrl, // 寫入行照網址
-          insuranceImg: insuranceUrl,       // 寫入保險網址
+          registrationImg: registrationUrl, 
+          insuranceImg: insuranceUrl,      
           status: 'pending',
           createdAt: serverTimestamp()
         });
+        
+        // 不需要手動跳轉，onSnapshot 會偵測到資料存在並自動顯示 pending 畫面
       } catch (e) {
         alert("註冊失敗: " + e.message);
         btn.disabled = false;
