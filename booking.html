@@ -14,27 +14,20 @@
       --input-border: #D1D1D6;
     }
     body { background: var(--bg-color); color: var(--text-main); font-family: -apple-system, sans-serif; margin: 0; padding: 10px; }
-    
     .tabs { display: flex; background: #E3E3E6; border-radius: 8px; padding: 2px; margin-bottom: 15px; }
     .tab-btn { flex: 1; border: none; padding: 10px 0; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-sub); }
     .tab-btn.active { background: white; color: var(--text-main); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-
     .section-title { font-weight: 700; margin: 20px 0 10px 5px; font-size: 14px; color: var(--apple-blue); }
     .form-group { background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 12px; }
-    
     .input-row { display: flex; align-items: center; margin-bottom: 12px; gap: 10px; }
     .label-txt { width: 80px; font-size: 14px; font-weight: 600; color: #48484A; }
     .main-input { flex: 1; border: none; border-bottom: 1px solid var(--input-border); padding: 8px 0; font-size: 16px; background: transparent; color: var(--text-main); }
-
     .datetime-container { display: flex; gap: 10px; }
     input[type="date"], input[type="time"], textarea { border: 1px solid var(--input-border); border-radius: 8px; padding: 12px; width: 100%; box-sizing: border-box; font-size: 15px; background: #FFF; }
-
     .counter-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .counter-ctrl { display: flex; align-items: center; gap: 15px; }
     .ctrl-btn { background: #E3E3E6; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 18px; color: var(--apple-blue); cursor: pointer; }
-
     .confirm-btn { width: 100%; background: var(--apple-blue); color: white; border: none; border-radius: 14px; padding: 16px; font-size: 17px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-    .confirm-btn:disabled { background: #CCC; }
     .delete-btn { color: var(--apple-red); font-size: 12px; border: 1px solid var(--apple-red); padding: 2px 6px; border-radius: 4px; cursor: pointer; }
   </style>
 </head>
@@ -64,7 +57,7 @@
     <div id="flight-section">
       <div class="input-row">
         <span class="label-txt">航班號碼</span>
-        <input type="text" id="flight-no" class="main-input" placeholder="BR198">
+        <input type="text" id="flight-no" class="main-input" placeholder="例如: BR198" oninput="renderStops()">
       </div>
     </div>
     <div id="stops-list"></div>
@@ -80,8 +73,11 @@
 
 <div class="section-title">🧳 人數行李</div>
 <div class="form-group">
-  <div class="counter-row"><span>成人/兒童</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('adult-count',-1)">-</button><b id="adult-count">1</b><button class="ctrl-btn" onclick="qty('adult-count',1)">+</button></div></div>
-  <div class="counter-row"><span>大型/中小行李</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('l-large',-1)">-</button><b id="l-large">0</b><button class="ctrl-btn" onclick="qty('l-large',1)">+</button></div></div>
+  <div class="counter-row"><span>成人</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('adult-count',-1)">-</button><b id="adult-count">1</b><button class="ctrl-btn" onclick="qty('adult-count',1)">+</button></div></div>
+  <div class="counter-row"><span>兒童</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('child-count',-1)">-</button><b id="child-count">0</b><button class="ctrl-btn" onclick="qty('child-count',1)">+</button></div></div>
+  <hr style="border:0; border-top:1px solid #EEE; margin:10px 0;">
+  <div class="counter-row"><span>大型行李 (28吋以上)</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('l-luggage',-1)">-</button><b id="l-luggage">0</b><button class="ctrl-btn" onclick="qty('l-luggage',1)">+</button></div></div>
+  <div class="counter-row"><span>中小型行李</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('s-luggage',-1)">-</button><b id="s-luggage">0</b><button class="ctrl-btn" onclick="qty('s-luggage',1)">+</button></div></div>
 </div>
 
 <div class="section-title">📝 備註</div>
@@ -128,38 +124,55 @@ window.switchTab = (mode, btn) => {
 window.renderStops = () => {
   const list = document.getElementById('stops-list');
   const flight = document.getElementById('flight-no').value || "";
+  
+  // [關鍵修正]：在重新渲染前，先保存當前輸入的數值，避免資料消失
+  const oldStart = document.getElementById('p-start')?.value || "";
+  const oldEnd = document.getElementById('p-end')?.value || "";
+  const oldMids = Array.from(document.querySelectorAll('.mid-input')).map(i => i.value);
+
   list.innerHTML = '';
 
-  // 起點 (對應 pickupLocation)
+  // 1. 起點
   const pUp = document.createElement('div');
   pUp.className = 'input-row';
-  pUp.innerHTML = currentMode === '接機' 
-    ? `<span class="label-txt">起點</span><input type="text" id="p-start" class="main-input" value="桃園機場 ${flight}" readonly>`
-    : `<span class="label-txt">起點</span><input type="text" id="p-start" class="main-input" placeholder="請輸入起點">`;
+  if (currentMode === '接機') {
+    pUp.innerHTML = `<span class="label-txt">起點</span><input type="text" id="p-start" class="main-input" value="桃園機場 ${flight}" readonly>`;
+  } else {
+    pUp.innerHTML = `<span class="label-txt">起點</span><input type="text" id="p-start" class="main-input" placeholder="請輸入起點" value="${oldStart}">`;
+  }
   list.appendChild(pUp);
 
-  // 中途 (對應 extraStops)
-  midStops.forEach((val, idx) => {
+  // 2. 中途點
+  midStops.forEach((_, idx) => {
     const mDiv = document.createElement('div');
     mDiv.className = 'input-row';
-    mDiv.innerHTML = `<span class="label-txt">停靠點</span><input type="text" class="main-input mid-input" value="${val}" onchange="updateMidStop(${idx}, this.value)"><span class="delete-btn" onclick="removeStop(${idx})">✕</span>`;
+    const val = oldMids[idx] || "";
+    mDiv.innerHTML = `<span class="label-txt">停靠點</span><input type="text" class="main-input mid-input" value="${val}"><span class="delete-btn" onclick="removeStop(${idx})">✕</span>`;
     list.appendChild(mDiv);
   });
 
-  // 終點 (對應 dropoffLocation)
+  // 3. 終點
   const dOff = document.createElement('div');
   dOff.className = 'input-row';
-  dOff.innerHTML = currentMode === '送機'
-    ? `<span class="label-txt">終點</span><input type="text" id="p-end" class="main-input" value="桃園機場 ${flight}" readonly>`
-    : `<span class="label-txt">終點</span><input type="text" id="p-end" class="main-input" placeholder="請輸入目的地">`;
+  if (currentMode === '送機') {
+    dOff.innerHTML = `<span class="label-txt">終點</span><input type="text" id="p-end" class="main-input" value="桃園機場 ${flight}" readonly>`;
+  } else {
+    dOff.innerHTML = `<span class="label-txt">終點</span><input type="text" id="p-end" class="main-input" placeholder="請輸入目的地" value="${oldEnd}">`;
+  }
   list.appendChild(dOff);
 };
 
 window.qty = (id, amt) => { let el = document.getElementById(id); let v = parseInt(el.innerText) + amt; if (v >= 0) el.innerText = v; };
-window.addNewStop = () => { midStops.push(""); renderStops(); };
-window.removeStop = (idx) => { midStops.splice(idx, 1); renderStops(); };
-window.updateMidStop = (idx, val) => { midStops[idx] = val; };
-document.getElementById('flight-no').oninput = () => renderStops();
+
+window.addNewStop = () => { 
+  midStops.push(""); 
+  renderStops(); 
+};
+
+window.removeStop = (idx) => { 
+  midStops.splice(idx, 1); 
+  renderStops(); 
+};
 
 window.sendRequest = async () => {
   const btn = document.getElementById('submit-btn');
@@ -167,7 +180,6 @@ window.sendRequest = async () => {
   const phone = document.getElementById('contact-phone').value;
   const date = document.getElementById('order-date').value;
   const time = document.getElementById('order-time').value;
-  const flight = document.getElementById('flight-no').value || "";
 
   if (!name || !phone || !date || !time) return alert("請填寫完整資訊");
 
@@ -184,38 +196,34 @@ window.sendRequest = async () => {
       contactName: name,
       contactPhone: phone,
       appointmentTime: `${date} ${time}`,
-      flightNo: flight,
-      // 關鍵：對應 admin.html 的獨立地址欄位
+      flightNo: document.getElementById('flight-no').value,
       pickupLocation: startNode,
       dropoffLocation: endNode,
       extraStops: mids,
-      // 為了相容性保留組合字串
       allStops: [startNode, mids, endNode].filter(s => s).join(' → '),
-      passengers: document.getElementById('adult-count').innerText,
-      luggage: document.getElementById('l-large').innerText,
+      // 恢復精確的人數與行李分類
+      adults: document.getElementById('adult-count').innerText,
+      children: document.getElementById('child-count').innerText,
+      largeLuggage: document.getElementById('l-luggage').innerText,
+      smallLuggage: document.getElementById('s-luggage').innerText,
       note: document.getElementById('order-note').value,
       customerId: userProfile?.userId || "guest",
       status: "pending",
       createdAt: serverTimestamp()
     };
 
-    // 同步到 Firebase 與 Webhook
     await Promise.all([
       addDoc(collection(db, "orders"), orderData),
       fetch(CONFIG.webhooks.newOrder, { method: "POST", body: JSON.stringify(orderData) })
     ]);
 
     alert("✅ 預約已送出！我們會盡快為您安排");
-    
-    // 嘗試關閉視窗
     if (window.parent && window.parent.closeBooking) {
         window.parent.closeBooking();
     } else {
         liff.closeWindow();
     }
-
   } catch (e) {
-    console.error("Submit Error:", e);
     alert("預約失敗，請重試");
     btn.disabled = false;
     btn.innerText = "確認預約";
