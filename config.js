@@ -1,57 +1,210 @@
-// config.js
-export const CONFIG = {
-  // 1. Firebase 連線資訊
-  firebaseConfig: {
-    apiKey: "AIzaSyCg7ONT1mDIXZplNhTKPHw-cn5UbXFQJyk",
-    authDomain: "destination-anywhere-cfd50.firebaseapp.com",
-    projectId: "destination-anywhere-cfd50",
-    appId: "1:718691467645:web:fb37ce5fa5708c1f788c14"
-  },
-  
-  // 2. 權限管理 (UID 清單)
-  ADMIN_UIDS: [
-    "Uc5716677131e3d507708995b4e9f7b79", // 超級管理員
-    "U56239f33a1cb65c8b1b880f87ea0c2ac", // 識翔
-    "U84c34631256a829d5fd8dceed8bd38f3"  // 33
-  ],
-
-  // 3. LINE 平台設定 (分流乘客與司機入口)
-  LIFF_IDS: {
-    PASSENGER: "2009434590-UHOSSHQI", // 預約首頁使用
-    DRIVER: "2009434590-3t2KvScf"    // 司機註冊與接單中心使用
-  },
-
-  // 為了兼容舊有代碼，保留單一 LIFF_ID 變數 (預設指向首頁)
-  LIFF_ID: "2009434590-UHOSSHQI",
-
-  // 4. 自動化接點 (Webhook)
-  webhooks: {
-    // 乘客下單後觸發的 Webhook (index.html 使用)
-    newOrder: "https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis", 
-    // 管理員調度中心觸發的 Webhook (admin.html 使用)
-    adminAction: "https://hook.us2.make.com/te3nqlpvmiekxglqy9jt0xp2org17q5v"
-  },
-
-  // 5. 語系支援
-  currentLang: "zh", 
-  i18n: {
-    zh: {
-      title: "訂車服務",
-      pickup: "上車：",
-      dropoff: "下車：",
-      addStop: "[ + 新增停靠點 ]",
-      confirmBtn: "確認預約行程",
-      dispatchBtn: "更新資訊並觸發 LINE 通知",
-      customerName: "乘客姓名"
-    },
-    en: {
-      title: "Booking Service",
-      pickup: "Pickup:",
-      dropoff: "Drop-off:",
-      addStop: "[ + Add Stop ]",
-      confirmBtn: "Confirm Booking",
-      dispatchBtn: "Update & Send Notification",
-      customerName: "Customer Name"
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DA 司機控制台</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    :root { 
+      --bg-color: #F2F2F7; --card-bg: #FFFFFF; --text-main: #1D1D1F; 
+      --text-sub: #86868B; --apple-blue: #0071E3; --apple-green: #34C759; --apple-red: #FF3B30; --border: #D2D2D7;
     }
+    body { background: var(--bg-color); color: var(--text-main); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; }
+    
+    .section-title { font-weight: 700; margin: 20px 0 10px 5px; font-size: 17px; color: var(--text-main); border-left: 4px solid var(--apple-blue); padding-left: 10px; }
+    .card { background: var(--card-bg); border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05); }
+    
+    .input-label { font-size: 11px; color: var(--text-sub); margin-bottom: 4px; display: block; font-weight: bold; }
+    input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 16px; box-sizing: border-box; background: #FAFAFA; margin-bottom: 12px; }
+    
+    .btn { padding: 14px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s; width: 100%; margin-top: 5px; }
+    .btn-blue { background: var(--apple-blue); color: white; }
+    .btn-outline { background: white; border: 1.5px solid var(--apple-blue); color: var(--apple-blue); }
+    
+    .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
+    .btn-status { font-size: 13px; padding: 10px; background: #F2F2F7; color: #1D1D1F; border: 1px solid #D2D2D7; border-radius: 8px; }
+    .btn-status.active { background: var(--apple-green); color: white; border-color: var(--apple-green); }
+
+    .order-info { font-size: 14px; line-height: 1.6; border-bottom: 1px solid #EEE; padding-bottom: 10px; margin-bottom: 10px; }
+    .hide { display: none !important; }
+    #loading { text-align: center; padding-top: 100px; color: var(--text-sub); }
+  </style>
+</head>
+<body>
+
+<div id="loading">🚀 正在啟動 DA 司機系統...</div>
+
+<div id="section-register" class="hide">
+  <div class="section-title">📝 司機加盟申請</div>
+  <div class="card">
+    <label class="input-label">真實姓名</label>
+    <input type="text" id="reg-name" placeholder="請輸入姓名">
+    <label class="input-label">手機號碼</label>
+    <input type="tel" id="reg-phone" placeholder="09xx-xxx-xxx">
+    <label class="input-label">車牌號碼</label>
+    <input type="text" id="reg-plate" placeholder="例如: ABC-1234">
+    <button class="btn btn-blue" onclick="handleRegister()">送出加盟申請</button>
+  </div>
+</div>
+
+<div id="section-pending" class="hide">
+  <div class="card" style="text-align: center; padding: 40px 20px;">
+    <div style="font-size: 48px; margin-bottom: 15px;">⌛</div>
+    <h3 style="margin: 0;">申請審核中</h3>
+    <p style="color: var(--text-sub); font-size: 14px;">您的資料已提交成功。請靜候管理員核准，通過後即可開始接單。</p>
+    <button class="btn btn-outline" onclick="location.reload()" style="margin-top: 20px;">重新整理</button>
+  </div>
+</div>
+
+<div id="section-main" class="hide">
+  <div class="section-title">👤 個人資料設定</div>
+  <div class="card">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <div><label class="input-label">姓名</label><input type="text" id="edit-name"></div>
+      <div><label class="input-label">車牌</label><input type="text" id="edit-plate"></div>
+    </div>
+    <label class="input-label">手機號碼</label>
+    <input type="tel" id="edit-phone">
+    <button class="btn btn-outline" onclick="updateDriverProfile()" style="font-size: 13px; padding: 8px;">儲存變更資料</button>
+  </div>
+
+  <div class="section-title">📅 我的派單行程</div>
+  <div id="orders-list"></div>
+</div>
+
+<script type="module">
+import { CONFIG } from './config.js';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const app = initializeApp(CONFIG.firebaseConfig);
+const db = getFirestore(app);
+let myUID = "";
+
+async function init() {
+  try {
+    // 🔴 修正點：明確指定使用 CONFIG.LIFF_IDS.DRIVER
+    const DRIVER_LIFF_ID = CONFIG.LIFF_IDS.DRIVER;
+    
+    await liff.init({ liffId: DRIVER_LIFF_ID });
+    
+    if (!liff.isLoggedIn()) { 
+      liff.login(); 
+      return; 
+    }
+
+    const profile = await liff.getProfile();
+    myUID = profile.userId;
+    document.getElementById('loading').classList.add('hide');
+
+    const drvSnap = await getDoc(doc(db, "drivers", myUID));
+
+    if (!drvSnap.exists()) {
+      document.getElementById('section-register').classList.remove('hide');
+    } else {
+      const drvData = drvSnap.data();
+      if (drvData.status === 'pending') {
+        document.getElementById('section-pending').classList.remove('hide');
+      } else if (drvData.status === 'approved') {
+        document.getElementById('section-main').classList.remove('hide');
+        loadDriverProfile(drvData);
+        loadMyOrders(drvData.name);
+      }
+    }
+  } catch (err) { 
+    console.error("Driver Init Error:", err);
+    document.getElementById('loading').innerText = "系統初始化失敗，請確認 config.js 配置";
   }
+}
+
+window.handleRegister = async () => {
+  const name = document.getElementById('reg-name').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const plate = document.getElementById('reg-plate').value.trim();
+  if(!name || !phone || !plate) return alert("請填寫完整資訊");
+
+  try {
+    await setDoc(doc(db, "drivers", myUID), {
+      uid: myUID, name, phone, plate,
+      status: 'pending',
+      createdAt: serverTimestamp()
+    });
+    alert("申請成功，請等待審核");
+    location.reload();
+  } catch (e) { alert("提交失敗"); }
 };
+
+function loadDriverProfile(data) {
+  document.getElementById('edit-name').value = data.name || "";
+  document.getElementById('edit-phone').value = data.phone || "";
+  document.getElementById('edit-plate').value = data.plate || "";
+}
+
+window.updateDriverProfile = async () => {
+  try {
+    await updateDoc(doc(db, "drivers", myUID), {
+      name: document.getElementById('edit-name').value,
+      phone: document.getElementById('edit-phone').value,
+      plate: document.getElementById('edit-plate').value
+    });
+    alert("資料已更新");
+  } catch (e) { alert("更新失敗"); }
+};
+
+function loadMyOrders(driverName) {
+  const q = query(collection(db, "orders"), where("driverName", "==", driverName));
+  onSnapshot(q, (snap) => {
+    const container = document.getElementById('orders-list');
+    container.innerHTML = snap.empty ? '<p style="text-align:center; color:#999; padding:20px;">目前尚無指派行程</p>' : '';
+    
+    snap.forEach(d => {
+      const ord = d.data();
+      const card = document.createElement('div');
+      card.className = 'card';
+      
+      const statusSteps = [
+        { key: 'dispatched', label: '🚗 前往中' },
+        { key: 'arrived', label: '📍 已抵達' },
+        { key: 'picked_up', label: '乘客上車' },
+        { key: 'completed', label: '🏁 行程結束' }
+      ];
+
+      const buttonsHtml = statusSteps.map(step => `
+        <button class="btn btn-status ${ord.status === step.key ? 'active' : ''}" 
+                onclick="updateOrderStatus('${d.id}', '${step.key}')">
+          ${step.label}
+        </button>
+      `).join('');
+
+      card.innerHTML = `
+        <div class="order-info">
+          <div style="font-weight:bold; color:var(--apple-blue); font-size:16px;">${ord.appointmentTime || '未定時間'}</div>
+          <div>👤 乘客：${ord.contactName || '未填寫'}</div>
+          <div>📞 電話：<a href="tel:${ord.contactPhone}">${ord.contactPhone || '無'}</a></div>
+          <div style="margin-top:5px; padding:8px; background:#F8F8F8; border-radius:8px; font-size:13px;">
+            <div>🟢 起：${ord.pickupLocation || '未提供'}</div>
+            <div>🔴 終：${ord.dropoffLocation || '未提供'}</div>
+          </div>
+        </div>
+        <div class="input-label">回報訂單狀態</div>
+        <div class="status-grid">${buttonsHtml}</div>
+      `;
+      container.appendChild(card);
+    });
+  });
+}
+
+window.updateOrderStatus = async (orderId, newStatus) => {
+  try {
+    await updateDoc(doc(db, "orders", orderId), { 
+      status: newStatus,
+      updatedAt: serverTimestamp()
+    });
+  } catch (e) { alert("狀態更新失敗"); }
+};
+
+init();
+</script>
+</body>
+</html>
