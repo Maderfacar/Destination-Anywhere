@@ -3,29 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DA 司機加盟申請</title>
+  <title>DA 司機控制台</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root { 
       --bg-color: #F2F2F7; --card-bg: #FFFFFF; --text-main: #1D1D1F; 
-      --text-sub: #86868B; --apple-blue: #0071E3; --apple-green: #34C759; --border: #D2D2D7;
+      --text-sub: #86868B; --apple-blue: #0071E3; --apple-green: #34C759; --apple-red: #FF3B30; --border: #D2D2D7;
     }
     body { background: var(--bg-color); color: var(--text-main); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; }
-    .section-title { font-weight: 700; margin: 20px 0 10px 5px; font-size: 17px; border-left: 4px solid var(--apple-blue); padding-left: 10px; }
-    .card { background: var(--card-bg); border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    
+    .section-title { font-weight: 700; margin: 20px 0 10px 5px; font-size: 17px; color: var(--text-main); border-left: 4px solid var(--apple-blue); padding-left: 10px; }
+    .card { background: var(--card-bg); border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05); }
+    
     .input-label { font-size: 11px; color: var(--text-sub); margin-bottom: 4px; display: block; font-weight: bold; }
-    input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 16px; box-sizing: border-box; background: #FAFAFA; margin-bottom: 12px; }
-    .btn { padding: 14px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 15px; width: 100%; }
+    input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 16px; box-sizing: border-box; background: #FAFAFA; margin-bottom: 12px; }
+    
+    .file-group { background: #F8F8F8; padding: 12px; border-radius: 10px; border: 1px dashed var(--border); margin-bottom: 12px; }
+    .file-group input[type="file"] { background: transparent; border: none; padding: 5px 0; font-size: 13px; margin-bottom: 0; }
+
+    .btn { padding: 14px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s; width: 100%; margin-top: 5px; }
     .btn-blue { background: var(--apple-blue); color: white; }
-    .file-input-group { margin-bottom: 15px; padding: 10px; background: #F9F9FB; border-radius: 10px; border: 1px dashed var(--border); }
+    .btn-blue:disabled { background: #A2A2A7; cursor: not-allowed; }
+    .btn-outline { background: white; border: 1.5px solid var(--apple-blue); color: var(--apple-blue); }
+    
+    .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
+    .btn-status { font-size: 13px; padding: 10px; background: #F2F2F7; color: #1D1D1F; border: 1px solid #D2D2D7; border-radius: 8px; cursor: pointer; }
+    .btn-status.active { background: var(--apple-green); color: white; border-color: var(--apple-green); }
+
+    .order-info { font-size: 14px; line-height: 1.6; border-bottom: 1px solid #EEE; padding-bottom: 10px; margin-bottom: 10px; }
     .hide { display: none !important; }
     #loading { text-align: center; padding-top: 100px; color: var(--text-sub); }
-    .upload-status { font-size: 12px; color: var(--apple-blue); margin-top: -8px; margin-bottom: 10px; display: block; }
   </style>
 </head>
 <body>
 
-<div id="loading">🚀 正在啟動 DA 系統...</div>
+<div id="loading">🚀 正在啟動 DA 司機系統...</div>
 
 <div id="section-register" class="hide">
   <div class="section-title">📝 司機加盟申請</div>
@@ -37,40 +49,66 @@
     <input type="tel" id="reg-phone" placeholder="09xx-xxx-xxx">
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-      <div><label class="input-label">車型 (例如: Camry)</label><input type="text" id="reg-model"></div>
+      <div><label class="input-label">車型 (例: Lexus ES)</label><input type="text" id="reg-model"></div>
       <div><label class="input-label">車色</label><input type="text" id="reg-color"></div>
     </div>
 
     <label class="input-label">車牌號碼</label>
-    <input type="text" id="reg-plate" placeholder="ABC-1234">
+    <input type="text" id="reg-plate" placeholder="例如: ABC-1234">
 
-    <div class="file-input-group">
-      <label class="input-label">🪪 上傳駕照 (照片/PDF)</label>
-      <input type="file" id="file-license" accept="image/*,.pdf">
-      <span id="status-license" class="upload-status"></span>
+    <div class="file-group">
+      <label class="input-label">🪪 駕照照片</label>
+      <input type="file" id="file-license" accept="image/*">
     </div>
 
-    <div class="file-input-group">
-      <label class="input-label">📄 上傳行照 (照片/PDF)</label>
-      <input type="file" id="file-registration" accept="image/*,.pdf">
-      <span id="status-registration" class="upload-status"></span>
+    <div class="file-group">
+      <label class="input-label">📄 行照照片</label>
+      <input type="file" id="file-registration" accept="image/*">
     </div>
 
-    <div class="file-input-group">
-      <label class="input-label">🛡️ 上傳保險證明 (照片/PDF)</label>
-      <input type="file" id="file-insurance" accept="image/*,.pdf">
-      <span id="status-insurance" class="upload-status"></span>
+    <div class="file-group">
+      <label class="input-label">🛡️ 保險證明照片</label>
+      <input type="file" id="file-insurance" accept="image/*">
     </div>
 
-    <button id="submit-btn" class="btn btn-blue" onclick="handleRegister()">送出加盟申請</button>
+    <button class="btn btn-blue" id="reg-submit" onclick="handleRegister()">送出加盟申請</button>
   </div>
+</div>
+
+<div id="section-pending" class="hide">
+  <div class="card" style="text-align: center; padding: 40px 20px;">
+    <div style="font-size: 48px; margin-bottom: 15px;">⌛</div>
+    <h3 style="margin: 0;">申請審核中</h3>
+    <p style="color: var(--text-sub); font-size: 14px;">您的證件與資料已提交。請靜候管理員核准，通過後即可開始接單。</p>
+    <button class="btn btn-outline" onclick="location.reload()" style="margin-top: 20px;">重新整理</button>
+  </div>
+</div>
+
+<div id="section-main" class="hide">
+  <div class="section-title">👤 司機與車輛資訊</div>
+  <div class="card">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <div><label class="input-label">姓名</label><input type="text" id="edit-name"></div>
+      <div><label class="input-label">車牌</label><input type="text" id="edit-plate"></div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <div><label class="input-label">車型</label><input type="text" id="edit-model"></div>
+      <div><label class="input-label">車色</label><input type="text" id="edit-color"></div>
+    </div>
+    <label class="input-label">手機號碼</label>
+    <input type="tel" id="edit-phone">
+    <button class="btn btn-outline" onclick="updateDriverProfile()" style="font-size: 13px; padding: 8px;">更新基本資料</button>
+  </div>
+
+  <div class="section-title">📅 我的派單行程</div>
+  <div id="orders-list"></div>
 </div>
 
 <script type="module">
 import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-// 引入 Firebase Storage 模組
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// 引入 Firebase Storage 用於上傳圖片
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const app = initializeApp(CONFIG.firebaseConfig);
@@ -80,81 +118,159 @@ let myUID = "";
 
 async function init() {
   try {
-    await liff.init({ liffId: CONFIG.LIFF_IDS.DRIVER });
+    const driverLiffId = CONFIG.LIFF_IDS ? CONFIG.LIFF_IDS.DRIVER : CONFIG.LIFF_ID;
+    await liff.init({ liffId: driverLiffId });
+    
     if (!liff.isLoggedIn()) { liff.login(); return; }
+
     const profile = await liff.getProfile();
     myUID = profile.userId;
     document.getElementById('loading').classList.add('hide');
 
     const drvSnap = await getDoc(doc(db, "drivers", myUID));
+
     if (!drvSnap.exists()) {
       document.getElementById('section-register').classList.remove('hide');
     } else {
-      // 依狀態顯示 Pending 或 Main 控制台... (省略，邏輯同前)
+      const drvData = drvSnap.data();
+      if (drvData.status === 'pending') {
+        document.getElementById('section-pending').classList.remove('hide');
+      } else if (drvData.status === 'approved') {
+        document.getElementById('section-main').classList.remove('hide');
+        loadDriverProfile(drvData);
+        loadMyOrders(drvData.name);
+      }
     }
-  } catch (err) { console.error(err); }
+  } catch (err) { 
+    console.error("Init Error:", err);
+    document.getElementById('loading').innerText = "系統初始化失敗。";
+  }
 }
 
-// 檔案上傳小工具
-async function uploadFile(file, folder) {
+// 輔助函式：上傳單一檔案到 Storage
+async function uploadToStorage(file, folderName) {
   if (!file) return null;
-  const fileName = `${myUID}_${Date.now()}_${file.name}`;
-  const storageRef = ref(storage, `driver_docs/${folder}/${fileName}`);
+  const storageRef = ref(storage, `drivers/${myUID}/${folderName}_${Date.now()}`);
   const snapshot = await uploadBytes(storageRef, file);
   return await getDownloadURL(snapshot.ref);
 }
 
 window.handleRegister = async () => {
-  const fields = {
-    name: document.getElementById('reg-name').value,
-    phone: document.getElementById('reg-phone').value,
-    model: document.getElementById('reg-model').value,
-    color: document.getElementById('reg-color').value,
-    plate: document.getElementById('reg-plate').value
-  };
+  const name = document.getElementById('reg-name').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const model = document.getElementById('reg-model').value.trim();
+  const color = document.getElementById('reg-color').value.trim();
+  const plate = document.getElementById('reg-plate').value.trim();
+  
+  const fileLic = document.getElementById('file-license').files[0];
+  const fileReg = document.getElementById('file-registration').files[0];
+  const fileIns = document.getElementById('file-insurance').files[0];
 
-  const files = {
-    license: document.getElementById('file-license').files[0],
-    registration: document.getElementById('file-registration').files[0],
-    insurance: document.getElementById('file-insurance').files[0]
-  };
-
-  if(!fields.name || !fields.plate || !files.license || !files.registration || !files.insurance) {
-    return alert("請填寫所有資訊並上傳必要證件照片");
+  if(!name || !phone || !plate || !fileLic || !fileReg || !fileIns) {
+    return alert("請填寫所有資料並上傳三項必要證件照片");
   }
 
-  const btn = document.getElementById('submit-btn');
-  btn.disabled = true;
-  btn.innerText = "檔案上傳中，請稍候...";
+  const submitBtn = document.getElementById('reg-submit');
+  submitBtn.disabled = true;
+  submitBtn.innerText = "正在上傳證件圖片...";
 
   try {
-    // 同步執行上傳
-    const [licenseUrl, regUrl, insUrl] = await Promise.all([
-      uploadFile(files.license, 'license'),
-      uploadFile(files.registration, 'registration'),
-      uploadFile(files.insurance, 'insurance')
+    // 同步執行三個上傳任務
+    const [urlLic, urlReg, urlIns] = await Promise.all([
+      uploadToStorage(fileLic, "license"),
+      uploadToStorage(fileReg, "registration"),
+      uploadToStorage(fileIns, "insurance")
     ]);
 
     await setDoc(doc(db, "drivers", myUID), {
-      ...fields,
-      uid: myUID,
-      docs: {
-        license: licenseUrl,
-        registration: regUrl,
-        insurance: insUrl
-      },
+      uid: myUID, 
+      name, phone, model, color, plate,
+      docUrls: { license: urlLic, registration: urlReg, insurance: urlIns },
       status: 'pending',
       createdAt: serverTimestamp()
     });
-
-    alert("申請成功，請等待審核");
+    
+    alert("資料提交成功，請靜候管理員審核");
     location.reload();
   } catch (e) {
     console.error(e);
-    alert("上傳失敗，請檢查網路或檔案格式");
-    btn.disabled = false;
-    btn.innerText = "送出加盟申請";
+    alert("提交失敗，請檢查網路連線或稍後再試");
+    submitBtn.disabled = false;
+    submitBtn.innerText = "送出加盟申請";
   }
+};
+
+function loadDriverProfile(data) {
+  document.getElementById('edit-name').value = data.name || "";
+  document.getElementById('edit-phone').value = data.phone || "";
+  document.getElementById('edit-plate').value = data.plate || "";
+  document.getElementById('edit-model').value = data.model || "";
+  document.getElementById('edit-color').value = data.color || "";
+}
+
+window.updateDriverProfile = async () => {
+  try {
+    await updateDoc(doc(db, "drivers", myUID), {
+      name: document.getElementById('edit-name').value,
+      phone: document.getElementById('edit-phone').value,
+      plate: document.getElementById('edit-plate').value,
+      model: document.getElementById('edit-model').value,
+      color: document.getElementById('edit-color').value
+    });
+    alert("資料已更新");
+  } catch (e) { alert("更新失敗"); }
+};
+
+function loadMyOrders(driverName) {
+  const q = query(collection(db, "orders"), where("driverName", "==", driverName));
+  onSnapshot(q, (snap) => {
+    const container = document.getElementById('orders-list');
+    container.innerHTML = snap.empty ? '<p style="text-align:center; color:#999; padding:20px;">目前尚無指派行程</p>' : '';
+    
+    snap.forEach(d => {
+      const ord = d.data();
+      const card = document.createElement('div');
+      card.className = 'card';
+      
+      const statusSteps = [
+        { key: 'dispatched', label: '🚗 前往中' },
+        { key: 'arrived', label: '📍 已抵達' },
+        { key: 'picked_up', label: '乘客上車' },
+        { key: 'completed', label: '🏁 行程結束' }
+      ];
+
+      const buttonsHtml = statusSteps.map(step => `
+        <button class="btn btn-status ${ord.status === step.key ? 'active' : ''}" 
+                onclick="updateOrderStatus('${d.id}', '${step.key}')">
+          ${step.label}
+        </button>
+      `).join('');
+
+      card.innerHTML = `
+        <div class="order-info">
+          <div style="font-weight:bold; color:var(--apple-blue); font-size:16px;">${ord.appointmentTime || '未定時間'}</div>
+          <div>👤 乘客：${ord.contactName || '匿名'}</div>
+          <div>📞 電話：<a href="tel:${ord.contactPhone}">${ord.contactPhone || '無'}</a></div>
+          <div style="margin-top:5px; padding:8px; background:#F8F8F8; border-radius:8px; font-size:13px;">
+            <div>🟢 起：${ord.pickupLocation || '未提供'}</div>
+            <div>🔴 終：${ord.dropoffLocation || '未提供'}</div>
+          </div>
+        </div>
+        <div class="input-label">回報訂單狀態</div>
+        <div class="status-grid">${buttonsHtml}</div>
+      `;
+      container.appendChild(card);
+    });
+  });
+}
+
+window.updateOrderStatus = async (orderId, newStatus) => {
+  try {
+    await updateDoc(doc(db, "orders", orderId), { 
+      status: newStatus,
+      updatedAt: serverTimestamp()
+    });
+  } catch (e) { alert("狀態更新失敗"); }
 };
 
 init();
