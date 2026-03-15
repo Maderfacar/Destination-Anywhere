@@ -8,58 +8,39 @@
   <link rel="stylesheet" href="style.css?v=1">
   
   <style>
-    /* 2. 僅保留此頁面專用的功能性樣式 */
-    .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #CCC; margin-bottom: 10px; }
-    
-    /* 頁籤系統 */
-    .tabs { display: flex; gap: 10px; margin: 15px 0; overflow-x: auto; padding-bottom: 5px; }
+    /* 管理頁面專用樣式 */
+    .header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #CCC; margin-bottom: 10px; }
+    .tabs { display: flex; gap: 10px; margin: 15px 0; overflow-x: auto; padding: 0 15px 5px; }
     .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 12px; background: #D2D2D7; font-weight: 600; cursor: pointer; transition: 0.3s; white-space: nowrap; }
     .tab-btn.active { background: var(--apple-blue); color: white; }
-    .panel { display: none; }
+    .panel { display: none; padding: 0 15px; }
     .panel.active { display: block; }
 
-    /* 訂單特有狀態與內容 */
     .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
     .badge { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; }
     .badge-pending { background: #FFF4E5; color: #FF9500; }
     .badge-done { background: #E5F9E5; color: var(--apple-green); }
 
     .info-summary { background: #F8F8F8; padding: 12px; border-radius: 12px; margin-bottom: 12px; font-size: 13px; line-height: 1.6; border: 1px solid #EEE; }
-    .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
-
-    /* 地址路線視覺 */
     .address-box { background: #F9F9FB; border-radius: 12px; padding: 12px; margin: 10px 0; border-left: 3px solid #DDD; }
     .address-box.pickup { border-left-color: var(--apple-green); }
     .address-box.dropoff { border-left-color: var(--apple-red); }
 
     .dispatch-zone { background: #F2F7FF; border-radius: 14px; padding: 15px; margin-top: 15px; border: 1px solid rgba(0,113,227,0.1); }
-    .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .driver-tag { display: inline-block; padding: 5px 10px; background: #EEE; border-radius: 20px; font-size: 12px; margin: 3px; }
     
-    .driver-tag { display: inline-block; padding: 5px 10px; background: #EEE; border-radius: 20px; font-size: 12px; margin: 3px; cursor: pointer; }
-    
-    /* 權限阻斷畫面 */
-    #access-denied { display: none; padding: 50px; text-align: center; }
-
-    /* 證件審核彈窗專用 */
-    #detail-modal {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
-      display: none; justify-content: center; align-items: center; z-index: 2000; padding: 20px;
-    }
-    .modal-content {
-      background: white; width: 100%; max-width: 450px; border-radius: 24px; 
-      max-height: 85vh; overflow-y: auto; padding: 25px; position: relative;
-    }
-    .modal-doc-img { width: 100%; border-radius: 12px; margin-top: 8px; border: 1px solid #DDD; cursor: zoom-in; }
-    .doc-label { font-size: 12px; font-weight: bold; color: var(--text-sub); margin-top: 12px; display: block; }
+    #loading-screen { padding: 50px; text-align: center; color: #666; }
   </style>
 </head>
 
 <body>
 
+<div id="loading-screen">身分驗證中...</div>
+
 <div id="admin-content" style="display:none;">
   <div class="header">
     <div style="font-weight:bold; font-size:20px;">DA 管理中樞</div>
-    <button onclick="location.href='index.html'" style="background:none; border:1px solid #666; padding:6px 14px; border-radius:20px; font-size:12px;">返回首頁</button>
+    <button onclick="location.href='index.html'" class="btn btn-outline" style="width:auto; padding:5px 15px;">返回首頁</button>
   </div>
 
   <div class="tabs">
@@ -70,43 +51,29 @@
 
   <div id="panel-dispatch" class="panel active">
       <div class="section-title">📇 已核准司機庫</div>
-      <div class="card">
-        <div id="driver-tags-area"></div>
-      </div>
+      <div class="card"><div id="driver-tags-area">讀取中...</div></div>
       <div class="section-title">🚗 訂單詳細調度</div>
-      <div id="orders-container"><div id="loading">讀取中...</div></div>
+      <div id="orders-container">讀取中...</div>
   </div>
 
   <div id="panel-verify" class="panel">
       <div class="section-title">⌛ 待審核申請</div>
-      <div id="pending-drivers-list">
-          <div style="text-align:center; padding:50px; color:#999;">暫無新申請</div>
-      </div>
+      <div id="pending-drivers-list"></div>
   </div>
 
   <div id="panel-design" class="panel">
       <div class="section-title">🖼️ 首頁視覺設定</div>
       <div class="card">
-        <div style="margin-bottom: 15px;">
-          <label class="input-label">首頁副標題 (Hero Sub)</label>
-          <input type="text" id="edit-hero-sub">
-        </div>
-        <div style="margin-bottom: 15px;">
-          <label class="input-label">預約卡片標題</label>
-          <input type="text" id="edit-booking-title">
-          <label class="input-label" style="margin-top:8px;">預約背景圖網址</label>
-          <input type="text" id="edit-booking-bg">
-        </div>
-        <div style="margin-bottom: 15px;">
-          <label class="input-label">行程規劃背景圖網址</label>
-          <input type="text" id="edit-itinerary-bg">
-        </div>
-        <button class="btn btn-blue" onclick="saveDesignSettings()">💾 儲存設定並同步首頁</button>
+        <label class="input-label">首頁副標題</label>
+        <input type="text" id="edit-hero-sub" class="input-field" placeholder="例如：專業接送服務">
+        
+        <label class="input-label" style="margin-top:15px;">預約卡片標題</label>
+        <input type="text" id="edit-booking-title" class="input-field" placeholder="例如：現在預約接機">
+        
+        <button class="btn btn-blue" style="margin-top:20px;" onclick="saveDesignSettings()">💾 儲存設定並同步</button>
       </div>
   </div>
 </div>
-
-... (此處與您原本 HTML 結構相同) ...
 
 <script type="module">
   import { db, CONFIG } from './firebase-config.js?v=1';
@@ -115,32 +82,47 @@
   let approvedDrivers = [];
 
   async function init() {
-    await liff.init({ liffId: CONFIG.LIFF_ID });
-    if (!liff.isLoggedIn()) { liff.login(); return; }
-    const profile = await liff.getProfile();
-    if (!CONFIG.ADMIN_UIDS.includes(profile.userId)) {
-      document.body.innerHTML = '<h2 style="padding:50px; text-align:center;">權限不足</h2>';
-      return;
+    try {
+      await liff.init({ liffId: CONFIG.LIFF_ID });
+      if (!liff.isLoggedIn()) { liff.login(); return; }
+      
+      const profile = await liff.getProfile();
+      
+      // 權限檢查
+      if (!CONFIG.ADMIN_UIDS.includes(profile.userId)) {
+        document.getElementById('loading-screen').innerHTML = '<h2>⚠️ 權限不足</h2><p>此帳號無管理權限</p>';
+        return;
+      }
+
+      // 驗證成功，移除載入文字並顯示主內容
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('admin-content').style.display = 'block';
+      
+      loadOrders();
+      loadApprovedDrivers();
+    } catch (err) {
+      console.error("初始化失敗:", err);
+      document.getElementById('loading-screen').innerHTML = '服務初始化失敗，請在 LINE 中開啟';
     }
-    loadOrders();
-    loadApprovedDrivers();
   }
 
-  // 1. 頁籤邏輯
+  // 頁籤切換邏輯
   window.switchTab = (target, btn) => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById(`panel-${target}`).classList.add('active');
+    
     if(target === 'verify') loadPendingDrivers();
+    if(target === 'design') loadCurrentDesign();
   };
 
-  // 2. 訂單管理
+  // 載入訂單
   window.loadOrders = () => {
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snap) => {
       const container = document.getElementById('orders-container');
-      container.innerHTML = snap.empty ? '暫無訂單' : '';
+      container.innerHTML = snap.empty ? '<div class="card">目前沒有訂單</div>' : '';
       snap.forEach(d => {
         const ord = d.data();
         const card = document.createElement('div');
@@ -150,12 +132,15 @@
             <b>${ord.tripType}</b>
             <span class="badge ${ord.status==='pending'?'badge-pending':'badge-done'}">${ord.status}</span>
           </div>
-          <div class="info-summary">${ord.appointmentTime}<br>👤 ${ord.contactName}</div>
+          <div class="info-summary">
+            時間：${ord.appointmentTime}<br>
+            客戶：${ord.contactName} (${ord.contactPhone})
+          </div>
           <div class="address-box pickup">🟢 ${ord.pickupLocation}</div>
           <div class="address-box dropoff">🔴 ${ord.dropoffLocation}</div>
           <div class="dispatch-zone">
-            <label class="input-label">指派司機：${ord.driverName || '未指派'}</label>
-            <select onchange="assignDriver('${d.id}', this.value)" style="width:100%; padding:8px; border-radius:8px;">
+            <label class="input-label">指派司機：${ord.driverName || '尚未指派'}</label>
+            <select onchange="assignDriver('${d.id}', this.value)" class="input-field" style="margin-top:8px;">
               <option value="">-- 選擇司機 --</option>
               ${approvedDrivers.map(drv => `<option value="${drv.name}" ${ord.driverName===drv.name?'selected':''}>${drv.name} (${drv.plate})</option>`).join('')}
             </select>
@@ -166,7 +151,7 @@
     });
   };
 
-  // 3. 司機審核邏輯
+  // 載入司機庫
   window.loadApprovedDrivers = () => {
     const q = query(collection(db, "drivers"), where("status", "==", "approved"));
     onSnapshot(q, (snap) => {
@@ -178,57 +163,72 @@
         approvedDrivers.push(drv);
         area.innerHTML += `<span class="driver-tag">${drv.name} (${drv.plate})</span>`;
       });
+      loadOrders(); // 司機更新後重新渲染訂單下拉選單
     });
   };
 
+  // 執行派車
   window.assignDriver = async (orderId, driverName) => {
     if(!driverName) return;
-    await updateDoc(doc(db, "orders", orderId), { driverName, status: 'dispatched' });
-    alert("指派成功");
+    try {
+      await updateDoc(doc(db, "orders", orderId), { 
+        driverName: driverName, 
+        status: 'dispatched' 
+      });
+      alert("指派成功");
+    } catch (e) {
+      alert("指派失敗: " + e.message);
+    }
   };
 
-  // 4. 首頁裝修邏輯
-  window.saveDesignSettings = async () => {
-    await setDoc(doc(db, "siteConfig", "homePage"), {
-      hero: { sub: document.getElementById('edit-hero-sub').value },
-      booking: { title: document.getElementById('edit-booking-title').value }
-    }, { merge: true });
-    alert("同步成功");
-  };
-
-// 補上遺漏的審核與設計加載邏輯
-window.loadPendingDrivers = () => {
-  const q = query(collection(db, "drivers"), where("status", "==", "pending"));
-  onSnapshot(q, (snap) => {
-    const list = document.getElementById('pending-drivers-list');
-    list.innerHTML = snap.empty ? '<div style="text-align:center; padding:50px; color:#999;">暫無新申請</div>' : '';
-    snap.forEach(d => {
-      const drv = d.data();
-      const div = document.createElement('div');
-      div.className = 'card';
-      div.innerHTML = `
-        <b>${drv.name}</b> (${drv.plate})<br>
-        <button class="btn btn-blue" style="margin-top:10px;" onclick="approveDriver('${d.id}')">核准加入</button>
-      `;
-      list.appendChild(div);
+  // 載入待審核司機
+  window.loadPendingDrivers = () => {
+    const q = query(collection(db, "drivers"), where("status", "==", "pending"));
+    onSnapshot(q, (snap) => {
+      const list = document.getElementById('pending-drivers-list');
+      list.innerHTML = snap.empty ? '<div class="card" style="text-align:center; color:#999;">暫無新申請</div>' : '';
+      snap.forEach(d => {
+        const drv = d.data();
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+          <b>${drv.name}</b><br>
+          車牌：${drv.plate} | 電話：${drv.phone}<br>
+          <button class="btn btn-blue" style="margin-top:10px;" onclick="approveDriver('${d.id}')">核准加入</button>
+        `;
+        list.appendChild(div);
+      });
     });
-  });
-};
+  };
 
-window.approveDriver = async (id) => {
-  await updateDoc(doc(db, "drivers", id), { status: 'approved' });
-  alert("已核准司機");
-};
+  window.approveDriver = async (id) => {
+    await updateDoc(doc(db, "drivers", id), { status: 'approved' });
+    alert("司機已核准");
+  };
 
-window.loadCurrentDesign = async () => {
-  const docSnap = await getDoc(doc(db, "siteConfig", "homePage"));
-  if (docSnap.exists()) {
-    const data = docSnap.data();
-    if(data.hero?.sub) document.getElementById('edit-hero-sub').value = data.hero.sub;
-    if(data.booking?.title) document.getElementById('edit-booking-title').value = data.booking.title;
-  }
-};
-  
+  // 讀取目前首頁設計
+  window.loadCurrentDesign = async () => {
+    const docSnap = await getDoc(doc(db, "siteConfig", "homePage"));
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if(data.hero?.sub) document.getElementById('edit-hero-sub').value = data.hero.sub;
+      if(data.booking?.title) document.getElementById('edit-booking-title').value = data.booking.title;
+    }
+  };
+
+  // 儲存設計
+  window.saveDesignSettings = async () => {
+    try {
+      await setDoc(doc(db, "siteConfig", "homePage"), {
+        hero: { sub: document.getElementById('edit-hero-sub').value },
+        booking: { title: document.getElementById('edit-booking-title').value }
+      }, { merge: true });
+      alert("首頁同步成功");
+    } catch (e) {
+      alert("儲存失敗: " + e.message);
+    }
+  };
+
   init();
 </script>
 </body>
