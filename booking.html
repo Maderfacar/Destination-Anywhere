@@ -213,9 +213,15 @@ window.sendRequest = async () => {
     };
 
     await Promise.all([
-      addDoc(collection(db, "orders"), orderData),
-      fetch(CONFIG.webhooks.newOrder, { method: "POST", body: JSON.stringify(orderData) })
-    ]);
+    addDoc(collection(db, "orders"), orderData),
+    fetch(CONFIG.webhooks.newOrder, { 
+        method: "POST", 
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(orderData) 
+    })
+]);
 
     alert("✅ 預約已送出！我們會盡快為您安排");
     if (window.parent && window.parent.closeBooking) {
