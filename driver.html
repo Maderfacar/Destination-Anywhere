@@ -91,8 +91,11 @@
 </div>
 
 <script type="module">
-import { CONFIG } from './config.js?v=3';
+// 🔴 加入 ?v=5 確保快取清除
+import { CONFIG } from './config.js?v=5';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+// 新增 App Check 模組
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
@@ -101,15 +104,24 @@ let db, storage, myUID;
 
 async function init() {
   try {
-    const driverLiffId = CONFIG.LIFF_IDS ? CONFIG.LIFF_IDS.DRIVER : CONFIG.LIFF_ID;
+    // 1. 取得司機端專用的 LIFF ID (優先判斷 CONFIG.LIFF_IDS.DRIVER)
+    const driverLiffId = (CONFIG.LIFF_IDS && CONFIG.LIFF_IDS.DRIVER) ? CONFIG.LIFF_IDS.DRIVER : CONFIG.LIFF_ID;
+    
     await liff.init({ liffId: driverLiffId });
     if (!liff.isLoggedIn()) { liff.login(); return; }
 
     const profile = await liff.getProfile();
     myUID = profile.userId;
 
-    // 初始化 Firebase 實例
+    // 2. 初始化 Firebase 實例
     const app = initializeApp(CONFIG.firebaseConfig);
+
+    // 3. 初始化 App Check 防禦
+    const appCheck = initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(CONFIG.appCheckSiteKey),
+      isTokenAutoRefreshEnabled: true
+    });
+
     db = getFirestore(app);
     storage = getStorage(app);
 
