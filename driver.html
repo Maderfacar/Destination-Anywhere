@@ -86,7 +86,9 @@ let myName = "";
 
 async function init() {
   try {
-    await liff.init({ liffId: CONFIG.LIFF_ID });
+    // 🔴 關鍵更新：使用司機專屬的 LIFF ID
+    await liff.init({ liffId: CONFIG.LIFF_IDS.DRIVER });
+    
     if (!liff.isLoggedIn()) { liff.login(); return; }
 
     const profile = await liff.getProfile();
@@ -196,7 +198,6 @@ window.updateOrderStatus = async (orderId, newStatus) => {
       status: newStatus,
       updatedAt: serverTimestamp()
     });
-    // 如果想要更高級，可以在這裡加入通知 Make.com 的 fetch 訊號
   } catch (e) { alert("更新失敗"); }
 };
 
