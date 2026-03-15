@@ -15,7 +15,13 @@ export const CONFIG = {
     "U84c34631256a829d5fd8dceed8bd38f3"  // 33
   ],
 
-  // 3. LINE 平台設定
+  // 3. LINE 平台設定 (分流乘客與司機入口)
+  LIFF_IDS: {
+    PASSENGER: "2009434590-UHOSSHQI", // 預約首頁使用
+    DRIVER: "2009434590-3t2KvScf"    // 司機註冊與接單中心使用
+  },
+
+  // 為了兼容舊有代碼，保留單一 LIFF_ID 變數 (預設指向首頁)
   LIFF_ID: "2009434590-UHOSSHQI",
 
   // 4. 自動化接點 (Webhook)
