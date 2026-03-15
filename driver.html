@@ -5,28 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DA 司機控制台</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  
   <link rel="stylesheet" href="style.css?v=1">
-
   <style>
-    /* 2. 僅保留司機端特有的功能性樣式 */
     .file-group { 
       background: #F8F8F8; padding: 12px; border-radius: 12px; 
-      border: 1px dashed var(--border); margin-bottom: 12px; 
+      border: 1px dashed #DDD; margin-bottom: 12px; 
     }
     .file-group input[type="file"] { background: transparent; border: none; padding: 5px 0; font-size: 13px; margin-bottom: 0; }
-
-    /* 訂單狀態回報按鈕組 */
     .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
     .btn-status { 
-      font-size: 13px; padding: 12px; background: #F2F2F7; color: var(--text-main); 
-      border: 1px solid var(--border); border-radius: 12px; cursor: pointer; transition: 0.2s;
+      font-size: 13px; padding: 12px; background: #F2F2F7; color: #000; 
+      border: 1px solid #DDD; border-radius: 12px; cursor: pointer; transition: 0.2s;
     }
-    .btn-status.active { background: var(--apple-green); color: white; border-color: var(--apple-green); font-weight: bold; }
-
+    .btn-status.active { background: #34C759; color: white; border-color: #34C759; font-weight: bold; }
     .order-info-box { font-size: 14px; line-height: 1.6; border-bottom: 1px solid #EEE; padding-bottom: 12px; margin-bottom: 12px; }
-    
-    #loading { text-align: center; padding-top: 100px; color: var(--text-sub); }
+    #loading { text-align: center; padding-top: 100px; color: #8E8E93; }
     .hide { display: none !important; }
   </style>
 </head>
@@ -39,15 +32,12 @@
   <div class="card">
     <label class="input-label">真實姓名</label>
     <input type="text" id="reg-name" placeholder="請輸入姓名">
-    
     <label class="input-label">手機號碼</label>
     <input type="tel" id="reg-phone" placeholder="09xx-xxx-xxx">
-    
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
       <div><label class="input-label">車型</label><input type="text" id="reg-model" placeholder="例: Lexus ES"></div>
       <div><label class="input-label">車色</label><input type="text" id="reg-color" placeholder="顏色"></div>
     </div>
-    
     <label class="input-label">車牌號碼</label>
     <input type="text" id="reg-plate" placeholder="例如: ABC-1234">
     
@@ -59,11 +49,6 @@
       <label class="input-label">📄 行照照片</label>
       <input type="file" id="file-registration" accept="image/*">
     </div>
-    <div class="file-group">
-      <label class="input-label">🛡️ 保險證明照片</label>
-      <input type="file" id="file-insurance" accept="image/*">
-    </div>
-    
     <button class="btn btn-blue" id="reg-submit" onclick="handleRegister()">送出加盟申請</button>
   </div>
 </div>
@@ -71,26 +56,17 @@
 <div id="section-pending" class="hide" style="padding: 15px;">
   <div class="card" style="text-align: center; padding: 50px 20px;">
     <div style="font-size: 48px; margin-bottom: 15px;">⌛</div>
-    <h3 style="margin: 0;">申請審核中</h3>
-    <p style="color: var(--text-sub); font-size: 14px; margin-top: 10px;">資料已提交，請靜候管理員核准。</p>
+    <h3>申請審核中</h3>
+    <p style="color: #8E8E93; font-size: 14px; margin-top: 10px;">資料已提交，請靜候管理員核准。</p>
     <button class="btn btn-outline" onclick="location.reload()" style="margin-top: 25px;">重新整理狀態</button>
   </div>
 </div>
 
 <div id="section-main" class="hide" style="padding: 15px;">
-  <div class="section-title">👤 司機與車輛資訊</div>
+  <div class="section-title">👤 司機資訊</div>
   <div class="card">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-      <div><label class="input-label">姓名</label><input type="text" id="edit-name"></div>
-      <div><label class="input-label">車牌</label><input type="text" id="edit-plate"></div>
-    </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-      <div><label class="input-label">車型</label><input type="text" id="edit-model"></div>
-      <div><label class="input-label">車色</label><input type="text" id="edit-color"></div>
-    </div>
-    <label class="input-label">手機號碼</label>
-    <input type="tel" id="edit-phone">
-    <button class="btn btn-outline" onclick="updateDriverProfile()" style="font-size: 13px; padding: 10px;">儲存變更資料</button>
+    <div style="font-weight: bold; font-size: 18px;" id="disp-name">載入中...</div>
+    <div style="color: #666; font-size: 14px; margin-top: 5px;" id="disp-car">車牌載入中...</div>
   </div>
 
   <div class="section-title">📅 我的派單行程</div>
@@ -98,21 +74,128 @@
 </div>
 
 <script type="module">
-  // 告知：引入 storage，這樣上傳邏輯就能直接運作
   import { db, storage, CONFIG } from './firebase-config.js?v=1';
   import { doc, getDoc, setDoc, updateDoc, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
   import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-  let myUID;
+  let myUID = "";
+  let driverData = null;
+
   async function init() {
     try {
-      const driverLiffId = (CONFIG.LIFF_IDS && CONFIG.LIFF_IDS.DRIVER) ? CONFIG.LIFF_IDS.DRIVER : CONFIG.LIFF_ID;
-      await liff.init({ liffId: driverLiffId });
+      await liff.init({ liffId: CONFIG.LIFF_ID });
       if (!liff.isLoggedIn()) { liff.login(); return; }
-      // ... 其餘判斷註冊狀態邏輯 ...
-    } catch (err) { /* 錯誤處理 */ }
+      
+      const profile = await liff.getProfile();
+      myUID = profile.userId;
+      
+      const docSnap = await getDoc(doc(db, "drivers", myUID));
+      document.getElementById('loading').classList.add('hide');
+
+      if (!docSnap.exists()) {
+        document.getElementById('section-register').classList.remove('hide');
+      } else {
+        driverData = docSnap.data();
+        if (driverData.status === 'pending') {
+          document.getElementById('section-pending').classList.remove('hide');
+        } else if (driverData.status === 'approved') {
+          showMainUI();
+        }
+      }
+    } catch (err) {
+      alert("初始化失敗: " + err.message);
+    }
   }
-  // ... 其餘 handleRegister, uploadToStorage 邏輯 ...
+
+  function showMainUI() {
+    document.getElementById('section-main').classList.remove('hide');
+    document.getElementById('disp-name').innerText = driverData.name;
+    document.getElementById('disp-car').innerText = `${driverData.plate} (${driverData.model})`;
+    loadMyOrders();
+  }
+
+  // 1. 處理註冊
+  window.handleRegister = async () => {
+    const name = document.getElementById('reg-name').value;
+    const phone = document.getElementById('reg-phone').value;
+    const plate = document.getElementById('reg-plate').value;
+    const model = document.getElementById('reg-model').value;
+    
+    if (!name || !phone || !plate) { alert("請填寫完整資訊"); return; }
+    
+    const btn = document.getElementById('reg-submit');
+    btn.disabled = true;
+    btn.innerText = "上傳檔案中...";
+
+    try {
+      // 處理圖片上傳 (如果有選擇檔案)
+      let licenseUrl = "";
+      const fileInput = document.getElementById('file-license');
+      if (fileInput.files[0]) {
+        const storageRef = ref(storage, `drivers/${myUID}/license`);
+        await uploadBytes(storageRef, fileInput.files[0]);
+        licenseUrl = await getDownloadURL(storageRef);
+      }
+
+      await setDoc(doc(db, "drivers", myUID), {
+        name, phone, plate, model,
+        color: document.getElementById('reg-color').value,
+        licenseImg: licenseUrl,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      });
+
+      alert("申請已送出！");
+      location.reload();
+    } catch (e) {
+      alert("提交失敗: " + e.message);
+      btn.disabled = false;
+    }
+  };
+
+  // 2. 載入屬於該司機的訂單
+  function loadMyOrders() {
+    const q = query(collection(db, "orders"), where("driverName", "==", driverData.name));
+    onSnapshot(q, (snap) => {
+      const container = document.getElementById('orders-list');
+      container.innerHTML = snap.empty ? '<div class="card">目前尚無派單</div>' : '';
+      
+      snap.forEach(d => {
+        const ord = d.data();
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="order-info-box">
+            <b style="color:#0071E3;">${ord.tripType}</b><br>
+            📅 時間：${ord.appointmentTime}<br>
+            👤 客戶：${ord.contactName} (${ord.contactPhone})<br>
+            🟢 起點：${ord.pickupLocation}<br>
+            🔴 終點：${ord.dropoffLocation}
+          </div>
+          <div class="status-grid">
+            <button class="btn-status ${ord.driverStatus==='onWay'?'active':''}" onclick="updateOrderStatus('${d.id}', 'onWay')">前往中</button>
+            <button class="btn-status ${ord.driverStatus==='arrived'?'active':''}" onclick="updateOrderStatus('${d.id}', 'arrived')">已抵達</button>
+            <button class="btn-status ${ord.driverStatus==='started'?'active':''}" onclick="updateOrderStatus('${d.id}', 'started')">行程開始</button>
+            <button class="btn-status ${ord.driverStatus==='completed'?'active':''}" onclick="updateOrderStatus('${d.id}', 'completed')">行程結束</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    });
+  }
+
+  // 3. 更新行程狀態
+  window.updateOrderStatus = async (orderId, status) => {
+    try {
+      await updateDoc(doc(db, "orders", orderId), { 
+        driverStatus: status,
+        lastUpdate: serverTimestamp()
+      });
+    } catch (e) {
+      alert("更新失敗");
+    }
+  };
+
   init();
 </script>
 </body>
