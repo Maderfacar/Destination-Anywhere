@@ -5,27 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>預約接送 | Destination Anywhere</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  
   <link rel="stylesheet" href="style.css?v=1">
 
   <style>
-    /* 2. 僅保留 Booking 頁面特有的邏輯樣式 */
+    /* Booking 頁面特有樣式 */
     .tabs { display: flex; background: #E3E3E6; border-radius: 12px; padding: 3px; margin-bottom: 15px; }
-    .tab-btn { flex: 1; border: none; padding: 10px 0; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-sub); transition: 0.2s; }
-    .tab-btn.active { background: white; color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .tab-btn { flex: 1; border: none; padding: 10px 0; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: #8E8E93; transition: 0.2s; }
+    .tab-btn.active { background: white; color: #000; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
     .input-row { display: flex; align-items: center; margin-bottom: 12px; gap: 10px; border-bottom: 1px solid #F2F2F7; padding-bottom: 8px; }
     .label-txt { width: 80px; font-size: 14px; font-weight: 600; color: #48484A; }
-    .main-input { flex: 1; border: none; padding: 8px 0; font-size: 16px; background: transparent; color: var(--text-main); outline: none; }
+    .main-input { flex: 1; border: none; padding: 8px 0; font-size: 16px; background: transparent; color: #000; outline: none; }
 
     .datetime-container { display: flex; gap: 10px; }
+    .datetime-container input { flex: 1; padding: 10px; border: 1px solid #EEE; border-radius: 8px; }
     
-    /* 計數器專用 */
     .counter-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .counter-ctrl { display: flex; align-items: center; gap: 15px; }
-    .ctrl-btn { background: #E3E3E6; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; color: var(--apple-blue); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .ctrl-btn { background: #E3E3E6; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; color: #0071E3; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     
-    .delete-btn { color: var(--apple-red); font-size: 12px; border: 1px solid var(--apple-red); padding: 2px 6px; border-radius: 6px; cursor: pointer; }
+    .delete-btn { color: #FF3B30; font-size: 12px; border: 1px solid #FF3B30; padding: 2px 6px; border-radius: 6px; cursor: pointer; margin-left: auto; }
   </style>
 </head>
 <body>
@@ -54,15 +53,15 @@
     <div id="flight-section">
       <div class="input-row">
         <span class="label-txt">航班號碼</span>
-        <input type="text" id="flight-no" class="main-input" placeholder="例如: BR198" oninput="renderStops()">
+        <input type="text" id="flight-no" class="main-input" placeholder="例如: BR198">
       </div>
     </div>
     <div id="stops-list"></div>
   </div>
-  <div style="text-align:center; color:var(--apple-blue); font-size:13px; font-weight:600; padding-top:10px; cursor:pointer;" onclick="addNewStop()">+ 新增停靠點</div>
+  <div style="text-align:center; color:#0071E3; font-size:13px; font-weight:600; padding-top:10px; cursor:pointer;" onclick="addNewStop()">+ 新增停靠點</div>
 </div>
 
-<div class="section-title">⏰ 預預約時間</div>
+<div class="section-title">⏰ 預約時間</div>
 <div class="card datetime-container">
   <input type="date" id="order-date">
   <input type="time" id="order-time">
@@ -79,7 +78,7 @@
 
 <div class="section-title">📝 備註</div>
 <div class="card">
-  <textarea id="order-note" rows="2" placeholder="特殊需求（例如：兒童安全座椅、寵物、多點上車地點說明...）"></textarea>
+  <textarea id="order-note" rows="2" placeholder="特殊需求（例如：安全座椅、多點上車說明...）" style="width:100%; border:none; outline:none; font-family:inherit; font-size:14px;"></textarea>
 </div>
 
 <div style="padding: 10px 0 30px;">
@@ -87,12 +86,11 @@
 </div>
 
 <script type="module">
-  // 告知：db 與 CONFIG 統一由外部管理
   import { db, CONFIG } from './firebase-config.js?v=1';
   import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   let currentMode = '送機';
-  let midStops = [];
+  let stops = [{ id: Date.now(), address: '', type: '起點' }, { id: Date.now()+1, address: '', type: '終點' }];
   let userProfile = null;
 
   async function init() {
@@ -102,10 +100,115 @@
         userProfile = await liff.getProfile();
         document.getElementById('contact-name').value = userProfile.displayName;
       }
-      renderStops();
-    } catch (e) { renderStops(); }
+    } catch (e) { console.log("LIFF Init Failed"); }
+    renderStops();
   }
-  // ... 其餘 renderStops, sendRequest 等邏輯保持不變 ...
+
+  // 1. 切換模式
+  window.switchTab = (mode, btn) => {
+    currentMode = mode;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    // 如果是交通趟或包車，隱藏航班資訊
+    document.getElementById('flight-section').style.display = (mode === '送機' || mode === '接機') ? 'block' : 'none';
+    
+    // 根據模式預設站點名稱
+    if(mode === '送機') { stops[0].type='起點'; stops[stops.length-1].type='機場'; }
+    else if(mode === '接機') { stops[0].type='機場'; stops[stops.length-1].type='目的地'; }
+    else { stops[0].type='起點'; stops[stops.length-1].type='目的地'; }
+    
+    renderStops();
+  }
+
+  // 2. 數量增減
+  window.qty = (id, change) => {
+    let el = document.getElementById(id);
+    let val = parseInt(el.innerText) + change;
+    if (val < 0) val = 0;
+    el.innerText = val;
+  }
+
+  // 3. 站點管理
+  window.renderStops = () => {
+    const list = document.getElementById('stops-list');
+    list.innerHTML = '';
+    stops.forEach((stop, index) => {
+      const isRemovable = index !== 0 && index !== stops.length - 1;
+      const div = document.createElement('div');
+      div.className = 'input-row';
+      div.innerHTML = `
+        <span class="label-txt">${stop.type}</span>
+        <input type="text" class="main-input" placeholder="請輸入地址" value="${stop.address}" oninput="updateStop(${index}, this.value)">
+        ${isRemovable ? `<span class="delete-btn" onclick="removeStop(${index})">刪除</span>` : ''}
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  window.updateStop = (index, value) => { stops[index].address = value; }
+
+  window.addNewStop = () => {
+    const newStop = { id: Date.now(), address: '', type: '停靠點' };
+    stops.splice(stops.length - 1, 0, newStop);
+    renderStops();
+  }
+
+  window.removeStop = (index) => {
+    stops.splice(index, 1);
+    renderStops();
+  }
+
+  // 4. 送出預約
+  window.sendRequest = async () => {
+    const btn = document.getElementById('submit-btn');
+    const name = document.getElementById('contact-name').value;
+    const phone = document.getElementById('contact-phone').value;
+    const date = document.getElementById('order-date').value;
+    const time = document.getElementById('order-time').value;
+
+    if (!name || !phone || !date || !time || stops[0].address === '' || stops[stops.length-1].address === '') {
+      alert("請填寫完整聯絡資訊、時間及起訖地點");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "處理中...";
+
+    const orderData = {
+      userId: userProfile?.userId || 'anonymous',
+      contactName: name,
+      contactPhone: phone,
+      tripType: currentMode,
+      flightNo: document.getElementById('flight-no').value,
+      appointmentTime: `${date} ${time}`,
+      pickupLocation: stops[0].address,
+      dropoffLocation: stops[stops.length-1].address,
+      midStops: stops.slice(1, -1).map(s => s.address),
+      passengers: {
+        adult: document.getElementById('adult-count').innerText,
+        child: document.getElementById('child-count').innerText
+      },
+      luggage: {
+        large: document.getElementById('l-luggage').innerText,
+        small: document.getElementById('s-luggage').innerText
+      },
+      note: document.getElementById('order-note').value,
+      status: 'pending',
+      createdAt: serverTimestamp()
+    };
+
+    try {
+      await addDoc(collection(db, "orders"), orderData);
+      alert("預約已送出！管理員將盡快與您聯繫。");
+      liff.closeWindow();
+    } catch (e) {
+      alert("發生錯誤，請稍後再試: " + e.message);
+      btn.disabled = false;
+      btn.innerText = "確認預約";
+    }
+  }
+
   init();
 </script>
 </body>
