@@ -78,7 +78,6 @@
       overflow: hidden;
     }
 
-    /* 確保文字在背景圖上清晰 */
     .bento-content { position: relative; z-index: 2; }
     .bento-overlay { 
       position: absolute; inset: 0; 
@@ -225,7 +224,6 @@
 
   <script type="module">
     import { CONFIG } from './config.js';
-    // 引入 Firebase 必要的模組來進行視覺同步
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -233,10 +231,28 @@
     const db = getFirestore(app);
 
     async function init() {
+      // --- 🔴 防呆跳轉邏輯開始 ---
+      // 取得網址列中的 LIFF ID 參數
+      const urlParams = new URLSearchParams(window.location.search);
+      const currentLiffId = urlParams.get('liffId') || "";
+      
+      // 如果目前的網址或進入點符合司機的 LIFF ID，立刻跳轉
+      if (window.location.href.includes("2009434590-3t2KvScf") || currentLiffId === "2009434590-3t2KvScf") {
+          window.location.replace("driver.html");
+          return;
+      }
+      // --- 🔴 防呆跳轉邏輯結束 ---
+
       try {
         await liff.init({ liffId: CONFIG.LIFF_ID });
         if (!liff.isLoggedIn()) { liff.login(); return; }
         
+        // 額外檢查：如果 init 完發現 ID 確實是司機的，再次強化跳轉
+        if (liff.getLiffId() === "2009434590-3t2KvScf") {
+            window.location.replace("driver.html");
+            return;
+        }
+
         const p = await liff.getProfile();
         document.getElementById('display-id').innerText = "ID: " + p.userId;
         document.getElementById('user-name').innerText = p.displayName;
@@ -247,9 +263,7 @@
           document.getElementById('admin-btn').style.display = 'block';
         }
 
-        // --- 同步 Firebase 裝修設定 ---
         syncDesign();
-
       } catch (e) { 
         console.error(e); 
         document.getElementById('display-id').innerText = "系統初始化失敗";
@@ -261,10 +275,8 @@
         const docSnap = await getDoc(doc(db, "siteConfig", "homePage"));
         if (docSnap.exists()) {
           const data = docSnap.data();
-          // 更新 Hero 副標題
           if (data.hero?.sub) document.getElementById('hero-sub').innerText = data.hero.sub;
           
-          // 更新預約卡片
           const bBooking = document.getElementById('btn-booking');
           if (data.bento_booking?.title) document.getElementById('txt-booking-title').innerText = data.bento_booking.title;
           if (data.bento_booking?.bgUrl) {
@@ -272,7 +284,6 @@
             bBooking.classList.add('has-bg');
           }
 
-          // 更新行程規劃卡片
           const bItin = document.getElementById('btn-itinerary');
           if (data.bento_itinerary?.bgUrl) {
             bItin.style.backgroundImage = `url('${data.bento_itinerary.bgUrl}')`;
