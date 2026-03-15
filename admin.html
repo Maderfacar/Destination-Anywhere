@@ -139,9 +139,20 @@
 <script type="module">
 import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+// 新增 App Check 核心模組
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, setDoc, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// 1. 初始化 Firebase App
 const app = initializeApp(CONFIG.firebaseConfig);
+
+// 2. 初始化 App Check
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider('6Ld6YIssAAAAAJQu3JbvVbdHpoXDnH77u43adUz1'),
+  isTokenAutoRefreshEnabled: true 
+});
+
+// 3. 初始化 Firestore
 const db = getFirestore(app);
 
 let lastActiveOrder = null;
