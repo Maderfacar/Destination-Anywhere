@@ -3,31 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DA 管理後台 | 司機審核</title>
+  <title>DA 管理後台</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root {
       --apple-bg: #F5F5F7; --apple-blue: #007AFF; --apple-green: #34C759;
-      --apple-red: #FF3B30; --apple-text: #1D1D1F; --apple-sub: #86868B;
+      --apple-text: #1D1D1F; --apple-sub: #86868B;
     }
     body { background: var(--apple-bg); color: var(--apple-text); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
     
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-    h1 { font-size: 24px; margin: 0; }
+    .card { background: white; border-radius: 18px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    
+    .section-title { font-weight: 700; margin: 20px 0 10px; font-size: 18px; border-left: 4px solid var(--apple-blue); padding-left: 10px; }
+    
+    .driver-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #F0F0F0; }
+    .btn { padding: 8px 14px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .btn-blue { background: var(--apple-blue); color: white; }
+    .btn-outline { background: #E5E5EA; color: var(--apple-text); }
 
-    .driver-card {
-      background: white; border-radius: 18px; padding: 20px; margin-bottom: 15px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;
-    }
-    .info-group b { font-size: 18px; display: block; }
-    .info-group span { font-size: 13px; color: var(--apple-sub); }
-
-    .btn-group { display: flex; gap: 10px; }
-    .btn { padding: 10px 16px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
-    .btn-view { background: #E5E5EA; color: var(--apple-text); }
-    .btn-approve { background: var(--apple-green); color: white; }
-
-    /* 彈窗樣式 */
+    /* 詳細資料彈窗 */
     #detail-modal {
       position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
       display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px;
@@ -36,58 +31,52 @@
       background: white; width: 100%; max-width: 500px; border-radius: 24px; 
       max-height: 90vh; overflow-y: auto; padding: 25px; position: relative;
     }
-    .close-modal { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; }
-    
-    .detail-section { margin-top: 20px; border-top: 1px solid #EEE; padding-top: 15px; }
-    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
     .detail-item label { font-size: 11px; color: var(--apple-sub); display: block; }
-    .detail-item p { margin: 4px 0; font-weight: 500; }
-
-    .doc-image-container { margin-top: 15px; }
-    .doc-label { font-size: 13px; font-weight: 600; margin-bottom: 8px; display: block; }
-    .doc-img { 
-      width: 100%; border-radius: 12px; margin-bottom: 15px; border: 1px solid #DDD; 
-      cursor: zoom-in; object-fit: cover; max-height: 250px;
-    }
+    .detail-item p { margin: 2px 0; font-weight: 500; }
+    .doc-img { width: 100%; border-radius: 12px; margin-top: 10px; border: 1px solid #DDD; cursor: zoom-in; }
 
     .hide { display: none !important; }
-    #loading { text-align: center; margin-top: 100px; color: var(--apple-sub); }
   </style>
 </head>
 <body>
 
-<div id="loading">🔐 正在進入管理系統...</div>
+<div id="loading" style="text-align:center; padding-top:100px;">🚀 安全載入中...</div>
 
 <div id="admin-view" class="hide">
   <div class="header">
-    <h1>司機加盟審核</h1>
-    <button class="btn btn-view" onclick="location.href='index.html'">回首頁</button>
+    <h1>DA 管理系統</h1>
+    <button class="btn btn-outline" onclick="location.href='index.html'">回首頁</button>
   </div>
-  
-  <div id="pending-list">
+
+  <div class="section-title">📝 待審核司機</div>
+  <div class="card" id="pending-list">
     </div>
+
+  <div class="section-title">📊 系統功能</div>
+  <div class="card">
+    <button class="btn btn-outline" onclick="alert('功能開發中')">訂單總覽</button>
+    <button class="btn btn-outline" onclick="alert('功能開發中')">系統配置</button>
+  </div>
 </div>
 
 <div id="detail-modal" onclick="if(event.target==this) closeDetails()">
   <div class="modal-content">
-    <span class="close-modal" onclick="closeDetails()">✕</span>
-    <h2 style="margin-top:0;">司機詳細資料</h2>
-    
-    <div id="modal-body">
-      </div>
-    
-    <div style="margin-top:30px;">
-      <button id="modal-approve-btn" class="btn btn-approve" style="width:100%; padding:15px; font-size:16px;">核准此司機</button>
+    <h2 style="margin-top:0;">司機證件審核</h2>
+    <div id="modal-body"></div>
+    <div style="margin-top:20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <button class="btn btn-outline" onclick="closeDetails()">關閉</button>
+      <button id="modal-approve-btn" class="btn btn-blue" style="background:var(--apple-green);">核准加盟</button>
     </div>
   </div>
 </div>
 
 <script type="module">
-  import { CONFIG } from './config.js?v=6';
+  import { CONFIG } from './config.js?v=7';
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  let db, currentDriver = null;
+  let db;
 
   async function init() {
     try {
@@ -96,9 +85,7 @@
       
       const p = await liff.getProfile();
       if (!CONFIG.ADMIN_UIDS.includes(p.userId)) {
-        alert("權限不足，僅限管理員進入");
-        location.href = 'index.html';
-        return;
+        alert("權限不足"); location.replace('index.html'); return;
       }
 
       const app = initializeApp(CONFIG.firebaseConfig);
@@ -107,54 +94,47 @@
       document.getElementById('admin-view').classList.remove('hide');
 
       loadPendingDrivers();
-    } catch (e) {
-      document.getElementById('loading').innerText = "進入失敗: " + e.message;
-    }
+    } catch (e) { console.error(e); }
   }
 
   function loadPendingDrivers() {
     const q = query(collection(db, "drivers"), where("status", "==", "pending"));
     onSnapshot(q, (snap) => {
       const list = document.getElementById('pending-list');
-      list.innerHTML = snap.empty ? '<p style="text-align:center; color:#999; margin-top:50px;">目前沒有待審核的申請</p>' : '';
+      list.innerHTML = snap.empty ? '<p style="color:#999; font-size:14px;">暫無申請</p>' : '';
       
       snap.forEach(d => {
         const data = d.data();
-        const card = document.createElement('div');
-        card.className = 'driver-card';
-        card.innerHTML = `
-          <div class="info-group">
-            <b>${data.name}</b>
-            <span>${data.plate} | ${data.model}</span>
+        const div = document.createElement('div');
+        div.className = 'driver-item';
+        div.innerHTML = `
+          <div>
+            <div style="font-weight:600;">${data.name}</div>
+            <div style="font-size:12px; color:#86868B;">${data.plate}</div>
           </div>
-          <div class="btn-group">
-            <button class="btn btn-view" onclick='viewDetails(${JSON.stringify(data)})'>查看</button>
-          </div>
+          <button class="btn btn-blue" id="btn-view-${data.uid}">查看並審核</button>
         `;
-        list.appendChild(card);
+        list.appendChild(div);
+        
+        // 綁定點擊事件
+        document.getElementById(`btn-view-${data.uid}`).onclick = () => viewDetails(data);
       });
     });
   }
 
   window.viewDetails = (data) => {
-    currentDriver = data;
     const body = document.getElementById('modal-body');
     body.innerHTML = `
       <div class="detail-grid">
-        <div class="detail-item"><label>真實姓名</label><p>${data.name}</p></div>
-        <div class="detail-item"><label>手機號碼</label><p><a href="tel:${data.phone}">${data.phone}</a></p></div>
-        <div class="detail-item"><label>車牌號碼</label><p>${data.plate}</p></div>
-        <div class="detail-item"><label>車型顏色</label><p>${data.model} (${data.color})</p></div>
+        <div class="detail-item"><label>姓名</label><p>${data.name}</p></div>
+        <div class="detail-item"><label>電話</label><p>${data.phone}</p></div>
+        <div class="detail-item"><label>車牌</label><p>${data.plate}</p></div>
+        <div class="detail-item"><label>車型</label><p>${data.model} (${data.color})</p></div>
       </div>
-      
-      <div class="doc-image-container">
-        <span class="doc-label">🪪 駕駛執照</span>
+      <div style="margin-top:15px;">
+        <label style="font-size:12px; font-weight:bold;">🪪 駕照 / 📄 行照 / 🛡️ 保險</label>
         <img src="${data.docs?.license}" class="doc-img" onclick="window.open(this.src)">
-        
-        <span class="doc-label">📄 車輛行照</span>
         <img src="${data.docs?.registration}" class="doc-img" onclick="window.open(this.src)">
-        
-        <span class="doc-label">🛡️ 保險證明</span>
         <img src="${data.docs?.insurance}" class="doc-img" onclick="window.open(this.src)">
       </div>
     `;
@@ -168,17 +148,12 @@
   };
 
   window.approveDriver = async (uid) => {
-    if (!confirm("確定要核准這位司機嗎？核准後他將能立刻接單。")) return;
+    if (!confirm("核准此司機加盟？")) return;
     try {
-      await updateDoc(doc(db, "drivers", uid), {
-        status: 'approved',
-        approvedAt: serverTimestamp()
-      });
-      alert("已核准該司機！");
+      await updateDoc(doc(db, "drivers", uid), { status: 'approved', approvedAt: serverTimestamp() });
+      alert("核准成功");
       closeDetails();
-    } catch (e) {
-      alert("核准失敗: " + e.message);
-    }
+    } catch (e) { alert("失敗: " + e.message); }
   };
 
   init();
