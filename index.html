@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="style.css?v=1">
 
   <style>
-    /* 2. 僅保留首頁特有的 Bento Grid 與 景點捲軸樣式 */
     .hero {
       padding: 40px 25px 25px;
       display: flex;
@@ -34,15 +33,15 @@
       font-size: 11px; font-weight: 600; cursor: pointer;
     }
 
-    /* Bento Grid 核心佈局 */
     .bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 20px 30px; }
     .bento-item {
       background: white; border-radius: 24px; padding: 22px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.02);
       background-size: cover; background-position: center; position: relative; overflow: hidden;
+      min-height: 100px;
     }
     .bento-content { position: relative; z-index: 2; }
-    .bento-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.2); z-index: 1; display: none; }
+    .bento-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); z-index: 1; display: none; }
     .has-bg .bento-overlay { display: block; }
     .has-bg .item-title, .has-bg .item-sub { color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 
@@ -55,7 +54,6 @@
     .item-title { font-weight: 700; font-size: 18px; margin-bottom: 5px; display: block; }
     .item-sub { font-size: 13px; opacity: 0.8; }
 
-    /* 景點捲軸 */
     .section-header { padding: 0 25px 15px; display: flex; justify-content: space-between; align-items: baseline; }
     .scroll-container { display: flex; overflow-x: auto; padding: 0 20px 40px; gap: 18px; scroll-snap-type: x mandatory; }
     .scroll-container::-webkit-scrollbar { display: none; }
@@ -68,17 +66,16 @@
       display: flex; flex-direction: column; justify-content: flex-end; padding: 25px; color: white;
     }
 
-    /* 預約滑入視窗 */
     #booking-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: var(--bg-color); z-index: 1000; transform: translateY(100%);
+      background: #FFF; z-index: 1000; transform: translateY(100%);
       transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
     #booking-overlay.active { transform: translateY(0); }
     .modal-nav {
         display: flex; align-items: center; padding: 15px 20px;
         background: rgba(255,255,255,0.8); backdrop-filter: blur(10px);
-        position: sticky; top: 0; z-index: 10;
+        position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #EEE;
     }
   </style>
 </head>
@@ -110,19 +107,19 @@
         <div class="bento-overlay"></div>
         <div class="bento-content">
           <span class="item-title" id="txt-itinerary-title">行程規劃</span>
-          <span class="item-sub">智慧路徑優化</span>
+          <span class="item-sub" id="txt-itinerary-sub">智慧路徑優化</span>
         </div>
       </div>
 
       <div class="bento-item">
         <span class="item-title">我的里程</span>
-        <span id="mileage-val" style="font-size: 20px; font-weight: 800; color: var(--apple-blue);">0 <small style="font-size:12px; font-weight:400; color:var(--text-sub);">KM</small></span>
+        <span id="mileage-val" style="font-size: 20px; font-weight: 800; color: #007AFF;">0 <small style="font-size:12px; font-weight:400; color:#8E8E93;">KM</small></span>
       </div>
     </div>
 
     <div class="section-header">
       <h2 style="font-size: 22px; margin: 0;">推薦景點</h2>
-      <span style="color:var(--apple-blue); font-size:14px; font-weight: 600;">更多</span>
+      <span style="color:#007AFF; font-size:14px; font-weight: 600;">更多</span>
     </div>
     
     <div class="scroll-container">
@@ -145,29 +142,30 @@
 
   <div id="booking-overlay">
     <div class="modal-nav">
-        <button onclick="closeBooking()" style="border:none; background:none; font-size:18px;">✕</button>
-        <div style="flex:1; text-align:center; font-weight:700;">行程預約</div>
+        <button onclick="closeBooking()" style="border:none; background:none; font-size:24px; padding: 0 10px;">✕</button>
+        <div style="flex:1; text-align:center; font-weight:700; font-size:17px;">行程預約</div>
+        <div style="width:40px;"></div>
     </div>
     <iframe id="booking-iframe" src="booking.html" style="width:100%; height:calc(100% - 60px); border:none;"></iframe>
   </div>
 
   <script type="module">
-  // 告知：改用模組化引入，減少冗餘初始化代碼
   import { db, CONFIG } from './firebase-config.js?v=1';
   import { doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   async function init() {
     const displayIdEl = document.getElementById('display-id');
     try {
-      // 司機頻道防呆
+      // 1. 司機頻道跳轉
       const urlParams = new URLSearchParams(window.location.search);
-      const currentLiffId = urlParams.get('liffId') || "";
-      const DRIVER_LIFF_ID = "2009434590-3t2KvScf";
-      if (window.location.href.includes(DRIVER_LIFF_ID) || currentLiffId === DRIVER_LIFF_ID) {
+      const DRIVER_LIFF_ID = CONFIG.DRIVER_LIFF_ID || "2009434590-3t2KvScf";
+      
+      if (window.location.href.includes(DRIVER_LIFF_ID)) {
           window.location.replace("driver.html");
           return;
       }
 
+      // 2. LIFF 初始化
       await liff.init({ liffId: CONFIG.LIFF_ID });
       if (!liff.isLoggedIn()) { liff.login(); return; }
       
@@ -176,28 +174,53 @@
       document.getElementById('user-name').innerText = p.displayName;
       document.getElementById('user-avatar').src = p.pictureUrl || "https://cdn-icons-png.flaticon.com/512/147/147144.png";
 
+      // 3. 管理員權限顯示
       if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(p.userId)) {
         document.getElementById('admin-btn').style.display = 'block';
       }
+      
+      // 4. 同步視覺設計
       syncDesign();
+      
     } catch (e) { 
       displayIdEl.innerText = "❌ 啟動失敗: " + e.message;
     }
   }
 
-  async function syncDesign() {
-    try {
-      const docSnap = await getDoc(doc(db, "siteConfig", "homePage"));
+  function syncDesign() {
+    // 使用 onSnapshot 監聽，後台一改這邊馬上變
+    onSnapshot(doc(db, "siteConfig", "homePage"), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        
+        // 副標題
         if (data.hero?.sub) document.getElementById('hero-sub').innerText = data.hero.sub;
-        // ... 其餘 syncDesign 邏輯 ...
+        
+        // 預約卡片
+        if (data.booking?.title) document.getElementById('txt-booking-title').innerText = data.booking.title;
+        if (data.booking?.bg) {
+          const el = document.getElementById('btn-booking');
+          el.style.backgroundImage = `url('${data.booking.bg}')`;
+          el.classList.add('has-bg');
+        }
+        
+        // 行程規劃卡片
+        if (data.itinerary?.bg) {
+          const el = document.getElementById('btn-itinerary');
+          el.style.backgroundImage = `url('${data.itinerary.bg}')`;
+          el.classList.add('has-bg');
+        }
       }
-    } catch (err) { console.warn("視覺方案同步略過"); }
+    });
   }
 
-  window.openBooking = () => document.getElementById('booking-overlay').classList.add('active');
+  window.openBooking = () => {
+    document.getElementById('booking-overlay').classList.add('active');
+    // 每次開啟時重新載入 iframe 確保資料最新
+    document.getElementById('booking-iframe').src = 'booking.html';
+  };
   window.closeBooking = () => document.getElementById('booking-overlay').classList.remove('active');
+  
   init();
 </script>
 </body>
