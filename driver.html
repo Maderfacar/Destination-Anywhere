@@ -7,16 +7,10 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link rel="stylesheet" href="style.css?v=1">
   <style>
-    .file-group { 
-      background: #F8F8F8; padding: 12px; border-radius: 12px; 
-      border: 1px dashed #DDD; margin-bottom: 12px; 
-    }
+    .file-group { background: #F8F8F8; padding: 12px; border-radius: 12px; border: 1px dashed #DDD; margin-bottom: 12px; }
     .file-group input[type="file"] { background: transparent; border: none; padding: 5px 0; font-size: 13px; margin-bottom: 0; }
     .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-    .btn-status { 
-      font-size: 13px; padding: 12px; background: #F2F2F7; color: #000; 
-      border: 1px solid #DDD; border-radius: 12px; cursor: pointer; transition: 0.2s;
-    }
+    .btn-status { font-size: 13px; padding: 12px; background: #F2F2F7; color: #000; border: 1px solid #DDD; border-radius: 12px; cursor: pointer; transition: 0.2s; }
     .btn-status.active { background: #34C759; color: white; border-color: #34C759; font-weight: bold; }
     .order-info-box { font-size: 14px; line-height: 1.6; border-bottom: 1px solid #EEE; padding-bottom: 12px; margin-bottom: 12px; }
     #loading { text-align: center; padding-top: 100px; color: #8E8E93; }
@@ -25,7 +19,7 @@
 </head>
 <body>
 
-<div id="loading">🚀 正在啟動 DA 司機系統...</div>
+<div id="loading">🚀 正在驗證司機權限...</div>
 
 <div id="section-register" class="hide" style="padding: 15px;">
   <div class="section-title">📝 司機加盟申請</div>
@@ -40,7 +34,6 @@
     </div>
     <label class="input-label">車牌號碼</label>
     <input type="text" id="reg-plate" placeholder="例如: ABC-1234">
-    
     <div class="file-group">
       <label class="input-label">🪪 駕照正反面照片</label>
       <input type="file" id="file-license" accept="image/*">
@@ -54,17 +47,16 @@
     <div style="font-size: 48px; margin-bottom: 15px;">⌛</div>
     <h3>申請審核中</h3>
     <p style="color: #8E8E93; font-size: 14px; margin-top: 10px;">資料已提交，請靜候管理員核准。</p>
-    <button class="btn btn-outline" onclick="location.reload()" style="margin-top: 25px;">重新整理狀態</button>
+    <button class="btn btn-outline" onclick="location.reload()">重新整理</button>
   </div>
 </div>
 
 <div id="section-main" class="hide" style="padding: 15px;">
   <div class="section-title">👤 司機資訊</div>
   <div class="card">
-    <div style="font-weight: bold; font-size: 18px;" id="disp-name">載入中...</div>
-    <div style="color: #666; font-size: 14px; margin-top: 5px;" id="disp-car">車牌載入中...</div>
+    <div style="font-weight: bold; font-size: 18px;" id="disp-name">--</div>
+    <div style="color: #666; font-size: 14px; margin-top: 5px;" id="disp-car">--</div>
   </div>
-
   <div class="section-title">📅 我的派單行程</div>
   <div id="orders-list"></div>
 </div>
@@ -75,12 +67,10 @@
   import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
   let myUID = "";
-  let driverData = null;
 
   async function init() {
     try {
-      // 強制使用司機端的 LIFF ID，防止跳轉衝突
-      const DRIVER_LIFF_ID = "2009434590-3t2KvScf"; 
+      const DRIVER_LIFF_ID = "2009434590-3t2KvScf";
       await liff.init({ liffId: DRIVER_LIFF_ID });
 
       if (!liff.isLoggedIn()) {
@@ -91,120 +81,90 @@
       const profile = await liff.getProfile();
       myUID = profile.userId;
       
-      // 監聽司機資料狀態
-      onSnapshot(doc(db, "drivers", myUID), (docSnap) => {
+      // 改用 onSnapshot 即時監聽，解決跳轉後沒更新的問題
+      onSnapshot(doc(db, "drivers", myUID), (snap) => {
         document.getElementById('loading').classList.add('hide');
         
-        if (!docSnap.exists()) {
-          // 沒資料 -> 顯示註冊
+        if (!snap.exists()) {
           showSection('section-register');
         } else {
-          driverData = docSnap.data();
-          if (driverData.status === 'pending') {
-            // 審核中
+          const data = snap.data();
+          if (data.status === 'pending') {
             showSection('section-pending');
-          } else if (driverData.status === 'approved') {
-            // 已核准 -> 進入主畫面
+          } else {
             showSection('section-main');
-            renderDriverInfo();
-            loadMyOrders();
+            document.getElementById('disp-name').innerText = data.name;
+            document.getElementById('disp-car').innerText = `${data.plate} (${data.model})`;
+            loadOrders(data.name);
           }
         }
       });
-
     } catch (err) {
-      document.getElementById('loading').innerHTML = "❌ 初始化失敗: " + err.message;
+      document.getElementById('loading').innerHTML = "初始化錯誤: " + err.message;
     }
   }
 
   function showSection(id) {
-    ['section-register', 'section-pending', 'section-main'].forEach(s => {
-      document.getElementById(s).classList.add('hide');
-    });
+    ['section-register', 'section-pending', 'section-main'].forEach(s => document.getElementById(s).classList.add('hide'));
     document.getElementById(id).classList.remove('hide');
   }
 
-  function renderDriverInfo() {
-    document.getElementById('disp-name').innerText = driverData.name;
-    document.getElementById('disp-car').innerText = `${driverData.plate} (${driverData.model})`;
-  }
-
   window.handleRegister = async () => {
-    const name = document.getElementById('reg-name').value;
-    const phone = document.getElementById('reg-phone').value;
-    const plate = document.getElementById('reg-plate').value;
-    const model = document.getElementById('reg-model').value;
-    
-    if (!name || !phone || !plate) { alert("請填寫完整資訊"); return; }
-    
     const btn = document.getElementById('reg-submit');
+    const name = document.getElementById('reg-name').value;
+    if(!name || !document.getElementById('reg-phone').value) return alert("請填寫必填欄位");
+
     btn.disabled = true;
-    btn.innerText = "上傳中...";
+    btn.innerText = "提交中...";
 
     try {
       let licenseUrl = "";
-      const fileInput = document.getElementById('file-license');
-      if (fileInput.files[0]) {
-        const storageRef = ref(storage, `drivers/${myUID}/license`);
-        await uploadBytes(storageRef, fileInput.files[0]);
-        licenseUrl = await getDownloadURL(storageRef);
+      const file = document.getElementById('file-license').files[0];
+      if (file) {
+        const sRef = ref(storage, `drivers/${myUID}/license`);
+        await uploadBytes(sRef, file);
+        licenseUrl = await getDownloadURL(sRef);
       }
 
       await setDoc(doc(db, "drivers", myUID), {
-        name, phone, plate, model,
+        name,
+        phone: document.getElementById('reg-phone').value,
+        plate: document.getElementById('reg-plate').value,
+        model: document.getElementById('reg-model').value,
         color: document.getElementById('reg-color').value,
         licenseImg: licenseUrl,
         status: 'pending',
         createdAt: serverTimestamp()
       });
-
-      alert("申請已送出！");
-      // 這裡不需要 reload，onSnapshot 會自動切換畫面
+      // onSnapshot 會自動處理切換到 pending 畫面
     } catch (e) {
       alert("提交失敗: " + e.message);
       btn.disabled = false;
-      btn.innerText = "送出加盟申請";
     }
   };
 
-  function loadMyOrders() {
-    const q = query(collection(db, "orders"), where("driverName", "==", driverData.name));
+  function loadOrders(driverName) {
+    const q = query(collection(db, "orders"), where("driverName", "==", driverName));
     onSnapshot(q, (snap) => {
-      const container = document.getElementById('orders-list');
-      container.innerHTML = snap.empty ? '<div class="card">目前尚無派單</div>' : '';
-      
+      const list = document.getElementById('orders-list');
+      list.innerHTML = snap.empty ? '<div class="card">目前尚無派單</div>' : '';
       snap.forEach(d => {
         const ord = d.data();
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <div class="order-info-box">
-            <b style="color:#0071E3;">${ord.tripType}</b><br>
-            📅 時間：${ord.appointmentTime}<br>
-            👤 客戶：${ord.contactName} (${ord.contactPhone})<br>
-            🟢 起點：${ord.pickupLocation}<br>
-            🔴 終點：${ord.dropoffLocation}
-          </div>
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+          <div class="order-info-box"><b>${ord.tripType}</b><br>客戶：${ord.contactName}<br>起點：${ord.pickupLocation}</div>
           <div class="status-grid">
-            <button class="btn-status ${ord.driverStatus==='onWay'?'active':''}" onclick="updateOrderStatus('${d.id}', 'onWay')">前往中</button>
-            <button class="btn-status ${ord.driverStatus==='arrived'?'active':''}" onclick="updateOrderStatus('${d.id}', 'arrived')">已抵達</button>
-            <button class="btn-status ${ord.driverStatus==='started'?'active':''}" onclick="updateOrderStatus('${d.id}', 'started')">行程開始</button>
-            <button class="btn-status ${ord.driverStatus==='completed'?'active':''}" onclick="updateOrderStatus('${d.id}', 'completed')">行程結束</button>
+            <button class="btn-status ${ord.driverStatus==='onWay'?'active':''}" onclick="updateStatus('${d.id}','onWay')">前往中</button>
+            <button class="btn-status ${ord.driverStatus==='completed'?'active':''}" onclick="updateStatus('${d.id}','completed')">結束行程</button>
           </div>
         `;
-        container.appendChild(card);
+        list.appendChild(div);
       });
     });
   }
 
-  window.updateOrderStatus = async (orderId, status) => {
-    try {
-      await updateDoc(doc(db, "orders", orderId), { 
-        driverStatus: status,
-        lastUpdate: serverTimestamp()
-      });
-    } catch (e) { console.error(e); }
-  };
+  window.updateStatus = (id, s) => updateDoc(doc(db, "orders", id), { driverStatus: s });
 
   init();
 </script>
