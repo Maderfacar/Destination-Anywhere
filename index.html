@@ -20,7 +20,6 @@
       margin: 0; padding: 0;
     }
 
-    /* Hero Section */
     .hero {
       padding: 50px 25px 30px;
       display: flex;
@@ -30,7 +29,6 @@
     .hero-text h1 { font-size: 28px; font-weight: 700; margin: 0; }
     .hero-text p { color: var(--apple-sub); margin: 5px 0 0; font-size: 16px; }
     
-    /* [新增] ID 顯示樣式 */
     #display-id { 
       font-size: 10px; 
       color: #BBB; 
@@ -61,7 +59,6 @@
       cursor: pointer;
     }
 
-    /* Bento Grid */
     .bento-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -75,7 +72,21 @@
       padding: 22px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.03);
       border: 1px solid rgba(0,0,0,0.02);
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      overflow: hidden;
     }
+
+    /* 確保文字在背景圖上清晰 */
+    .bento-content { position: relative; z-index: 2; }
+    .bento-overlay { 
+      position: absolute; inset: 0; 
+      background: rgba(0,0,0,0.2); 
+      z-index: 1; display: none;
+    }
+    .has-bg .bento-overlay { display: block; }
+    .has-bg .item-title, .has-bg .item-sub { color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 
     .bento-main { 
       grid-column: span 2; 
@@ -95,7 +106,6 @@
     .item-title { font-weight: 700; font-size: 18px; margin-bottom: 5px; display: block; }
     .item-sub { font-size: 13px; opacity: 0.8; }
 
-    /* 景點卡片與 Modal 保持不變 */
     .section-header { padding: 0 25px 15px; display: flex; justify-content: space-between; align-items: baseline; }
     .section-header h2 { font-size: 22px; margin: 0; }
 
@@ -149,7 +159,7 @@
   <div id="home-view">
     <header class="hero">
       <div class="hero-text">
-        <p>探索未知，隨心所行</p>
+        <p id="hero-sub">探索未知，隨心所行</p>
         <h1>您好，<span id="user-name">旅伴</span></h1>
         <code id="display-id">正在取得系統 ID...</code>
       </div>
@@ -160,14 +170,20 @@
     </header>
 
     <div class="bento-grid">
-      <div class="bento-item bento-main" onclick="openBooking()">
-        <span class="item-title">快速預約接送 🚕</span>
-        <span class="item-sub">點擊立即呼叫專業司機</span>
+      <div id="btn-booking" class="bento-item bento-main" onclick="openBooking()">
+        <div class="bento-overlay"></div>
+        <div class="bento-content">
+          <span class="item-title" id="txt-booking-title">快速預約接送 🚕</span>
+          <span class="item-sub" id="txt-booking-sub">點擊立即呼叫專業司機</span>
+        </div>
       </div>
 
-      <div class="bento-item bento-blue" onclick="alert('Google API 行程規劃即將上線')">
-        <span class="item-title">行程規劃</span>
-        <span class="item-sub">智慧路徑優化</span>
+      <div id="btn-itinerary" class="bento-item bento-blue" onclick="alert('Google API 行程規劃即將上線')">
+        <div class="bento-overlay"></div>
+        <div class="bento-content">
+          <span class="item-title" id="txt-itinerary-title">行程規劃</span>
+          <span class="item-sub">智慧路徑優化</span>
+        </div>
       </div>
 
       <div class="bento-item">
@@ -180,20 +196,19 @@
       <h2>推薦景點</h2>
       <span style="color:var(--apple-blue); font-size:14px; font-weight: 600;">更多</span>
     </div>
-
     <div class="scroll-container">
       <div class="spot-card" style="background-image: url('https://images.unsplash.com/photo-1571471811631-9b4c88bb47f3?q=80&w=600');">
         <div class="spot-overlay">
           <span style="font-size:12px; text-transform:uppercase; letter-spacing:1px; opacity:0.8;">New Taipei City</span>
-          <b style="font-size:22px; margin: 5px 0;">九份山城</b>
-          <p style="font-size:14px; opacity:0.9; margin:0;">宮崎駿般的幻境，茶香與石階的浪漫。</p>
+          <b>九份山城</b>
+          <p style="font-size:14px; opacity:0.9;">宮崎駿般的幻境，茶香與石階的浪漫。</p>
         </div>
       </div>
       <div class="spot-card" style="background-image: url('https://images.unsplash.com/photo-1547900596-eb5260f95d4e?q=80&w=600');">
         <div class="spot-overlay">
           <span style="font-size:12px; text-transform:uppercase; letter-spacing:1px; opacity:0.8;">Hualien</span>
-          <b style="font-size:22px; margin: 5px 0;">太魯閣峽谷</b>
-          <p style="font-size:14px; opacity:0.9; margin:0;">見證大自然萬年刻劃的鬼斧神工。</p>
+          <b>太魯閣峽谷</b>
+          <p style="font-size:14px; opacity:0.9;">見證大自然萬年刻劃的鬼斧神工。</p>
         </div>
       </div>
     </div>
@@ -210,6 +225,12 @@
 
   <script type="module">
     import { CONFIG } from './config.js';
+    // 引入 Firebase 必要的模組來進行視覺同步
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const app = initializeApp(CONFIG.firebaseConfig);
+    const db = getFirestore(app);
 
     async function init() {
       try {
@@ -217,24 +238,48 @@
         if (!liff.isLoggedIn()) { liff.login(); return; }
         
         const p = await liff.getProfile();
-        
-        // [關鍵] 將 ID 顯示在網頁畫面上
         document.getElementById('display-id').innerText = "ID: " + p.userId;
-
-        // 渲染個人名字與頭像
         document.getElementById('user-name').innerText = p.displayName;
         const avatar = document.getElementById('user-avatar');
         avatar.src = p.pictureUrl || "https://cdn-icons-png.flaticon.com/512/147/147144.png";
 
-        // 管理者權限檢查
         if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(p.userId)) {
           document.getElementById('admin-btn').style.display = 'block';
         }
 
+        // --- 同步 Firebase 裝修設定 ---
+        syncDesign();
+
       } catch (e) { 
         console.error(e); 
-        document.getElementById('display-id').innerText = "取得 ID 失敗";
+        document.getElementById('display-id').innerText = "系統初始化失敗";
       }
+    }
+
+    async function syncDesign() {
+      try {
+        const docSnap = await getDoc(doc(db, "siteConfig", "homePage"));
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          // 更新 Hero 副標題
+          if (data.hero?.sub) document.getElementById('hero-sub').innerText = data.hero.sub;
+          
+          // 更新預約卡片
+          const bBooking = document.getElementById('btn-booking');
+          if (data.bento_booking?.title) document.getElementById('txt-booking-title').innerText = data.bento_booking.title;
+          if (data.bento_booking?.bgUrl) {
+            bBooking.style.backgroundImage = `url('${data.bento_booking.bgUrl}')`;
+            bBooking.classList.add('has-bg');
+          }
+
+          // 更新行程規劃卡片
+          const bItin = document.getElementById('btn-itinerary');
+          if (data.bento_itinerary?.bgUrl) {
+            bItin.style.backgroundImage = `url('${data.bento_itinerary.bgUrl}')`;
+            bItin.classList.add('has-bg');
+          }
+        }
+      } catch (err) { console.log("使用預約預設視覺方案"); }
     }
 
     window.openBooking = () => {
