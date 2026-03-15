@@ -146,9 +146,9 @@ import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, g
 // 1. 初始化 Firebase App
 const app = initializeApp(CONFIG.firebaseConfig);
 
-// 2. 初始化 App Check
+// 2. 初始化 App Check (改由 CONFIG 讀取金鑰)
 const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('6Ld6YIssAAAAAJQu3JbvVbdHpoXDnH77u43adUz1'),
+  provider: new ReCaptchaV3Provider(CONFIG.appCheckSiteKey),
   isTokenAutoRefreshEnabled: true 
 });
 
