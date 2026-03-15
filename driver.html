@@ -34,10 +34,20 @@
     </div>
     <label class="input-label">車牌號碼</label>
     <input type="text" id="reg-plate" placeholder="例如: ABC-1234">
+    
     <div class="file-group">
       <label class="input-label">🪪 駕照正反面照片</label>
       <input type="file" id="file-license" accept="image/*">
     </div>
+    <div class="file-group">
+      <label class="input-label">🚗 行照照片</label>
+      <input type="file" id="file-registration" accept="image/*">
+    </div>
+    <div class="file-group">
+      <label class="input-label">🛡️ 保險證明照片</label>
+      <input type="file" id="file-insurance" accept="image/*">
+    </div>
+
     <button class="btn btn-blue" id="reg-submit">送出加盟申請</button>
   </div>
 </div>
@@ -66,28 +76,23 @@
   import { doc, getDoc, setDoc, updateDoc, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
   import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-  const DRIVER_LIFF_ID = "2009434590-3t2KvScf"; // 司機端專用 ID
+  const DRIVER_LIFF_ID = "2009434590-3t2KvScf"; 
 
   async function start() {
     const loader = document.getElementById('loading');
     const errEl = document.getElementById('error-display');
 
     try {
-      // 1. 初始化 LIFF
       await liff.init({ liffId: DRIVER_LIFF_ID });
 
-      // 2. 檢查登入
       if (!liff.isLoggedIn()) {
-        console.log("Redirecting to login...");
         liff.login({ redirectUri: "https://maderfacar.github.io/Destination-Anywhere/driver.html" });
         return;
       }
 
-      // 3. 取得 Profile
       const profile = await liff.getProfile();
       const uid = profile.userId;
 
-      // 4. 即時監聽資料庫
       onSnapshot(doc(db, "drivers", uid), (snap) => {
         loader.classList.add('hide');
         if (!snap.exists()) {
@@ -103,7 +108,8 @@
           }
         }
       }, (error) => {
-        throw new Error("Firestore 連線失敗: " + error.message);
+        errEl.classList.remove('hide');
+        errEl.innerHTML = `<div class="error-box">Firestore 連線失敗: ${error.message}</div>`;
       });
 
     } catch (err) {
@@ -128,15 +134,34 @@
       if (!name || !phone) return alert("姓名與電話為必填");
 
       btn.disabled = true;
-      btn.innerText = "提交中...";
+      btn.innerText = "正在上傳資料...";
 
       try {
-        let url = "";
-        const file = document.getElementById('file-license').files[0];
-        if (file) {
+        // 上傳駕照
+        let licenseUrl = "";
+        const fileLic = document.getElementById('file-license').files[0];
+        if (fileLic) {
           const sRef = ref(storage, `drivers/${uid}/license`);
-          await uploadBytes(sRef, file);
-          url = await getDownloadURL(sRef);
+          await uploadBytes(sRef, fileLic);
+          licenseUrl = await getDownloadURL(sRef);
+        }
+
+        // 上傳行照
+        let registrationUrl = "";
+        const fileReg = document.getElementById('file-registration').files[0];
+        if (fileReg) {
+          const sRef = ref(storage, `drivers/${uid}/registration`);
+          await uploadBytes(sRef, fileReg);
+          registrationUrl = await getDownloadURL(sRef);
+        }
+
+        // 上傳保險
+        let insuranceUrl = "";
+        const fileIns = document.getElementById('file-insurance').files[0];
+        if (fileIns) {
+          const sRef = ref(storage, `drivers/${uid}/insurance`);
+          await uploadBytes(sRef, fileIns);
+          insuranceUrl = await getDownloadURL(sRef);
         }
 
         await setDoc(doc(db, "drivers", uid), {
@@ -144,7 +169,9 @@
           plate: document.getElementById('reg-plate').value,
           model: document.getElementById('reg-model').value,
           color: document.getElementById('reg-color').value,
-          licenseImg: url,
+          licenseImg: licenseUrl,
+          registrationImg: registrationUrl, // 寫入行照網址
+          insuranceImg: insuranceUrl,       // 寫入保險網址
           status: 'pending',
           createdAt: serverTimestamp()
         });
@@ -160,7 +187,6 @@
     document.getElementById('disp-name').innerText = data.name;
     document.getElementById('disp-car').innerText = `${data.plate} (${data.model})`;
     
-    // 載入訂單
     const q = query(collection(db, "orders"), where("driverName", "==", data.name));
     onSnapshot(q, (snap) => {
       const list = document.getElementById('orders-list');
