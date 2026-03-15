@@ -109,7 +109,21 @@
 ... (此處與您原本 HTML 結構相同) ...
 
 <script type="module">
-// ... (JavaScript 邏輯保持不變，或後續進行模組化) ...
+  import { db, CONFIG } from './firebase-config.js?v=1';
+  import { collection, query, orderBy, onSnapshot, doc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  async function init() {
+    await liff.init({ liffId: CONFIG.LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    const profile = await liff.getProfile();
+    if (!CONFIG.ADMIN_UIDS.includes(profile.userId)) {
+      alert("權限不足");
+      return;
+    }
+    loadOrders();
+  }
+  // ... 其餘管理邏輯 ...
+  init();
 </script>
 </body>
 </html>
