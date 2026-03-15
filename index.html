@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Destination Anywhere | 探索未知</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  
   <link rel="stylesheet" href="style.css?v=1">
-
   <style>
     .hero {
       padding: 40px 25px 25px;
@@ -18,7 +16,6 @@
     .hero-text h1 { font-size: 28px; font-weight: 700; margin: 0; }
     .hero-text p { color: var(--text-sub); margin: 5px 0 0; font-size: 16px; }
     #display-id { font-size: 10px; color: #BBB; word-break: break-all; margin-top: 4px; display: block; }
-
     #user-avatar {
       width: 55px; height: 55px;
       border-radius: 50%;
@@ -26,13 +23,11 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       background: #EEE;
     }
-    
     #admin-btn {
       display: none; margin-top: 8px; background: var(--apple-blue);
       color: white; border: none; padding: 5px 10px; border-radius: 10px;
       font-size: 11px; font-weight: 600; cursor: pointer;
     }
-
     .bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 20px 30px; }
     .bento-item {
       background: white; border-radius: 24px; padding: 22px;
@@ -44,16 +39,13 @@
     .bento-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); z-index: 1; display: none; }
     .has-bg .bento-overlay { display: block; }
     .has-bg .item-title, .has-bg .item-sub { color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-
     .bento-main { 
       grid-column: span 2; min-height: 130px; display: flex; flex-direction: column; justify-content: center;
       background: linear-gradient(135deg, #2C2C2E 0%, #000000 100%); color: white; 
     }
     .bento-blue { background: linear-gradient(135deg, #007AFF 0%, #0051FF 100%); color: white; }
-    
     .item-title { font-weight: 700; font-size: 18px; margin-bottom: 5px; display: block; }
     .item-sub { font-size: 13px; opacity: 0.8; }
-
     .section-header { padding: 0 25px 15px; display: flex; justify-content: space-between; align-items: baseline; }
     .scroll-container { display: flex; overflow-x: auto; padding: 0 20px 40px; gap: 18px; scroll-snap-type: x mandatory; }
     .scroll-container::-webkit-scrollbar { display: none; }
@@ -65,7 +57,6 @@
       position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.8));
       display: flex; flex-direction: column; justify-content: flex-end; padding: 25px; color: white;
     }
-
     #booking-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: #FFF; z-index: 1000; transform: translateY(100%);
@@ -156,30 +147,24 @@
   async function init() {
     const displayIdEl = document.getElementById('display-id');
     try {
-      // 1. 司機頻道跳轉
-      const urlParams = new URLSearchParams(window.location.search);
-      const DRIVER_LIFF_ID = CONFIG.DRIVER_LIFF_ID || "2009434590-3t2KvScf";
-      
-      if (window.location.href.includes(DRIVER_LIFF_ID)) {
-          window.location.replace("driver.html");
-          return;
-      }
-
-      // 2. LIFF 初始化
+      // 乘客端 LIFF 初始化 (使用乘客端 ID)
       await liff.init({ liffId: CONFIG.LIFF_ID });
-      if (!liff.isLoggedIn()) { liff.login(); return; }
+      
+      if (!liff.isLoggedIn()) { 
+        liff.login(); 
+        return; 
+      }
       
       const p = await liff.getProfile();
       displayIdEl.innerText = "ID: " + p.userId;
       document.getElementById('user-name').innerText = p.displayName;
       document.getElementById('user-avatar').src = p.pictureUrl || "https://cdn-icons-png.flaticon.com/512/147/147144.png";
 
-      // 3. 管理員權限顯示
+      // 管理員權限顯示
       if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(p.userId)) {
         document.getElementById('admin-btn').style.display = 'block';
       }
       
-      // 4. 同步視覺設計
       syncDesign();
       
     } catch (e) { 
@@ -188,23 +173,16 @@
   }
 
   function syncDesign() {
-    // 使用 onSnapshot 監聽，後台一改這邊馬上變
     onSnapshot(doc(db, "siteConfig", "homePage"), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        
-        // 副標題
         if (data.hero?.sub) document.getElementById('hero-sub').innerText = data.hero.sub;
-        
-        // 預約卡片
         if (data.booking?.title) document.getElementById('txt-booking-title').innerText = data.booking.title;
         if (data.booking?.bg) {
           const el = document.getElementById('btn-booking');
           el.style.backgroundImage = `url('${data.booking.bg}')`;
           el.classList.add('has-bg');
         }
-        
-        // 行程規劃卡片
         if (data.itinerary?.bg) {
           const el = document.getElementById('btn-itinerary');
           el.style.backgroundImage = `url('${data.itinerary.bg}')`;
@@ -216,12 +194,11 @@
 
   window.openBooking = () => {
     document.getElementById('booking-overlay').classList.add('active');
-    // 每次開啟時重新載入 iframe 確保資料最新
     document.getElementById('booking-iframe').src = 'booking.html';
   };
   window.closeBooking = () => document.getElementById('booking-overlay').classList.remove('active');
   
   init();
-</script>
+  </script>
 </body>
 </html>
