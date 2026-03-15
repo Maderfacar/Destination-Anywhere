@@ -98,14 +98,22 @@
 </div>
 
 <script type="module">
-  // JS 邏輯暫不變動
-  import { CONFIG } from './config.js?v=5';
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
-  import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+  // 告知：引入 storage，這樣上傳邏輯就能直接運作
+  import { db, storage, CONFIG } from './firebase-config.js?v=1';
+  import { doc, getDoc, setDoc, updateDoc, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-  // ... (其餘邏輯與您原本的完全相同) ...
+  let myUID;
+  async function init() {
+    try {
+      const driverLiffId = (CONFIG.LIFF_IDS && CONFIG.LIFF_IDS.DRIVER) ? CONFIG.LIFF_IDS.DRIVER : CONFIG.LIFF_ID;
+      await liff.init({ liffId: driverLiffId });
+      if (!liff.isLoggedIn()) { liff.login(); return; }
+      // ... 其餘判斷註冊狀態邏輯 ...
+    } catch (err) { /* 錯誤處理 */ }
+  }
+  // ... 其餘 handleRegister, uploadToStorage 邏輯 ...
+  init();
 </script>
 </body>
 </html>
