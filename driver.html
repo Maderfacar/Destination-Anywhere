@@ -11,26 +11,19 @@
       --text-sub: #86868B; --apple-blue: #0071E3; --apple-green: #34C759; --apple-red: #FF3B30; --border: #D2D2D7;
     }
     body { background: var(--bg-color); color: var(--text-main); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; }
-    
     .section-title { font-weight: 700; margin: 20px 0 10px 5px; font-size: 17px; color: var(--text-main); border-left: 4px solid var(--apple-blue); padding-left: 10px; }
     .card { background: var(--card-bg); border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05); }
-    
     .input-label { font-size: 11px; color: var(--text-sub); margin-bottom: 4px; display: block; font-weight: bold; }
     input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 16px; box-sizing: border-box; background: #FAFAFA; margin-bottom: 12px; }
-    
-    /* 檔案上傳框樣式 */
     .file-group { background: #F8F8F8; padding: 12px; border-radius: 10px; border: 1px dashed var(--border); margin-bottom: 12px; }
     .file-group input[type="file"] { background: transparent; border: none; padding: 5px 0; font-size: 13px; margin-bottom: 0; }
-
     .btn { padding: 14px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s; width: 100%; margin-top: 5px; }
     .btn-blue { background: var(--apple-blue); color: white; }
     .btn-blue:disabled { background: #A2A2A7; cursor: not-allowed; }
     .btn-outline { background: white; border: 1.5px solid var(--apple-blue); color: var(--apple-blue); }
-    
     .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
     .btn-status { font-size: 13px; padding: 10px; background: #F2F2F7; color: #1D1D1F; border: 1px solid #D2D2D7; border-radius: 8px; cursor: pointer; }
     .btn-status.active { background: var(--apple-green); color: white; border-color: var(--apple-green); }
-
     .order-info { font-size: 14px; line-height: 1.6; border-bottom: 1px solid #EEE; padding-bottom: 10px; margin-bottom: 10px; }
     .hide { display: none !important; }
     #loading { text-align: center; padding-top: 100px; color: var(--text-sub); }
@@ -45,33 +38,26 @@
   <div class="card">
     <label class="input-label">真實姓名</label>
     <input type="text" id="reg-name" placeholder="請輸入姓名">
-    
     <label class="input-label">手機號碼</label>
     <input type="tel" id="reg-phone" placeholder="09xx-xxx-xxx">
-
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
       <div><label class="input-label">車型 (例: Lexus ES)</label><input type="text" id="reg-model" placeholder="車型"></div>
       <div><label class="input-label">車色</label><input type="text" id="reg-color" placeholder="顏色"></div>
     </div>
-
     <label class="input-label">車牌號碼</label>
     <input type="text" id="reg-plate" placeholder="例如: ABC-1234">
-
     <div class="file-group">
       <label class="input-label">🪪 駕照正反面照片</label>
       <input type="file" id="file-license" accept="image/*">
     </div>
-
     <div class="file-group">
       <label class="input-label">📄 行照照片</label>
       <input type="file" id="file-registration" accept="image/*">
     </div>
-
     <div class="file-group">
       <label class="input-label">🛡️ 強制險/任意險證明</label>
       <input type="file" id="file-insurance" accept="image/*">
     </div>
-
     <button class="btn btn-blue" id="reg-submit" onclick="handleRegister()">送出加盟申請</button>
   </div>
 </div>
@@ -80,7 +66,7 @@
   <div class="card" style="text-align: center; padding: 40px 20px;">
     <div style="font-size: 48px; margin-bottom: 15px;">⌛</div>
     <h3 style="margin: 0;">申請審核中</h3>
-    <p style="color: var(--text-sub); font-size: 14px;">資料已成功提交。請靜候管理員核准，通過後即可開始接單。</p>
+    <p style="color: var(--text-sub); font-size: 14px;">資料已成功提交。請靜候管理員核准。</p>
     <button class="btn btn-outline" onclick="location.reload()" style="margin-top: 20px;">重新整理</button>
   </div>
 </div>
@@ -100,34 +86,35 @@
     <input type="tel" id="edit-phone">
     <button class="btn btn-outline" onclick="updateDriverProfile()" style="font-size: 13px; padding: 8px;">儲存變更資料</button>
   </div>
-
   <div class="section-title">📅 我的派單行程</div>
   <div id="orders-list"></div>
 </div>
 
 <script type="module">
-import { CONFIG } from './config.js';
+import { CONFIG } from './config.js?v=3';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-const app = initializeApp(CONFIG.firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
-let myUID = "";
+// 提升變數到全域，確保 handleRegister 能讀到
+let db, storage, myUID;
 
 async function init() {
   try {
     const driverLiffId = CONFIG.LIFF_IDS ? CONFIG.LIFF_IDS.DRIVER : CONFIG.LIFF_ID;
     await liff.init({ liffId: driverLiffId });
-    
     if (!liff.isLoggedIn()) { liff.login(); return; }
 
     const profile = await liff.getProfile();
     myUID = profile.userId;
-    document.getElementById('loading').classList.add('hide');
+
+    // 初始化 Firebase 實例
+    const app = initializeApp(CONFIG.firebaseConfig);
+    db = getFirestore(app);
+    storage = getStorage(app);
 
     const drvSnap = await getDoc(doc(db, "drivers", myUID));
+    document.getElementById('loading').classList.add('hide');
 
     if (!drvSnap.exists()) {
       document.getElementById('section-register').classList.remove('hide');
@@ -143,14 +130,12 @@ async function init() {
     }
   } catch (err) { 
     console.error("Init Error:", err);
-    document.getElementById('loading').innerText = "系統啟動失敗，請確認網路。";
+    document.getElementById('loading').innerHTML = `❌ 系統啟動失敗<br><small>${err.message}</small>`;
   }
 }
 
-// 輔助函式：上傳單一檔案
 async function uploadToStorage(file, prefix) {
   if (!file) return null;
-  // 檔名加入時間戳防止重複，路徑包含司機 UID
   const storageRef = ref(storage, `drivers/${myUID}/${prefix}_${Date.now()}`);
   const snapshot = await uploadBytes(storageRef, file);
   return await getDownloadURL(snapshot.ref);
@@ -173,17 +158,16 @@ window.handleRegister = async () => {
 
   const btn = document.getElementById('reg-submit');
   btn.disabled = true;
-  btn.innerText = "⏳ 證件上傳中，請勿關閉視窗...";
+  btn.innerText = "⏳ 正在上傳第 1 張證件...";
 
   try {
-    // 同步上傳三張圖片
-    const [uLic, uReg, uIns] = await Promise.all([
-      uploadToStorage(fLic, "license"),
-      uploadToStorage(fReg, "registration"),
-      uploadToStorage(fIns, "insurance")
-    ]);
+    // 依序上傳，增加行動裝置穩定性
+    const uLic = await uploadToStorage(fLic, "license");
+    btn.innerText = "⏳ 正在上傳第 2 張證件...";
+    const uReg = await uploadToStorage(fReg, "registration");
+    btn.innerText = "⏳ 正在上傳第 3 張證件...";
+    const uIns = await uploadToStorage(fIns, "insurance");
 
-    // 寫入 Firestore 資料庫
     await setDoc(doc(db, "drivers", myUID), {
       uid: myUID, 
       name, phone, model, color, plate,
@@ -192,23 +176,23 @@ window.handleRegister = async () => {
       createdAt: serverTimestamp()
     });
     
-    alert("加盟申請已送出！管理員審核通過後即可開始接單。");
+    alert("加盟申請已送出！");
     location.reload();
   } catch (e) {
     console.error(e);
-    alert("提交失敗，請檢查網路連線或照片格式");
+    alert(`失敗原因: ${e.code || e.message}\n請確認 Firebase Storage 規則是否已發布`);
     btn.disabled = false;
     btn.innerText = "送出加盟申請";
   }
 };
 
-function loadDriverProfile(data) {
+window.loadDriverProfile = (data) => {
   document.getElementById('edit-name').value = data.name || "";
   document.getElementById('edit-phone').value = data.phone || "";
   document.getElementById('edit-plate').value = data.plate || "";
   document.getElementById('edit-model').value = data.model || "";
   document.getElementById('edit-color').value = data.color || "";
-}
+};
 
 window.updateDriverProfile = async () => {
   try {
@@ -223,31 +207,26 @@ window.updateDriverProfile = async () => {
   } catch (e) { alert("更新失敗"); }
 };
 
-function loadMyOrders(driverName) {
+window.loadMyOrders = (driverName) => {
   const q = query(collection(db, "orders"), where("driverName", "==", driverName));
   onSnapshot(q, (snap) => {
     const container = document.getElementById('orders-list');
     container.innerHTML = snap.empty ? '<p style="text-align:center; color:#999; padding:20px;">目前尚無指派行程</p>' : '';
-    
     snap.forEach(d => {
       const ord = d.data();
       const card = document.createElement('div');
       card.className = 'card';
-      
       const statusSteps = [
         { key: 'dispatched', label: '🚗 前往中' },
         { key: 'arrived', label: '📍 已抵達' },
         { key: 'picked_up', label: '乘客上車' },
         { key: 'completed', label: '🏁 行程結束' }
       ];
-
       const buttonsHtml = statusSteps.map(step => `
         <button class="btn btn-status ${ord.status === step.key ? 'active' : ''}" 
                 onclick="updateOrderStatus('${d.id}', '${step.key}')">
           ${step.label}
-        </button>
-      `).join('');
-
+        </button>`).join('');
       card.innerHTML = `
         <div class="order-info">
           <div style="font-weight:bold; color:var(--apple-blue); font-size:16px;">${ord.appointmentTime || '未定時間'}</div>
@@ -259,12 +238,11 @@ function loadMyOrders(driverName) {
           </div>
         </div>
         <div class="input-label">回報訂單狀態</div>
-        <div class="status-grid">${buttonsHtml}</div>
-      `;
+        <div class="status-grid">${buttonsHtml}</div>`;
       container.appendChild(card);
     });
   });
-}
+};
 
 window.updateOrderStatus = async (orderId, newStatus) => {
   try {
