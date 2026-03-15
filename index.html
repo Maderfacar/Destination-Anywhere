@@ -226,6 +226,8 @@
     // 🔴 加入 ?v=5 確保快取清除
     import { CONFIG } from './config.js?v=5';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    // 新增 App Check 核心模組
+    import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
     import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     let db;
@@ -241,9 +243,16 @@
 
         // 2. 初始化 Firebase
         const app = initializeApp(CONFIG.firebaseConfig);
+
+        // 3. 初始化 App Check (加入金鑰防禦)
+        const appCheck = initializeAppCheck(app, {
+          provider: new ReCaptchaV3Provider(CONFIG.appCheckSiteKey),
+          isTokenAutoRefreshEnabled: true 
+        });
+
         db = getFirestore(app);
 
-        // 3. 司機頻道防呆跳轉 (針對司機端 LIFF ID)
+        // 4. 司機頻道防呆跳轉 (針對司機端 LIFF ID)
         const urlParams = new URLSearchParams(window.location.search);
         const currentLiffId = urlParams.get('liffId') || "";
         const DRIVER_LIFF_ID = "2009434590-3t2KvScf";
@@ -253,17 +262,17 @@
             return;
         }
 
-        // 4. 初始化 LIFF
+        // 5. 初始化 LIFF
         await liff.init({ liffId: CONFIG.LIFF_ID });
         if (!liff.isLoggedIn()) { liff.login(); return; }
         
-        // 5. 取得使用者資訊並顯示
+        // 6. 取得使用者資訊並顯示
         const p = await liff.getProfile();
         displayIdEl.innerText = "ID: " + p.userId;
         document.getElementById('user-name').innerText = p.displayName;
         document.getElementById('user-avatar').src = p.pictureUrl || "https://cdn-icons-png.flaticon.com/512/147/147144.png";
 
-        // 6. 管理員權限判定
+        // 7. 管理員權限判定
         if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(p.userId)) {
           document.getElementById('admin-btn').style.display = 'block';
         }
