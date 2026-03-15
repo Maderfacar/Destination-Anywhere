@@ -88,11 +88,21 @@
 <button class="confirm-btn" id="submit-btn" onclick="sendRequest()">確認預約</button>
 
 <script type="module">
-import { CONFIG } from './config.js';
+// 🔴 加入 ?v=5 確保瀏覽器讀取最新設定
+import { CONFIG } from './config.js?v=5';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+// 新增：引入 App Check 核心
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const app = initializeApp(CONFIG.firebaseConfig);
+
+// 新增：啟用 App Check 保護，對抗非授權的 Firebase 請求
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider(CONFIG.appCheckSiteKey),
+  isTokenAutoRefreshEnabled: true 
+});
+
 const db = getFirestore(app);
 
 let currentMode = '送機';
@@ -125,14 +135,12 @@ window.renderStops = () => {
   const list = document.getElementById('stops-list');
   const flight = document.getElementById('flight-no').value || "";
   
-  // [關鍵修正]：在重新渲染前，先保存當前輸入的數值，避免資料消失
   const oldStart = document.getElementById('p-start')?.value || "";
   const oldEnd = document.getElementById('p-end')?.value || "";
   const oldMids = Array.from(document.querySelectorAll('.mid-input')).map(i => i.value);
 
   list.innerHTML = '';
 
-  // 1. 起點
   const pUp = document.createElement('div');
   pUp.className = 'input-row';
   if (currentMode === '接機') {
@@ -142,7 +150,6 @@ window.renderStops = () => {
   }
   list.appendChild(pUp);
 
-  // 2. 中途點
   midStops.forEach((_, idx) => {
     const mDiv = document.createElement('div');
     mDiv.className = 'input-row';
@@ -151,7 +158,6 @@ window.renderStops = () => {
     list.appendChild(mDiv);
   });
 
-  // 3. 終點
   const dOff = document.createElement('div');
   dOff.className = 'input-row';
   if (currentMode === '送機') {
@@ -201,7 +207,6 @@ window.sendRequest = async () => {
       dropoffLocation: endNode,
       extraStops: mids,
       allStops: [startNode, mids, endNode].filter(s => s).join(' → '),
-      // 恢復精確的人數與行李分類
       adults: document.getElementById('adult-count').innerText,
       children: document.getElementById('child-count').innerText,
       largeLuggage: document.getElementById('l-luggage').innerText,
@@ -212,25 +217,25 @@ window.sendRequest = async () => {
       createdAt: serverTimestamp()
     };
 
+    // 同步寫入資料庫並觸發通知
     await Promise.all([
-    addDoc(collection(db, "orders"), orderData),
-    fetch(CONFIG.webhooks.newOrder, { 
+      addDoc(collection(db, "orders"), orderData),
+      fetch(CONFIG.webhooks.newOrder, { 
         method: "POST", 
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData) 
-    })
-]);
+      })
+    ]);
 
     alert("✅ 預約已送出！我們會盡快為您安排");
     if (window.parent && window.parent.closeBooking) {
-        window.parent.closeBooking();
+      window.parent.closeBooking();
     } else {
-        liff.closeWindow();
+      liff.closeWindow();
     }
   } catch (e) {
-    alert("預約失敗，請重試");
+    console.error("Booking failed:", e);
+    alert("預約失敗，請確認網路連線或重試");
     btn.disabled = false;
     btn.innerText = "確認預約";
   }
