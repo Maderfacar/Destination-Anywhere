@@ -152,13 +152,53 @@
   </div>
 
   <script type="module">
-    // JS 暫時保持在頁面內，稍後再進行模組化
-    import { CONFIG } from './config.js?v=5';
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  // 告知：改用模組化引入，減少冗餘初始化代碼
+  import { db, CONFIG } from './firebase-config.js?v=1';
+  import { doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // ... init() 與 syncDesign() 邏輯不變 ...
-  </script>
+  async function init() {
+    const displayIdEl = document.getElementById('display-id');
+    try {
+      // 司機頻道防呆
+      const urlParams = new URLSearchParams(window.location.search);
+      const currentLiffId = urlParams.get('liffId') || "";
+      const DRIVER_LIFF_ID = "2009434590-3t2KvScf";
+      if (window.location.href.includes(DRIVER_LIFF_ID) || currentLiffId === DRIVER_LIFF_ID) {
+          window.location.replace("driver.html");
+          return;
+      }
+
+      await liff.init({ liffId: CONFIG.LIFF_ID });
+      if (!liff.isLoggedIn()) { liff.login(); return; }
+      
+      const p = await liff.getProfile();
+      displayIdEl.innerText = "ID: " + p.userId;
+      document.getElementById('user-name').innerText = p.displayName;
+      document.getElementById('user-avatar').src = p.pictureUrl || "https://cdn-icons-png.flaticon.com/512/147/147144.png";
+
+      if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(p.userId)) {
+        document.getElementById('admin-btn').style.display = 'block';
+      }
+      syncDesign();
+    } catch (e) { 
+      displayIdEl.innerText = "❌ 啟動失敗: " + e.message;
+    }
+  }
+
+  async function syncDesign() {
+    try {
+      const docSnap = await getDoc(doc(db, "siteConfig", "homePage"));
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.hero?.sub) document.getElementById('hero-sub').innerText = data.hero.sub;
+        // ... 其餘 syncDesign 邏輯 ...
+      }
+    } catch (err) { console.warn("視覺方案同步略過"); }
+  }
+
+  window.openBooking = () => document.getElementById('booking-overlay').classList.add('active');
+  window.closeBooking = () => document.getElementById('booking-overlay').classList.remove('active');
+  init();
+</script>
 </body>
 </html>
