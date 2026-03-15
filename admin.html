@@ -15,7 +15,6 @@
     
     .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #CCC; }
     
-    /* Tab 切換樣式 */
     .tabs { display: flex; gap: 10px; margin: 15px 0; }
     .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 12px; background: #D2D2D7; font-weight: 600; cursor: pointer; transition: 0.3s; }
     .tab-btn.active { background: var(--apple-blue); color: white; }
@@ -26,7 +25,6 @@
     
     .admin-card { background: var(--card-bg); border-radius: 16px; padding: 18px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05); }
     
-    /* 訂單卡片內部樣式 */
     .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
     .badge { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; }
     .badge-pending { background: #FFF4E5; color: #FF9500; }
@@ -36,7 +34,8 @@
     .input-label { font-size: 11px; color: var(--text-sub); margin-bottom: 3px; display: block; font-weight: bold; }
     input, textarea, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; box-sizing: border-box; background: #FAFAFA; }
     
-    /* 地址專用區塊 */
+    .info-summary { background: #F8F8F8; padding: 12px; border-radius: 12px; margin-bottom: 12px; font-size: 13px; line-height: 1.6; border: 1px solid #EEE; }
+
     .address-box { background: #F9F9FB; border-radius: 12px; padding: 12px; margin: 10px 0; border-left: 3px solid #DDD; }
     .address-box.pickup { border-left-color: var(--apple-green); }
     .address-box.dropoff { border-left-color: var(--apple-red); }
@@ -110,7 +109,7 @@
 <script type="module">
 import { CONFIG } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const app = initializeApp(CONFIG.firebaseConfig);
 const db = getFirestore(app);
@@ -128,7 +127,6 @@ async function init() {
     await liff.init({ liffId: CONFIG.LIFF_ID });
     if (!liff.isLoggedIn()) { liff.login(); return; }
     
-    // 司機名單即時監聽 (變成標籤方便點選)
     onSnapshot(collection(db, "drivers"), (snap) => {
       const area = document.getElementById('driver-tags-area');
       area.innerHTML = "<p class='input-label'>快速填入：</p>";
@@ -142,7 +140,6 @@ async function init() {
       });
     });
 
-    // 訂單監聽
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snapshot) => {
       const container = document.getElementById('orders-container');
@@ -156,7 +153,7 @@ function renderOrderCard(id, data) {
   const container = document.getElementById('orders-container');
   const card = document.createElement('div');
   card.className = 'admin-card';
-  card.onclick = () => { window.lastActiveOrder = id; }; // 記錄點擊的訂單
+  card.onclick = () => { window.lastActiveOrder = id; }; 
 
   card.innerHTML = `
     <div class="order-header">
@@ -164,9 +161,17 @@ function renderOrderCard(id, data) {
       <span class="badge ${data.status==='pending'?'badge-pending':'badge-done'}">${data.status}</span>
     </div>
 
+    <div class="info-summary">
+      <div><b>📞 電話：</b>${data.contactPhone || '未提供'}</div>
+      <div><b>👨‍👩‍👧 人數：</b>成人 ${data.adults || 0} / 兒童 ${data.children || 0}</div>
+      <div><b>🧳 行李：</b>大型 ${data.largeLuggage || 0} / 中小 ${data.smallLuggage || 0}</div>
+      <div><b>📝 備註：</b>${data.note || '無備註'}</div>
+    </div>
+
     <div class="edit-grid">
       <div><label class="input-label">預約時間</label><input type="text" id="time-${id}" value="${data.appointmentTime || ''}"></div>
-      <div><label class="input-label">乘客</label><input type="text" id="name-${id}" value="${data.contactName || ''}"></div>
+      <div><label class="input-label">乘客姓名</label><input type="text" id="name-${id}" value="${data.contactName || ''}"></div>
+      <div style="grid-column: span 2;"><label class="input-label">航班號碼 (僅接送機適用)</label><input type="text" id="flight-${id}" value="${data.flightNo || ''}" placeholder="例如: BR198"></div>
     </div>
 
     <div class="address-box pickup">
@@ -188,11 +193,12 @@ function renderOrderCard(id, data) {
       <div class="edit-grid">
         <div><label class="input-label">指派司機</label><input type="text" id="drvName-${id}" value="${data.driverName || ''}" placeholder="點上方標籤快速填入"></div>
         <div>
-            <label class="input-label">狀態</label>
+            <label class="input-label">訂單狀態</label>
             <select id="status-${id}">
                 <option value="pending" ${data.status==='pending'?'selected':''}>待處理</option>
                 <option value="dispatched" ${data.status==='dispatched'?'selected':''}>已派車</option>
                 <option value="completed" ${data.status==='completed'?'selected':''}>已完成</option>
+                <option value="cancelled" ${data.status==='cancelled'?'selected':''}>已取消</option>
             </select>
         </div>
       </div>
@@ -200,30 +206,34 @@ function renderOrderCard(id, data) {
         <button class="btn btn-outline" onclick="triggerAction('${id}', 'notify_customer')">📢 通知乘客</button>
         <button class="btn btn-outline" onclick="triggerAction('${id}', 'notify_driver')">📱 通知司機</button>
       </div>
-      <button class="btn btn-blue" style="margin-top:10px;" onclick="saveChanges('${id}')">💾 儲存所有欄位</button>
+      <button class="btn btn-blue" style="margin-top:10px;" onclick="saveChanges('${id}')">💾 儲存所有修改</button>
     </div>
   `;
   container.appendChild(card);
 }
 
-// 儲存修改
 window.saveChanges = async (id) => {
-  const dName = document.getElementById(`drvName-${id}`).value;
   const updateData = {
     appointmentTime: document.getElementById(`time-${id}`).value,
     contactName: document.getElementById(`name-${id}`).value,
+    flightNo: document.getElementById(`flight-${id}`).value,
     pickupLocation: document.getElementById(`pickup-${id}`).value,
     extraStops: document.getElementById(`stops-${id}`).value,
     dropoffLocation: document.getElementById(`dropoff-${id}`).value,
-    driverName: dName,
+    driverName: document.getElementById(`drvName-${id}`).value,
     status: document.getElementById(`status-${id}`).value,
-    updatedAt: serverTimestamp()
+    updatedAt: serverTimestamp(),
+    // 同步更新全站點字串供列表參考
+    allStops: [
+      document.getElementById(`pickup-${id}`).value,
+      document.getElementById(`stops-${id}`).value,
+      document.getElementById(`dropoff-${id}`).value
+    ].filter(s => s).join(' → ')
   };
   await updateDoc(doc(db, "orders", id), updateData);
-  alert("已更新訂單與地址資訊");
+  alert("✅ 訂單與調度資訊已儲存");
 };
 
-// 首頁裝修邏輯
 async function loadCurrentDesign() {
     const docSnap = await getDoc(doc(db, "siteConfig", "homePage"));
     if (docSnap.exists()) {
@@ -252,7 +262,6 @@ window.saveDesignSettings = async () => {
     alert("✅ 首頁裝修已發佈！");
 };
 
-// 司機資料管理
 window.addDriver = async () => {
   const name = document.getElementById('new-drv-name').value;
   const uid = document.getElementById('new-drv-uid').value;
