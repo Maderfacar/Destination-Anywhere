@@ -1,61 +1,41 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
-    <title>DA 系統初始化</title>
+    <meta charset="UTF-8">
+    <title>DA 系統初始化 - 權限設定</title>
+</head>
+<body>
+    <h2>正在初始化管理員權限...</h2>
+    <div id="log"></div>
+
     <script type="module">
         import { CONFIG } from './config.js';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // 1. 初始化 Firebase
         const app = initializeApp(CONFIG.firebaseConfig);
         const db = getFirestore(app);
+        const logDiv = document.getElementById('log');
 
-        async function setup() {
-            const statusEl = document.getElementById('status');
-            statusEl.innerText = "正在建立資料結構...";
-
+        async function initAdmins() {
             try {
-                // 2. 定義初始資料
-                const initialData = {
-                    hero: {
-                        title: "您好，旅伴",
-                        sub: "探索未知，隨心所行"
-                    },
-                    bento_booking: {
-                        title: "快速預約接送 🚕",
-                        sub: "點擊立即呼叫專業司機",
-                        bgUrl: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=1000"
-                    },
-                    bento_itinerary: {
-                        title: "行程規劃 🗺️",
-                        sub: "智慧路徑優化",
-                        bgUrl: "https://images.unsplash.com/photo-1526772662000-3f88f10405ff?q=80&w=1000"
-                    },
-                    bento_mileage: {
-                        title: "我的里程 💎",
-                        sub: "查看累積回饋"
-                    }
-                };
-
-                // 3. 寫入 Firebase (路徑: siteConfig/homePage)
-                await setDoc(doc(db, "siteConfig", "homePage"), initialData);
+                const adminList = CONFIG.ADMIN_UIDS;
                 
-                statusEl.innerText = "✅ 初始化成功！您的 siteConfig/homePage 已建立。";
-                statusEl.style.color = "green";
-            } catch (error) {
-                console.error(error);
-                statusEl.innerText = "❌ 失敗: " + error.message;
-                statusEl.style.color = "red";
+                for (const uid of adminList) {
+                    // 使用 UID 作為 Document ID
+                    await setDoc(doc(db, "admins", uid), {
+                        role: "admin",
+                        createdAt: serverTimestamp()
+                    });
+                    logDiv.innerHTML += `<p style="color:green;">✅ UID: ${uid} 已成功加入管理員清單</p>`;
+                }
+                logDiv.innerHTML += "<h3>🎉 所有管理員權限已設定完成，現在可以關閉此頁面。</h3>";
+            } catch (e) {
+                logDiv.innerHTML += `<p style="color:red;">❌ 錯誤: ${e.message}</p>`;
             }
         }
 
-        window.startSetup = setup;
+        initAdmins();
     </script>
-</head>
-<body style="font-family:sans-serif; text-align:center; padding-top:50px;">
-    <h2>Destination Anywhere 系統地基建立</h2>
-    <p id="status">點擊下方按鈕開始自動配置資料庫</p>
-    <button onclick="startSetup()" style="padding:15px 30px; font-size:18px; cursor:pointer;">開始初始化</button>
 </body>
 </html>
