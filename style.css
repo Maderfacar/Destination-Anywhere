@@ -1,0 +1,147 @@
+/* --- Destination Anywhere 全域品牌規範 --- */
+:root {
+    /* 品牌色彩控制中心 */
+    --bg-color: #F2F2F7;         /* 蘋果系統淺灰背景 */
+    --card-bg: #FFFFFF;         /* 純白卡片 */
+    --text-main: #1D1D1F;       /* 深灰文字（非純黑） */
+    --text-sub: #86868B;        /* 次要描述文字 */
+    --apple-blue: #0071E3;      /* 品牌主色 */
+    --apple-green: #34C759;     /* 成功、狀態啟動 */
+    --apple-red: #FF3B30;       /* 警告、刪除 */
+    --border: #D2D2D7;          /* 線條顏色 */
+    --input-bg: #FAFAFA;        /* 輸入框背景 */
+}
+
+/* 基礎重置 */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    padding: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* 模組化標題：DA 標誌性的左側藍線 */
+.section-title {
+    font-weight: 700;
+    margin: 20px 0 12px 5px;
+    font-size: 17px;
+    color: var(--text-main);
+    border-left: 4px solid var(--apple-blue);
+    padding-left: 10px;
+}
+
+/* 模組化卡片：High-end 懸浮感 */
+.card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+/* 表單元件系統 */
+.input-label {
+    font-size: 11px;
+    color: var(--text-sub);
+    margin-bottom: 5px;
+    display: block;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 16px;
+    box-sizing: border-box;
+    background: var(--input-bg);
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--apple-blue);
+    background: #FFF;
+}
+
+/* 按鈕系統 */
+.btn {
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 15px;
+    transition: all 0.2s;
+    width: 100%;
+    text-align: center;
+    display: block;
+}
+
+.btn-blue {
+    background: var(--apple-blue);
+    color: white;
+}
+
+.btn-blue:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+}
+
+.btn-blue:disabled {
+    background: #A2A2A7;
+    cursor: not-allowed;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1.5px solid var(--apple-blue);
+    color: var(--apple-blue);
+}
+
+/* 狀態按鈕與網格 (常用於控制台) */
+.status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.btn-status {
+    font-size: 13px;
+    padding: 10px;
+    background: #F2F2F7;
+    color: #1D1D1F;
+    border: 1px solid #D2D2D7;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-status.active {
+    background: var(--apple-green);
+    color: white;
+    border-color: var(--apple-green);
+}
+
+/* 載入與隱藏輔助類 */
+.hide { display: none !important; }
+
+#loading {
+    text-align: center;
+    padding-top: 100px;
+    color: var(--text-sub);
+    font-weight: 500;
+}
+
+/* 響應式微調 */
+@media (max-width: 380px) {
+    body { padding: 10px; }
+    .card { padding: 15px; }
+}
