@@ -161,7 +161,7 @@ async function init() {
     }
     document.getElementById('admin-content').style.display = 'block';
 
-    // 1. 監聽已核准司機 (供調度使用 - 保留原始)
+    // 1. 監聽已核准司機 (供調度使用)
     onSnapshot(query(collection(db, "drivers"), where("status", "==", "approved")), (snap) => {
       const area = document.getElementById('driver-tags-area');
       area.innerHTML = "<p class='input-label'>快速填入：</p>";
@@ -180,7 +180,7 @@ async function init() {
       refreshOrders();
     });
 
-    // 2. 監聽待審核司機 (修改：點擊後顯示詳細資料彈窗)
+    // 2. 監聽待審核司機 (補齊車型與顏色顯示)
     onSnapshot(query(collection(db, "drivers"), where("status", "==", "pending")), (snap) => {
       const list = document.getElementById('pending-drivers-list');
       list.innerHTML = snap.empty ? "<div style='text-align:center; padding:50px; color:#999;'>暫無新申請</div>" : "";
@@ -192,7 +192,7 @@ async function init() {
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div>
                 <div style="font-weight:bold;">${drv.name}</div>
-                <div style="font-size:12px; color:#666;">車牌: ${drv.plate}</div>
+                <div style="font-size:12px; color:#666;">${drv.model || '未提供車型'} (${drv.color || '無'}) - ${drv.plate}</div>
             </div>
             <button class="btn btn-blue" style="width:auto; padding:8px 15px;" id="btn-open-verify-${d.id}">查看資料</button>
           </div>
@@ -206,14 +206,15 @@ async function init() {
   } catch (e) { console.error("Init Error:", e); }
 }
 
-// 新增：開啟審核彈窗
+// 開啟審核彈窗 (補齊車型與顏色欄位)
 window.openVerifyModal = (uid, data) => {
     const body = document.getElementById('verify-modal-body');
     body.innerHTML = `
       <div class="edit-grid" style="margin-bottom:15px;">
         <div><label class="input-label">姓名</label><p style="margin:2px 0;">${data.name}</p></div>
         <div><label class="input-label">電話</label><p style="margin:2px 0;"><a href="tel:${data.phone}">${data.phone}</a></p></div>
-        <div style="grid-column: span 2;"><label class="input-label">車牌號碼</label><p style="margin:2px 0;">${data.plate}</p></div>
+        <div><label class="input-label">車牌號碼</label><p style="margin:2px 0;">${data.plate}</p></div>
+        <div><label class="input-label">車型 / 顏色</label><p style="margin:2px 0;">${data.model || '未填'} / ${data.color || '未填'}</p></div>
       </div>
       <div style="border-top:1px solid #EEE; padding-top:10px;">
         <span class="doc-label">🪪 駕駛執照</span>
@@ -238,8 +239,6 @@ window.approveDriver = async (uid) => {
     alert("核准成功！");
     closeVerifyModal();
 };
-
-// --- 以下所有調度與裝修邏輯，完全保留原始，嚴禁修改 ---
 
 function refreshOrders() {
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
