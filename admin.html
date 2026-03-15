@@ -110,19 +110,125 @@
 
 <script type="module">
   import { db, CONFIG } from './firebase-config.js?v=1';
-  import { collection, query, orderBy, onSnapshot, doc, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, setDoc, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  let approvedDrivers = [];
 
   async function init() {
     await liff.init({ liffId: CONFIG.LIFF_ID });
     if (!liff.isLoggedIn()) { liff.login(); return; }
     const profile = await liff.getProfile();
     if (!CONFIG.ADMIN_UIDS.includes(profile.userId)) {
-      alert("權限不足");
+      document.body.innerHTML = '<h2 style="padding:50px; text-align:center;">權限不足</h2>';
       return;
     }
     loadOrders();
+    loadApprovedDrivers();
   }
-  // ... 其餘管理邏輯 ...
+
+  // 1. 頁籤邏輯
+  window.switchTab = (target, btn) => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`panel-${target}`).classList.add('active');
+    if(target === 'verify') loadPendingDrivers();
+  };
+
+  // 2. 訂單管理
+  window.loadOrders = () => {
+    const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snap) => {
+      const container = document.getElementById('orders-container');
+      container.innerHTML = snap.empty ? '暫無訂單' : '';
+      snap.forEach(d => {
+        const ord = d.data();
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="order-header">
+            <b>${ord.tripType}</b>
+            <span class="badge ${ord.status==='pending'?'badge-pending':'badge-done'}">${ord.status}</span>
+          </div>
+          <div class="info-summary">${ord.appointmentTime}<br>👤 ${ord.contactName}</div>
+          <div class="address-box pickup">🟢 ${ord.pickupLocation}</div>
+          <div class="address-box dropoff">🔴 ${ord.dropoffLocation}</div>
+          <div class="dispatch-zone">
+            <label class="input-label">指派司機：${ord.driverName || '未指派'}</label>
+            <select onchange="assignDriver('${d.id}', this.value)" style="width:100%; padding:8px; border-radius:8px;">
+              <option value="">-- 選擇司機 --</option>
+              ${approvedDrivers.map(drv => `<option value="${drv.name}" ${ord.driverName===drv.name?'selected':''}>${drv.name} (${drv.plate})</option>`).join('')}
+            </select>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    });
+  };
+
+  // 3. 司機審核邏輯
+  window.loadApprovedDrivers = () => {
+    const q = query(collection(db, "drivers"), where("status", "==", "approved"));
+    onSnapshot(q, (snap) => {
+      approvedDrivers = [];
+      const area = document.getElementById('driver-tags-area');
+      area.innerHTML = '';
+      snap.forEach(d => {
+        const drv = d.data();
+        approvedDrivers.push(drv);
+        area.innerHTML += `<span class="driver-tag">${drv.name} (${drv.plate})</span>`;
+      });
+    });
+  };
+
+  window.assignDriver = async (orderId, driverName) => {
+    if(!driverName) return;
+    await updateDoc(doc(db, "orders", orderId), { driverName, status: 'dispatched' });
+    alert("指派成功");
+  };
+
+  // 4. 首頁裝修邏輯
+  window.saveDesignSettings = async () => {
+    await setDoc(doc(db, "siteConfig", "homePage"), {
+      hero: { sub: document.getElementById('edit-hero-sub').value },
+      booking: { title: document.getElementById('edit-booking-title').value }
+    }, { merge: true });
+    alert("同步成功");
+  };
+
+// 補上遺漏的審核與設計加載邏輯
+window.loadPendingDrivers = () => {
+  const q = query(collection(db, "drivers"), where("status", "==", "pending"));
+  onSnapshot(q, (snap) => {
+    const list = document.getElementById('pending-drivers-list');
+    list.innerHTML = snap.empty ? '<div style="text-align:center; padding:50px; color:#999;">暫無新申請</div>' : '';
+    snap.forEach(d => {
+      const drv = d.data();
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `
+        <b>${drv.name}</b> (${drv.plate})<br>
+        <button class="btn btn-blue" style="margin-top:10px;" onclick="approveDriver('${d.id}')">核准加入</button>
+      `;
+      list.appendChild(div);
+    });
+  });
+};
+
+window.approveDriver = async (id) => {
+  await updateDoc(doc(db, "drivers", id), { status: 'approved' });
+  alert("已核准司機");
+};
+
+window.loadCurrentDesign = async () => {
+  const docSnap = await getDoc(doc(db, "siteConfig", "homePage"));
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    if(data.hero?.sub) document.getElementById('edit-hero-sub').value = data.hero.sub;
+    if(data.booking?.title) document.getElementById('edit-booking-title').value = data.booking.title;
+  }
+};
+  
   init();
 </script>
 </body>
