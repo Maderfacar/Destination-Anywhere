@@ -46,64 +46,70 @@
     .btn { padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
     .btn-blue { background: var(--apple-blue); color: white; width: 100%; }
     .btn-outline { background: white; border: 1.5px solid var(--apple-blue); color: var(--apple-blue); }
-    .btn-red { background: white; border: 1.5px solid var(--apple-red); color: var(--apple-red); font-size: 11px; padding: 4px 8px; border-radius: 6px; }
-
+    
     .driver-tag { display: inline-block; padding: 5px 10px; background: #EEE; border-radius: 20px; font-size: 12px; margin: 3px; cursor: pointer; }
+    
+    #access-denied { display: none; padding: 50px; text-align: center; }
   </style>
 </head>
 
 <body>
 
-<div class="header">
-  <div style="font-weight:bold; font-size:20px;">DA 管理中樞</div>
-  <button onclick="location.href='index.html'" style="background:none; border:1px solid #666; padding:6px 14px; border-radius:20px; font-size:12px;">返回首頁</button>
+<div id="admin-content" style="display:none;">
+  <div class="header">
+    <div style="font-weight:bold; font-size:20px;">DA 管理中樞</div>
+    <button onclick="location.href='index.html'" style="background:none; border:1px solid #666; padding:6px 14px; border-radius:20px; font-size:12px;">返回首頁</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('dispatch', this)">🚕 調度派車</button>
+    <button class="tab-btn" onclick="switchTab('design', this)">🎨 裝修首頁</button>
+  </div>
+
+  <div id="panel-dispatch" class="panel active">
+      <div class="section-title">📇 司機庫管理</div>
+      <div class="admin-card">
+        <div class="edit-grid">
+          <div><label class="input-label">司機姓名</label><input type="text" id="new-drv-name"></div>
+          <div><label class="input-label">車牌號碼</label><input type="text" id="new-drv-plate"></div>
+          <div style="grid-column: span 2;"><label class="input-label">LINE UID</label><input type="text" id="new-drv-uid"></div>
+        </div>
+        <button class="btn btn-blue" style="margin-top:10px;" onclick="addDriver()">➕ 存入資料庫</button>
+        <div id="driver-tags-area" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="section-title">🚗 訂單詳細調度</div>
+      <div id="orders-container">
+        <div style="text-align:center; padding:50px; color:#999;">讀取中...</div>
+      </div>
+  </div>
+
+  <div id="panel-design" class="panel">
+      <div class="section-title">🖼️ 首頁視覺設定</div>
+      <div class="admin-card">
+        <div style="margin-bottom: 15px;">
+          <label class="input-label">首頁副標題 (Hero Sub)</label>
+          <input type="text" id="edit-hero-sub">
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label class="input-label">預約卡片標題</label>
+          <input type="text" id="edit-booking-title">
+          <label class="input-label" style="margin-top:8px;">預約背景圖網址 (Unsplash)</label>
+          <input type="text" id="edit-booking-bg">
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label class="input-label">行程規劃背景圖網址</label>
+          <input type="text" id="edit-itinerary-bg">
+        </div>
+        <button class="btn btn-blue" onclick="saveDesignSettings()">💾 儲存設定並同步首頁</button>
+      </div>
+  </div>
 </div>
 
-<div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('dispatch', this)">🚕 調度派車</button>
-  <button class="tab-btn" onclick="switchTab('design', this)">🎨 裝修首頁</button>
-</div>
-
-<div id="panel-dispatch" class="panel active">
-    <div class="section-title">📇 司機庫管理</div>
-    <div class="admin-card">
-      <div class="edit-grid">
-        <div><label class="input-label">司機姓名</label><input type="text" id="new-drv-name"></div>
-        <div><label class="input-label">車牌號碼</label><input type="text" id="new-drv-plate"></div>
-        <div style="grid-column: span 2;"><label class="input-label">LINE UID</label><input type="text" id="new-drv-uid"></div>
-      </div>
-      <button class="btn btn-blue" style="margin-top:10px;" onclick="addDriver()">➕ 存入資料庫</button>
-      <div id="driver-tags-area" style="margin-top:10px;"></div>
-    </div>
-
-    <div class="section-title">🚗 訂單詳細調度</div>
-    <div id="orders-container">
-      <div style="text-align:center; padding:50px; color:#999;">讀取中...</div>
-    </div>
-</div>
-
-<div id="panel-design" class="panel">
-    <div class="section-title">🖼️ 首頁視覺設定</div>
-    <div class="admin-card">
-      <div style="margin-bottom: 15px;">
-        <label class="input-label">首頁副標題 (Hero Sub)</label>
-        <input type="text" id="edit-hero-sub">
-      </div>
-
-      <div style="margin-bottom: 15px;">
-        <label class="input-label">預約卡片標題</label>
-        <input type="text" id="edit-booking-title">
-        <label class="input-label" style="margin-top:8px;">預約背景圖網址 (Unsplash)</label>
-        <input type="text" id="edit-booking-bg">
-      </div>
-
-      <div style="margin-bottom: 15px;">
-        <label class="input-label">行程規劃背景圖網址</label>
-        <input type="text" id="edit-itinerary-bg">
-      </div>
-
-      <button class="btn btn-blue" onclick="saveDesignSettings()">💾 儲存設定並同步首頁</button>
-    </div>
+<div id="access-denied">
+  <h2 style="color: var(--apple-red);">⚠️ 權限不足</h2>
+  <p id="denied-msg">您非授權管理員，無法進入此頁面。</p>
+  <button class="btn btn-blue" onclick="liff.closeWindow()">關閉視窗</button>
 </div>
 
 <script type="module">
@@ -114,19 +120,31 @@ import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, g
 const app = initializeApp(CONFIG.firebaseConfig);
 const db = getFirestore(app);
 
-window.switchTab = (target, btn) => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('panel-' + target).classList.add('active');
-    if(target === 'design') loadCurrentDesign();
-};
+let lastActiveOrder = null;
 
 async function init() {
   try {
     await liff.init({ liffId: CONFIG.LIFF_ID });
-    if (!liff.isLoggedIn()) { liff.login(); return; }
     
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+
+    const profile = await liff.getProfile();
+    const userUID = profile.userId;
+
+    // 🔴 核心白名單檢查
+    if (!CONFIG.ADMIN_UIDS.includes(userUID)) {
+      document.getElementById('access-denied').style.display = 'block';
+      document.getElementById('denied-msg').innerText = `您的 UID (${userUID}) 未獲授權。`;
+      return;
+    }
+
+    // 通過檢查，顯示內容
+    document.getElementById('admin-content').style.display = 'block';
+
+    // 監聽司機庫
     onSnapshot(collection(db, "drivers"), (snap) => {
       const area = document.getElementById('driver-tags-area');
       area.innerHTML = "<p class='input-label'>快速填入：</p>";
@@ -135,25 +153,38 @@ async function init() {
         const tag = document.createElement('span');
         tag.className = 'driver-tag';
         tag.innerText = dv.name;
-        tag.onclick = () => { window.lastActiveOrder && (document.getElementById(`drvName-${window.lastActiveOrder}`).value = dv.name); };
+        tag.onclick = () => { 
+          if(lastActiveOrder) document.getElementById(`drvName-${lastActiveOrder}`).value = dv.name; 
+        };
         area.appendChild(tag);
       });
     });
 
+    // 監聽訂單
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snapshot) => {
       const container = document.getElementById('orders-container');
       container.innerHTML = "";
       snapshot.forEach(d => renderOrderCard(d.id, d.data()));
     });
-  } catch (e) { console.error(e); }
+  } catch (e) { 
+    console.error("Init Error:", e);
+  }
 }
+
+window.switchTab = (target, btn) => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + target).classList.add('active');
+    if(target === 'design') loadCurrentDesign();
+};
 
 function renderOrderCard(id, data) {
   const container = document.getElementById('orders-container');
   const card = document.createElement('div');
   card.className = 'admin-card';
-  card.onclick = () => { window.lastActiveOrder = id; }; 
+  card.onclick = () => { lastActiveOrder = id; }; 
 
   card.innerHTML = `
     <div class="order-header">
@@ -162,6 +193,7 @@ function renderOrderCard(id, data) {
     </div>
 
     <div class="info-summary">
+      <div><b>👤 乘客：</b>${data.contactName || '未提供'}</div>
       <div><b>📞 電話：</b>${data.contactPhone || '未提供'}</div>
       <div><b>👨‍👩‍👧 人數：</b>成人 ${data.adults || 0} / 兒童 ${data.children || 0}</div>
       <div><b>🧳 行李：</b>大型 ${data.largeLuggage || 0} / 中小 ${data.smallLuggage || 0}</div>
@@ -170,8 +202,7 @@ function renderOrderCard(id, data) {
 
     <div class="edit-grid">
       <div><label class="input-label">預約時間</label><input type="text" id="time-${id}" value="${data.appointmentTime || ''}"></div>
-      <div><label class="input-label">乘客姓名</label><input type="text" id="name-${id}" value="${data.contactName || ''}"></div>
-      <div style="grid-column: span 2;"><label class="input-label">航班號碼 (僅接送機適用)</label><input type="text" id="flight-${id}" value="${data.flightNo || ''}" placeholder="例如: BR198"></div>
+      <div style="grid-column: span 1;"><label class="input-label">航班號碼</label><input type="text" id="flight-${id}" value="${data.flightNo || ''}"></div>
     </div>
 
     <div class="address-box pickup">
@@ -180,7 +211,7 @@ function renderOrderCard(id, data) {
     </div>
 
     <div class="address-box">
-      <label class="input-label">🟡 停靠點 (多點請用分號隔開)</label>
+      <label class="input-label">🟡 停靠點</label>
       <textarea id="stops-${id}" rows="2">${data.extraStops || ''}</textarea>
     </div>
 
@@ -191,7 +222,7 @@ function renderOrderCard(id, data) {
 
     <div class="dispatch-zone">
       <div class="edit-grid">
-        <div><label class="input-label">指派司機</label><input type="text" id="drvName-${id}" value="${data.driverName || ''}" placeholder="點上方標籤快速填入"></div>
+        <div><label class="input-label">指派司機</label><input type="text" id="drvName-${id}" value="${data.driverName || ''}"></div>
         <div>
             <label class="input-label">訂單狀態</label>
             <select id="status-${id}">
@@ -206,7 +237,7 @@ function renderOrderCard(id, data) {
         <button class="btn btn-outline" onclick="triggerAction('${id}', 'notify_customer')">📢 通知乘客</button>
         <button class="btn btn-outline" onclick="triggerAction('${id}', 'notify_driver')">📱 通知司機</button>
       </div>
-      <button class="btn btn-blue" style="margin-top:10px;" onclick="saveChanges('${id}')">💾 儲存所有修改</button>
+      <button class="btn btn-blue" style="margin-top:10px;" onclick="saveChanges('${id}')">💾 儲存修改</button>
     </div>
   `;
   container.appendChild(card);
@@ -215,7 +246,6 @@ function renderOrderCard(id, data) {
 window.saveChanges = async (id) => {
   const updateData = {
     appointmentTime: document.getElementById(`time-${id}`).value,
-    contactName: document.getElementById(`name-${id}`).value,
     flightNo: document.getElementById(`flight-${id}`).value,
     pickupLocation: document.getElementById(`pickup-${id}`).value,
     extraStops: document.getElementById(`stops-${id}`).value,
@@ -223,7 +253,6 @@ window.saveChanges = async (id) => {
     driverName: document.getElementById(`drvName-${id}`).value,
     status: document.getElementById(`status-${id}`).value,
     updatedAt: serverTimestamp(),
-    // 同步更新全站點字串供列表參考
     allStops: [
       document.getElementById(`pickup-${id}`).value,
       document.getElementById(`stops-${id}`).value,
@@ -231,35 +260,7 @@ window.saveChanges = async (id) => {
     ].filter(s => s).join(' → ')
   };
   await updateDoc(doc(db, "orders", id), updateData);
-  alert("✅ 訂單與調度資訊已儲存");
-};
-
-async function loadCurrentDesign() {
-    const docSnap = await getDoc(doc(db, "siteConfig", "homePage"));
-    if (docSnap.exists()) {
-        const data = docSnap.data();
-        document.getElementById('edit-hero-sub').value = data.hero?.sub || "";
-        document.getElementById('edit-booking-title').value = data.bento_booking?.title || "";
-        document.getElementById('edit-booking-bg').value = data.bento_booking?.bgUrl || "";
-        document.getElementById('edit-itinerary-bg').value = data.bento_itinerary?.bgUrl || "";
-    }
-}
-
-window.saveDesignSettings = async () => {
-    const config = {
-        hero: { sub: document.getElementById('edit-hero-sub').value, title: "您好，旅伴" },
-        bento_booking: {
-            title: document.getElementById('edit-booking-title').value,
-            bgUrl: document.getElementById('edit-booking-bg').value,
-            sub: "點擊立即呼叫專業司機"
-        },
-        bento_itinerary: {
-            bgUrl: document.getElementById('edit-itinerary-bg').value,
-            title: "行程規劃 🗺️", sub: "智慧路徑優化"
-        }
-    };
-    await setDoc(doc(db, "siteConfig", "homePage"), config);
-    alert("✅ 首頁裝修已發佈！");
+  alert("✅ 資訊已更新");
 };
 
 window.addDriver = async () => {
@@ -270,14 +271,46 @@ window.addDriver = async () => {
     name, uid, plate: document.getElementById('new-drv-plate').value,
     createdAt: serverTimestamp()
   });
-  alert("司機已加入庫");
+  alert("司機已存入庫");
 };
 
 window.triggerAction = async (id, type) => {
   const oSnap = await getDoc(doc(db, "orders", id));
   const payload = { action: type, orderId: id, ...oSnap.data() };
-  await fetch(CONFIG.webhooks.adminAction, { method: "POST", body: JSON.stringify(payload) });
-  alert("發送訊號至 Make.com");
+  await fetch(CONFIG.webhooks.adminAction, { 
+    method: "POST", 
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload) 
+  });
+  alert("已發送通知訊號");
+};
+
+async function loadCurrentDesign() {
+  const docSnap = await getDoc(doc(db, "siteConfig", "homePage"));
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    document.getElementById('edit-hero-sub').value = data.hero?.sub || "";
+    document.getElementById('edit-booking-title').value = data.bento_booking?.title || "";
+    document.getElementById('edit-booking-bg').value = data.bento_booking?.bgUrl || "";
+    document.getElementById('edit-itinerary-bg').value = data.bento_itinerary?.bgUrl || "";
+  }
+}
+
+window.saveDesignSettings = async () => {
+  const config = {
+    hero: { sub: document.getElementById('edit-hero-sub').value, title: "您好，旅伴" },
+    bento_booking: {
+      title: document.getElementById('edit-booking-title').value,
+      bgUrl: document.getElementById('edit-booking-bg').value,
+      sub: "點擊立即呼叫專業司機"
+    },
+    bento_itinerary: {
+      bgUrl: document.getElementById('edit-itinerary-bg').value,
+      title: "行程規劃 🗺️", sub: "智慧路徑優化"
+    }
+  };
+  await setDoc(doc(db, "siteConfig", "homePage"), config);
+  alert("✅ 首頁裝修已發佈！");
 };
 
 init();
