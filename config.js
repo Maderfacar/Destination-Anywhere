@@ -21,7 +21,7 @@ export const CONFIG = {
   // 4. 自動化接點 (Webhook)
   webhooks: {
     // 乘客下單後觸發的 Webhook (index.html 使用)
-    newOrder: "你的_INDEX_WEBHOOK_URL", 
+    newOrder: "https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis", 
     // 管理員調度中心觸發的 Webhook (admin.html 使用)
     adminAction: "https://hook.us2.make.com/te3nqlpvmiekxglqy9jt0xp2org17q5v"
   },
