@@ -52,5 +52,9 @@ export const CONFIG = {
       dispatchBtn: "Update & Send Notification",
       customerName: "Customer Name"
     }
-  }
+  },
+
+  // 6. 安全防禦：App Check reCAPTCHA v3 網站金鑰
+  // 請填入你在 Google reCAPTCHA Admin 取得的「網站金鑰 (Site Key)」
+  appCheckSiteKey: "你的_reCAPTCHA_V3_SITE_KEY"
 };
