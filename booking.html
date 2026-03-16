@@ -24,8 +24,17 @@
     .counter-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .counter-ctrl { display: flex; align-items: center; gap: 15px; }
     .ctrl-btn { background: #E3E3E6; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; color: #0071E3; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    
+    /* 新型行李卡片樣式 */
+    .luggage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
+    .luggage-card { background: #F8F8FA; border: 1px solid #EEE; border-radius: 12px; padding: 12px 5px; text-align: center; }
+    .luggage-icon { font-size: 24px; margin-bottom: 5px; display: block; }
+    .luggage-name { font-size: 12px; color: #48484A; font-weight: 600; display: block; margin-bottom: 8px; white-space: nowrap; }
+    .luggage-ctrl { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .mini-btn { width: 24px; height: 24px; border-radius: 50%; border: none; background: #E3E3E6; color: #0071E3; font-weight: bold; cursor: pointer; }
+    .luggage-num { font-size: 15px; font-weight: 700; min-width: 15px; }
+
     .delete-btn { color: #FF3B30; font-size: 11px; border: 1px solid #FF3B30; padding: 2px 5px; border-radius: 4px; cursor: pointer; }
-    .luggage-desc { font-size: 11px; color: #8E8E93; display: block; font-weight: 400; }
     .qr-box { background: white; padding: 15px; border-radius: 12px; display: inline-block; margin: 20px 0; border: 1px solid #EEE; }
     .qr-box img { width: 200px; height: 200px; display: block; }
   </style>
@@ -35,8 +44,8 @@
 <div id="booking-container">
   <div class="section-title">👤 聯絡資訊</div>
   <div class="card">
-    <div class="input-row"><span class="label-txt">聯絡人</span><input type="text" id="contact-name" class="main-input" placeholder="請輸入姓名"></div>
-    <div class="input-row"><span class="label-txt">電話</span><input type="tel" id="contact-phone" class="main-input" placeholder="09xx-xxx-xxx"></div>
+    <div class="input-row"><span class="label-txt">聯絡人</span><input type="text" id="contact-name" class="main-input"></div>
+    <div class="input-row"><span class="label-txt">電話</span><input type="tel" id="contact-phone" class="main-input"></div>
   </div>
 
   <div class="section-title">📍 行程站點</div>
@@ -60,15 +69,40 @@
     <input type="time" id="order-time-input" step="900">
   </div>
 
-  <div class="section-title">🧳 人數行李</div>
+  <div class="section-title">🧳 人數與行李</div>
   <div class="card">
     <div class="counter-row"><span>成人</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('adults',-1)">-</button><b id="adults">0</b><button class="ctrl-btn" onclick="qty('adults',1)">+</button></div></div>
     <div class="counter-row"><span>兒童</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('children',-1)">-</button><b id="children">0</b><button class="ctrl-btn" onclick="qty('children',1)">+</button></div></div>
-    <hr style="border:0; border-top:1px solid #F2F2F7; margin:15px 0;">
-    <div class="counter-row"><div><span>18-20吋</span><span class="luggage-desc">登機箱</span></div><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('luggage_S',-1)">-</button><b id="luggage_S">0</b><button class="ctrl-btn" onclick="qty('luggage_S',1)">+</button></div></div>
-    <div class="counter-row"><div><span>22-24吋</span><span class="luggage-desc">中型託運</span></div><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('luggage_M',-1)">-</button><b id="luggage_M">0</b><button class="ctrl-btn" onclick="qty('luggage_M',1)">+</button></div></div>
-    <div class="counter-row"><div><span>26-28吋</span><span class="luggage-desc">大型託運</span></div><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('luggage_L',-1)">-</button><b id="luggage_L">0</b><button class="ctrl-btn" onclick="qty('luggage_L',1)">+</button></div></div>
-    <div class="counter-row"><div><span>30-32吋</span><span class="luggage-desc">超大託運</span></div><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('luggage_XL',-1)">-</button><b id="luggage_XL">0</b><button class="ctrl-btn" onclick="qty('luggage_XL',1)">+</button></div></div>
+    
+    <div class="luggage-grid">
+      <div class="luggage-card">
+        <span class="luggage-icon">💼</span>
+        <span class="luggage-name">登機箱</span>
+        <div class="luggage-ctrl">
+          <button class="mini-btn" onclick="qty('luggage_S',-1)">-</button>
+          <b class="luggage-num" id="luggage_S">0</b>
+          <button class="mini-btn" onclick="qty('luggage_S',1)">+</button>
+        </div>
+      </div>
+      <div class="luggage-card">
+        <span class="luggage-icon">🧳</span>
+        <span class="luggage-name">託運行李</span>
+        <div class="luggage-ctrl">
+          <button class="mini-btn" onclick="qty('luggage_M',-1)">-</button>
+          <b class="luggage-num" id="luggage_M">0</b>
+          <button class="mini-btn" onclick="qty('luggage_M',1)">+</button>
+        </div>
+      </div>
+      <div class="luggage-card">
+        <span class="luggage-icon">🚲</span>
+        <span class="luggage-name">特大/器材</span>
+        <div class="luggage-ctrl">
+          <button class="mini-btn" onclick="qty('luggage_L',-1)">-</button>
+          <b class="luggage-num" id="luggage_L">0</b>
+          <button class="mini-btn" onclick="qty('luggage_L',1)">+</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="section-title">📝 備註</div>
@@ -95,7 +129,6 @@
   let stops = [];
   let userProfile = null;
 
-  // 1. 核心渲染函式
   window.renderStops = () => {
     const list = document.getElementById('stops-list');
     if (!list) return;
@@ -113,42 +146,31 @@
     });
   };
 
-  // 2. 切換邏輯
   window.switchTab = (mode, btn) => {
     currentMode = mode;
     const allBtns = document.querySelectorAll('.tab-btn');
     allBtns.forEach(b => b.classList.remove('active'));
-    
-    if (btn) {
-      btn.classList.add('active');
-    } else {
-      allBtns.forEach(b => { if(b.innerText === mode) b.classList.add('active'); });
-    }
+    if (btn) btn.classList.add('active');
+    else allBtns.forEach(b => { if(b.innerText === mode) b.classList.add('active'); });
     
     document.getElementById('flight-section').style.display = (mode === '送機' || mode === '接機') ? 'block' : 'none';
-    
     const t = Date.now();
-    if (mode === '送機') {
-      stops = [{ id: t, address: '', type: '起點' }, { id: t+1, address: '', type: '機場' }];
-    } else if (mode === '接機') {
-      stops = [{ id: t, address: '', type: '機場' }, { id: t+1, address: '', type: '目的地' }];
-    } else {
-      stops = [{ id: t, address: '', type: '起點' }, { id: t+1, address: '', type: '目的地' }];
-    }
+    if (mode === '送機') stops = [{ id: t, address: '', type: '起點' }, { id: t+1, address: '', type: '機場' }];
+    else if (mode === '接機') stops = [{ id: t, address: '', type: '機場' }, { id: t+1, address: '', type: '目的地' }];
+    else stops = [{ id: t, address: '', type: '起點' }, { id: t+1, address: '', type: '目的地' }];
     window.renderStops();
   };
 
-  // 3. 通用功能
   window.updateStop = (index, value) => { stops[index].address = value; };
   window.addNewStop = () => { stops.splice(stops.length - 1, 0, { id: Date.now(), address: '', type: '停靠點' }); window.renderStops(); };
   window.removeStop = (index) => { stops.splice(index, 1); window.renderStops(); };
+  
   window.qty = (id, change) => {
     let el = document.getElementById(id);
     let val = parseInt(el.innerText) + change;
     el.innerText = val < 0 ? 0 : val;
   };
 
-  // 4. 發送請求
   window.sendRequest = async () => {
     const btn = document.getElementById('submit-btn');
     const name = document.getElementById('contact-name').value;
@@ -180,10 +202,11 @@
       dropoffLocation: stops[stops.length-1].address,
       adults: document.getElementById('adults').innerText,
       children: document.getElementById('children').innerText,
+      // 將三分類行李數據對應回原有的資料欄位
       luggage_S: document.getElementById('luggage_S').innerText,
       luggage_M: document.getElementById('luggage_M').innerText,
       luggage_L: document.getElementById('luggage_L').innerText,
-      luggage_XL: document.getElementById('luggage_XL').innerText,
+      luggage_XL: "0", 
       note: document.getElementById('order-note').value || '無',
       status: 'pending'
     };
@@ -216,9 +239,7 @@
     else window.location.replace('index.html');
   };
 
-  // 5. 初始化與強效修復
   async function startApp() {
-    // 優先渲染 UI，不等待 LIFF
     window.switchTab('送機', document.getElementById('default-tab'));
 
     try {
@@ -226,9 +247,7 @@
       if (liff.isLoggedIn()) {
         userProfile = await liff.getProfile();
         if (userProfile && userProfile.displayName) {
-          // 直接賦值，並移除 placeholder
-          const nameInput = document.getElementById('contact-name');
-          nameInput.value = userProfile.displayName;
+          document.getElementById('contact-name').value = userProfile.displayName;
         }
       }
     } catch (e) { 
