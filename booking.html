@@ -21,8 +21,6 @@
     .counter-ctrl { display: flex; align-items: center; gap: 15px; }
     .ctrl-btn { background: #E3E3E6; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; color: #0071E3; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .delete-btn { color: #FF3B30; font-size: 12px; border: 1px solid #FF3B30; padding: 2px 6px; border-radius: 6px; cursor: pointer; margin-left: auto; }
-
-    /* 成功畫面樣式 */
     #success-screen { display: none; text-align: center; padding: 40px 20px; }
     .qr-box { background: white; padding: 15px; border-radius: 12px; display: inline-block; margin: 20px 0; border: 1px solid #EEE; }
     .qr-box img { width: 200px; height: 200px; display: block; }
@@ -168,6 +166,7 @@
     btn.disabled = true;
     btn.innerText = "正在預約...";
 
+    // 嚴格對齊原始資料結構，確保 Make 端變數路徑正確
     const orderData = {
       userId: userProfile?.userId || 'anonymous',
       contactName: name,
@@ -191,18 +190,18 @@
     };
 
     try {
-      // 1. 同步寫入 Firestore
+      // 1. 寫入 Firestore
       const docRef = await addDoc(collection(db, "orders"), {
         ...orderData,
         createdAt: serverTimestamp()
       });
 
-      // 2. 直接發送 Webhook 到 Make (解決 Cannot GET 問題)
-      fetch('https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis', {
+      // 2. 直發 Webhook (強製 POST 並傳送對齊後的資料)
+      await fetch('https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...orderData, orderId: docRef.id })
-      }).catch(err => console.error("Make Webhook Error:", err));
+      });
 
       showSuccess(docRef.id);
     } catch (e) {
@@ -216,16 +215,13 @@
     document.getElementById('booking-container').style.display = 'none';
     document.getElementById('success-screen').style.display = 'block';
     document.getElementById('display-order-id').innerText = "訂單編號：" + orderId;
-    
     const qrContainer = document.getElementById('qrcode-container');
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${orderId}`;
     qrContainer.innerHTML = `<img src="${qrUrl}" alt="QR Code">`;
   }
 
   window.closeLiffWindow = () => {
-    // 發送通知給父視窗 index.html 關閉 Overlay
     window.parent.postMessage('booking_success', '*');
-
     if (liff.isInClient()) {
       liff.closeWindow(); 
     } else {
