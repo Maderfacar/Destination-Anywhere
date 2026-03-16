@@ -147,7 +147,6 @@
   async function init() {
     const displayIdEl = document.getElementById('display-id');
     try {
-      // 乘客端 LIFF 初始化 (使用乘客端 ID)
       await liff.init({ liffId: CONFIG.LIFF_ID });
       
       if (!liff.isLoggedIn()) { 
@@ -160,7 +159,6 @@
       document.getElementById('user-name').innerText = p.displayName;
       document.getElementById('user-avatar').src = p.pictureUrl || "https://cdn-icons-png.flaticon.com/512/147/147144.png";
 
-      // 管理員權限顯示
       if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(p.userId)) {
         document.getElementById('admin-btn').style.display = 'block';
       }
@@ -191,6 +189,13 @@
       }
     });
   }
+
+  // 新增：監聽來自 iframe 的訊號
+  window.addEventListener('message', (event) => {
+    if (event.data === 'booking_success') {
+      closeBooking();
+    }
+  });
 
   window.openBooking = () => {
     document.getElementById('booking-overlay').classList.add('active');
