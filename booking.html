@@ -25,7 +25,7 @@
     .counter-ctrl { display: flex; align-items: center; gap: 15px; }
     .ctrl-btn { background: #E3E3E6; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; color: #0071E3; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     
-    /* 新型行李卡片樣式 */
+    /* 三分類行李卡片佈局 */
     .luggage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
     .luggage-card { background: #F8F8FA; border: 1px solid #EEE; border-radius: 12px; padding: 12px 5px; text-align: center; }
     .luggage-icon { font-size: 24px; margin-bottom: 5px; display: block; }
@@ -164,7 +164,6 @@
   window.updateStop = (index, value) => { stops[index].address = value; };
   window.addNewStop = () => { stops.splice(stops.length - 1, 0, { id: Date.now(), address: '', type: '停靠點' }); window.renderStops(); };
   window.removeStop = (index) => { stops.splice(index, 1); window.renderStops(); };
-  
   window.qty = (id, change) => {
     let el = document.getElementById(id);
     let val = parseInt(el.innerText) + change;
@@ -202,11 +201,10 @@
       dropoffLocation: stops[stops.length-1].address,
       adults: document.getElementById('adults').innerText,
       children: document.getElementById('children').innerText,
-      // 將三分類行李數據對應回原有的資料欄位
       luggage_S: document.getElementById('luggage_S').innerText,
       luggage_M: document.getElementById('luggage_M').innerText,
       luggage_L: document.getElementById('luggage_L').innerText,
-      luggage_XL: "0", 
+      luggage_XL: "0",
       note: document.getElementById('order-note').value || '無',
       status: 'pending'
     };
@@ -246,12 +244,20 @@
       await liff.init({ liffId: CONFIG.LIFF_ID });
       if (liff.isLoggedIn()) {
         userProfile = await liff.getProfile();
+        
+        // --- 重點修復部分 ---
         if (userProfile && userProfile.displayName) {
-          document.getElementById('contact-name').value = userProfile.displayName;
+          setTimeout(() => {
+            const nameField = document.getElementById('contact-name');
+            nameField.value = userProfile.displayName;
+            // 雙重保險：如果一般 value 沒效，使用 defaultValue
+            nameField.defaultValue = userProfile.displayName;
+          }, 100); // 延遲 100ms 確保 DOM 渲染完畢
         }
+        // ------------------
       }
     } catch (e) { 
-      console.log("LIFF Init Failed"); 
+      console.log("LIFF Init Failed", e); 
     }
   }
 
