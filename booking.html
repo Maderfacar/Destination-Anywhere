@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="style.css?v=1">
 
   <style>
-    /* Booking 頁面樣式 */
+    /* Booking 頁面樣式 - 保持不變 */
     .tabs { display: flex; background: #E3E3E6; border-radius: 12px; padding: 3px; margin-bottom: 15px; }
     .tab-btn { flex: 1; border: none; padding: 10px 0; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: #8E8E93; transition: 0.2s; }
     .tab-btn.active { background: white; color: #000; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -166,37 +166,32 @@
     btn.disabled = true;
     btn.innerText = "正在預約...";
 
-    // 嚴格對齊原始資料結構，確保 Make 端變數路徑正確
+    // 組裝路線文本
+    const allStopsText = stops.map(s => `${s.type}: ${s.address}`).join(' -> ');
+
+    // 嚴格對齊你 Make 端的欄位名稱
     const orderData = {
       userId: userProfile?.userId || 'anonymous',
+      tripType: currentMode,
+      appointmentTime: `${date} ${time}`,
       contactName: name,
       contactPhone: phone,
-      tripType: currentMode,
-      flightNo: document.getElementById('flight-no').value,
-      appointmentTime: `${date} ${time}`,
-      pickupLocation: stops[0].address,
-      dropoffLocation: stops[stops.length-1].address,
-      midStops: stops.slice(1, -1).map(s => s.address),
-      passengers: {
-        adult: document.getElementById('adult-count').innerText,
-        child: document.getElementById('child-count').innerText
-      },
-      luggage: {
-        large: document.getElementById('l-luggage').innerText,
-        small: document.getElementById('s-luggage').innerText
-      },
-      note: document.getElementById('order-note').value,
+      flightNo: document.getElementById('flight-no').value || '無',
+      allStops: allStopsText,
+      adults: document.getElementById('adult-count').innerText,
+      children: document.getElementById('child-count').innerText,
+      largeLuggage: document.getElementById('l-luggage').innerText,
+      smallLuggage: document.getElementById('s-luggage').innerText,
+      note: document.getElementById('order-note').value || '無備註',
       status: 'pending'
     };
 
     try {
-      // 1. 寫入 Firestore
       const docRef = await addDoc(collection(db, "orders"), {
         ...orderData,
         createdAt: serverTimestamp()
       });
 
-      // 2. 直發 Webhook (強製 POST 並傳送對齊後的資料)
       await fetch('https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
