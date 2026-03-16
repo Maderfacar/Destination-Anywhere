@@ -7,7 +7,7 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link rel="stylesheet" href="style.css?v=1">
   <style>
-    /* 核心佈局：確保成功畫面初始絕對隱藏 */
+    /* 核心佈局 */
     #success-screen { display: none !important; text-align: center; padding: 40px 20px; }
     #booking-container { display: block; }
 
@@ -17,8 +17,13 @@
     .input-row { display: flex; align-items: center; margin-bottom: 12px; gap: 10px; border-bottom: 1px solid #F2F2F7; padding-bottom: 8px; }
     .label-txt { width: 85px; font-size: 13px; font-weight: 600; color: #48484A; line-height: 1.2; }
     .main-input { flex: 1; border: none; padding: 8px 0; font-size: 16px; background: transparent; color: #000; outline: none; }
-    .datetime-container { display: flex; gap: 10px; }
-    .datetime-container input { flex: 1; padding: 10px; border: 1px solid #EEE; border-radius: 8px; }
+    
+    /* 時間選擇器樣式優化 */
+    .datetime-container { display: flex; gap: 8px; align-items: center; }
+    .datetime-container input[type="date"] { flex: 2; padding: 10px; border: 1px solid #EEE; border-radius: 8px; font-size: 15px; }
+    .time-select-group { flex: 3; display: flex; gap: 4px; align-items: center; }
+    .time-select-group select { flex: 1; padding: 10px 5px; border: 1px solid #EEE; border-radius: 8px; font-size: 15px; background: #FFF; }
+
     .counter-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .counter-ctrl { display: flex; align-items: center; gap: 15px; }
     .ctrl-btn { background: #E3E3E6; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; color: #0071E3; cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -33,7 +38,7 @@
 <div id="booking-container">
   <div class="section-title">👤 聯絡資訊</div>
   <div class="card">
-    <div class="input-row"><span class="label-txt">聯絡人</span><input type="text" id="contact-name" class="main-input"></div>
+    <div class="input-row"><span class="label-txt">聯絡人</span><input type="text" id="contact-name" class="main-input" placeholder="讀取中..."></div>
     <div class="input-row"><span class="label-txt">電話</span><input type="tel" id="contact-phone" class="main-input" placeholder="09xx-xxx-xxx"></div>
   </div>
 
@@ -55,7 +60,16 @@
   <div class="section-title">⏰ 預約時間</div>
   <div class="card datetime-container">
     <input type="date" id="order-date">
-    <input type="time" id="order-time-input">
+    <div class="time-select-group">
+      <select id="time-hour"></select>
+      <span>:</span>
+      <select id="time-minute">
+        <option value="00">00</option>
+        <option value="15">15</option>
+        <option value="30">30</option>
+        <option value="45">45</option>
+      </select>
+    </div>
   </div>
 
   <div class="section-title">🧳 人數行李</div>
@@ -91,7 +105,13 @@
   let stops = [];
   let userProfile = null;
 
-  // 1. 核心渲染函式 (確保立即反應)
+  // 初始化小時選單 (00-23)
+  const hourSelect = document.getElementById('time-hour');
+  for (let i = 0; i < 24; i++) {
+    let h = i.toString().padStart(2, '0');
+    hourSelect.options.add(new Option(h, h));
+  }
+
   window.renderStops = () => {
     const list = document.getElementById('stops-list');
     if (!list) return;
@@ -109,16 +129,19 @@
     });
   };
 
-  // 2. 切換邏輯
   window.switchTab = (mode, btn) => {
     currentMode = mode;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
+    const allBtns = document.querySelectorAll('.tab-btn');
+    allBtns.forEach(b => b.classList.remove('active'));
     
-    // 顯示/隱藏航班號碼
+    if (btn) {
+      btn.classList.add('active');
+    } else {
+      allBtns.forEach(b => { if(b.innerText === mode) b.classList.add('active'); });
+    }
+    
     document.getElementById('flight-section').style.display = (mode === '送機' || mode === '接機') ? 'block' : 'none';
     
-    // 重設地址結構
     const t = Date.now();
     if (mode === '送機') {
       stops = [{ id: t, address: '', type: '起點' }, { id: t+1, address: '', type: '機場' }];
@@ -130,7 +153,6 @@
     window.renderStops();
   };
 
-  // 3. 通用功能
   window.updateStop = (index, value) => { stops[index].address = value; };
   window.addNewStop = () => { stops.splice(stops.length - 1, 0, { id: Date.now(), address: '', type: '停靠點' }); window.renderStops(); };
   window.removeStop = (index) => { stops.splice(index, 1); window.renderStops(); };
@@ -140,15 +162,15 @@
     el.innerText = val < 0 ? 0 : val;
   };
 
-  // 4. 發送請求
   window.sendRequest = async () => {
     const btn = document.getElementById('submit-btn');
     const name = document.getElementById('contact-name').value;
     const phone = document.getElementById('contact-phone').value;
     const date = document.getElementById('order-date').value;
-    const time = document.getElementById('order-time-input').value;
+    const hour = document.getElementById('time-hour').value;
+    const min = document.getElementById('time-minute').value;
 
-    if (!name || !phone || !date || !time || stops[0].address === '' || stops[stops.length-1].address === '') {
+    if (!name || !phone || !date || stops[0].address === '' || stops[stops.length-1].address === '') {
       alert("請填寫完整資訊並確認起迄點地址"); return;
     }
 
@@ -163,7 +185,7 @@
       contactName: name,
       contactPhone: phone,
       tripType: currentMode,
-      appointmentTime: `${date} ${time}`,
+      appointmentTime: `${date} ${hour}:${min}`,
       orderTime: orderTimeStr,
       flightNo: document.getElementById('flight-no').value || '無',
       allStops: stops.map(s => `${s.type}: ${s.address}`).join(' -> '),
@@ -208,21 +230,26 @@
     else window.location.replace('index.html');
   };
 
-  // 5. 初始化與強效修復
   async function startApp() {
+    // 優先渲染地址欄位
+    window.switchTab('送機', document.getElementById('default-tab'));
+
     try {
       await liff.init({ liffId: CONFIG.LIFF_ID });
       if (liff.isLoggedIn()) {
         userProfile = await liff.getProfile();
-        document.getElementById('contact-name').value = userProfile.displayName;
+        if (userProfile && userProfile.displayName) {
+          document.getElementById('contact-name').value = userProfile.displayName;
+        }
+      } else {
+        document.getElementById('contact-name').value = "";
+        document.getElementById('contact-name').placeholder = "請輸入聯絡姓名";
       }
-    } catch (e) { console.log("LIFF Init Failed"); }
-    
-    // 初始化 UI：強制觸發一次送機模式的渲染
-    window.switchTab('送機', document.getElementById('default-tab'));
+    } catch (e) { 
+      document.getElementById('contact-name').placeholder = "請輸入聯絡姓名";
+    }
   }
 
-  // 確保 DOM 載入後立即執行
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', startApp);
   } else {
