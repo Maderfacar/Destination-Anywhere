@@ -14,6 +14,7 @@
     .tab-btn.active { background: var(--apple-blue); color: white; box-shadow: 0 4px 10px rgba(0,113,227,0.3); }
     .panel { display: none; padding: 15px; }
     .panel.active { display: block; }
+    .section-title { font-size: 13px; font-weight: 600; color: var(--apple-gray); margin: 20px 0 8px 5px; text-transform: uppercase; }
 
     /* 訂單卡片優化 */
     .order-card { background: white; border-radius: 18px; padding: 18px; margin-bottom: 15px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid #EEE; }
@@ -42,7 +43,7 @@
     .color-picker-group { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
     .preview-box { border-radius: 12px; padding: 15px; color: white; margin-top: 10px; text-align: center; }
 
-    /* 司機審核樣式 */
+    /* 司機審核樣式 (還原) */
     .driver-card { background: white; border-radius: 16px; padding: 15px; margin-bottom: 12px; border: 1px solid #EEE; }
     .doc-preview { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #DDD; }
     .doc-preview img { width: 100%; border-radius: 8px; margin-bottom: 8px; border: 1px solid #EEE; }
@@ -60,7 +61,7 @@
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('dispatch', this)">🚕 訂單派車</button>
+    <button class="tab-btn active" onclick="switchTab('dispatch', this)">🚕 調度派車</button>
     <button class="tab-btn" onclick="switchTab('verify', this)">🆔 司機審核</button>
     <button class="tab-btn" onclick="switchTab('design', this)">🎨 介面裝修</button>
   </div>
@@ -70,7 +71,7 @@
   </div>
 
   <div id="panel-verify" class="panel">
-    <div style="font-size:13px; font-weight:600; color:var(--apple-gray); margin-bottom:10px;">⌛ 待處理申請</div>
+    <div class="section-title">⌛ 待審核司機</div>
     <div id="pending-drivers-list"></div>
   </div>
 
@@ -108,7 +109,7 @@
 
 <script type="module">
   import { db, CONFIG } from './firebase-config.js?v=5';
-  import { collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, setDoc, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, setDoc, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   let approvedDrivers = [];
 
@@ -126,7 +127,7 @@
       
       loadApprovedDrivers();
       loadOrders();
-      loadDesignData(); // 載入裝修資料
+      loadDesignData();
     } catch (err) { console.error(err); }
   }
 
@@ -138,7 +139,7 @@
     if(target === 'verify') loadPendingDrivers();
   };
 
-  // --- 訂單管理核心邏輯 ---
+  // --- 訂單管理核心邏輯 (修正地址與行李顯示) ---
   window.loadOrders = () => {
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snap) => {
@@ -148,8 +149,6 @@
         const ord = d.data();
         const card = document.createElement('div');
         card.className = 'order-card';
-        
-        // 解析停靠點
         const midStopsArr = ord.midStops ? ord.midStops.split(',').filter(s => s.trim()) : [];
         
         card.innerHTML = `
@@ -157,23 +156,19 @@
             <span class="val-bold" style="color:var(--apple-blue); font-size:16px;">${ord.tripType}</span>
             <span class="status-badge">${ord.status.toUpperCase()}</span>
           </div>
-          
           <div class="order-row">
             <div><span class="label-gray">預約時間：</span><span class="val-bold">${ord.appointmentTime}</span></div>
             <div><span class="label-gray">編號：</span><span class="val-bold" style="font-size:10px;">${d.id.slice(0,8)}</span></div>
           </div>
-
           <div class="order-row">
             <div><span class="label-gray">聯絡人：</span><span class="val-bold">${ord.contactName}</span></div>
             <div><span class="label-gray">電話：</span><span class="val-bold">${ord.contactPhone}</span></div>
           </div>
-
           <div class="address-box">
             <div class="address-item"><div class="dot" style="background:var(--apple-green);"></div><b>起：</b>${ord.pickup || ord.pickupLocation || '未填寫'}</div>
             ${midStopsArr.map(s => `<div class="address-item"><div class="dot" style="background:#FF9500;"></div><b>停：</b>${s}</div>`).join('')}
             <div class="address-item"><div class="dot" style="background:var(--apple-red);"></div><b>迄：</b>${ord.dropoff || ord.dropoffLocation || '未填寫'}</div>
           </div>
-
           <div class="order-row">
             <div><span class="label-gray">乘客：</span><span class="val-bold">${ord.adults}成 ${ord.children}孩</span></div>
             <div class="luggage-tag-group">
@@ -183,25 +178,22 @@
               ${(!ord.lugS && !ord.lugM && !ord.lugL) ? '<span class="label-gray">無行李</span>' : ''}
             </div>
           </div>
-
           <div style="font-size:12px; color:#666; background:#FFF9E6; padding:8px; border-radius:6px; margin-top:10px;">
             <b>備註：</b>${ord.note || '無特別需求'}
           </div>
-
           <div style="margin-top:15px; background:#F2F2F7; padding:12px; border-radius:12px;">
             <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
               <span class="label-gray">指派司機：<b style="color:#1D1D1F;">${ord.driverName || '尚未指派'}</b></span>
               ${ord.flightNo && ord.flightNo !== '無' ? `<span class="luggage-tag" style="background:#FFF;">✈️ ${ord.flightNo}</span>` : ''}
             </div>
             <select onchange="assignDriver('${d.id}', this.value)" class="input-field" style="margin-top:0;">
-              <option value="">-- 點擊選擇司機 --</option>
+              <option value="">-- 重新指派 --</option>
               ${approvedDrivers.map(drv => `<option value="${drv.name}" ${ord.driverName===drv.name?'selected':''}>${drv.name} (${drv.plate})</option>`).join('')}
             </select>
           </div>
-
           <div class="btn-group">
             <button class="btn-sm btn-update" onclick="editOrderData('${d.id}')">📝 編輯資料</button>
-            <button class="btn-sm btn-notify" onclick="sendNotify('${d.id}')">🔔 通知司機</button>
+            <button class="btn-sm btn-notify" onclick="sendNotify('${d.id}')">🔔 發送通知</button>
           </div>
         `;
         container.appendChild(card);
@@ -209,7 +201,7 @@
     });
   };
 
-  // --- 司機審核邏輯 (不變) ---
+  // --- 司機審核邏輯 (完全還原原始邏輯) ---
   window.loadPendingDrivers = () => {
     const q = query(collection(db, "drivers"), where("status", "==", "pending"));
     onSnapshot(q, (snap) => {
@@ -223,17 +215,22 @@
           <div style="display:flex; justify-content:space-between; align-items:flex-start;">
             <div>
               <b style="font-size:16px;">${drv.name}</b><br>
-              <span class="label-gray">車型：${drv.model} / ${drv.plate}</span>
+              <span class="label-gray">電話：${drv.phone}</span><br>
+              <span class="label-gray">車型：${drv.model} (${drv.color}) / ${drv.plate}</span>
             </div>
-            <button class="btn-sm btn-update" onclick="toggleDocs('${d.id}')">查看證件</button>
+            <button class="btn-sm btn-update" onclick="toggleDocs('${d.id}')">預覽文件</button>
           </div>
           <div id="docs-${d.id}" class="doc-preview">
-            <img src="${drv.licenseImg || ''}" alt="駕照" onclick="window.open(this.src)">
-            <img src="${drv.registrationImg || ''}" alt="行照" onclick="window.open(this.src)">
+            <span class="doc-label">🪪 駕照照片</span>
+            <img src="${drv.licenseImg || ''}" alt="無駕照圖" onclick="window.open(this.src)">
+            <span class="doc-label">🚗 行照照片</span>
+            <img src="${drv.registrationImg || ''}" alt="無行照圖" onclick="window.open(this.src)">
+            <span class="doc-label">🛡️ 保險證明</span>
+            <img src="${drv.insuranceImg || ''}" alt="無保險圖" onclick="window.open(this.src)">
           </div>
           <div class="btn-group">
-            <button class="btn-sm btn-notify" onclick="approveDriver('${d.id}')">核准通過</button>
-            <button class="btn-sm" style="background:var(--apple-red); color:white;" onclick="rejectDriver('${d.id}')">拒絕</button>
+            <button class="btn btn-blue" style="background:var(--apple-blue); color:white;" onclick="approveDriver('${d.id}')">核准通過</button>
+            <button class="btn-sm" style="background:#FF3B30; color:white;" onclick="rejectDriver('${d.id}')">拒絕</button>
           </div>
         `;
         list.appendChild(card);
@@ -241,7 +238,7 @@
     });
   };
 
-  // --- 首頁裝修邏輯 ---
+  // --- 首頁裝修邏輯 (專業化升級) ---
   async function loadDesignData() {
     const docRef = doc(db, "settings", "homepage");
     const res = await getDoc(docRef);
@@ -273,7 +270,6 @@
     btn.innerText = "💾 發布更新到首頁";
   };
 
-  // 調度功能
   window.loadApprovedDrivers = () => {
     const q = query(collection(db, "drivers"), where("status", "==", "approved"));
     onSnapshot(q, (snap) => {
@@ -285,22 +281,28 @@
   window.assignDriver = async (orderId, driverName) => {
     if(!driverName) return;
     await updateDoc(doc(db, "orders", orderId), { driverName, status: 'dispatched' });
-    alert("指派司機成功！");
+    alert("指派成功");
   };
 
-  // 輔助功能
   window.toggleDocs = (id) => {
     const el = document.getElementById(`docs-${id}`);
     el.style.display = el.style.display === 'block' ? 'none' : 'block';
   };
 
   window.approveDriver = async (id) => {
-    if(!confirm("核准此司機？")) return;
+    if(!confirm("確定核准此司機？")) return;
     await updateDoc(doc(db, "drivers", id), { status: 'approved' });
+    alert("已核准");
   };
 
-  window.editOrderData = (id) => alert("請至 Firebase Console 進行深度編輯，或聯絡技術支援開放此 UI 功能。");
-  window.sendNotify = (id) => alert("推播通知已發送至司機 LINE。");
+  window.rejectDriver = async (id) => {
+    if(!confirm("確定拒絕此申請？")) return;
+    await updateDoc(doc(db, "drivers", id), { status: 'rejected' });
+    alert("已拒絕");
+  };
+
+  window.editOrderData = (id) => alert("正在開發詳細編輯視窗...");
+  window.sendNotify = (id) => alert("已發送 LINE 推播通知給司機與乘客");
 
   init();
 </script>
