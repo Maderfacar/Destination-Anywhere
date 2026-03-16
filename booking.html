@@ -2,40 +2,45 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>預約接送 | Destination Anywhere</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <link rel="stylesheet" href="style.css?v=1">
   <style>
-    /* 核心佈局 */
-    #success-screen { display: none !important; text-align: center; padding: 40px 20px; }
-    #booking-container { display: block; }
-
-    .tabs { display: flex; background: #E3E3E6; border-radius: 12px; padding: 3px; margin-bottom: 15px; }
-    .tab-btn { flex: 1; border: none; padding: 10px 0; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: #8E8E93; transition: 0.2s; }
-    .tab-btn.active { background: white; color: #000; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .input-row { display: flex; align-items: center; margin-bottom: 12px; gap: 10px; border-bottom: 1px solid #F2F2F7; padding-bottom: 8px; }
-    .label-txt { width: 85px; font-size: 13px; font-weight: 600; color: #48484A; line-height: 1.2; }
-    .main-input { flex: 1; border: none; padding: 8px 0; font-size: 16px; background: transparent; color: #000; outline: none; }
+    :root { --apple-blue: #0071E3; --apple-gray: #8E8E93; --apple-bg: #F5F5F7; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--apple-bg); margin: 0; padding: 15px; color: #1D1D1F; }
+    .section-title { font-size: 13px; font-weight: 600; color: var(--apple-gray); margin: 20px 0 8px 5px; text-transform: uppercase; }
+    .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 15px; }
     
-    .datetime-container { display: flex; gap: 10px; }
-    .datetime-container input { flex: 1; padding: 10px; border: 1px solid #EEE; border-radius: 8px; font-size: 16px; }
+    /* 聯絡人與輸入框 */
+    .input-row { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #F2F2F7; padding: 8px 0; }
+    .input-row:last-child { border-bottom: none; }
+    .label-txt { width: 70px; font-size: 14px; font-weight: 600; color: #48484A; }
+    .main-input { flex: 1; border: none; padding: 8px 0; font-size: 16px; outline: none; background: transparent; }
 
-    .counter-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .counter-ctrl { display: flex; align-items: center; gap: 15px; }
-    .ctrl-btn { background: #E3E3E6; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; color: #0071E3; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    
+    /* 頁籤切換 */
+    .tabs { display: flex; background: #E3E3E6; border-radius: 10px; padding: 2px; margin-bottom: 15px; }
+    .tab-btn { flex: 1; border: none; padding: 8px 0; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: #8E8E93; transition: 0.2s; }
+    .tab-btn.active { background: white; color: #000; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+    /* 行李卡片 Grid */
     .luggage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
-    .luggage-card { background: #F8F8FA; border: 1px solid #EEE; border-radius: 12px; padding: 12px 5px; text-align: center; }
-    .luggage-icon { font-size: 24px; margin-bottom: 5px; display: block; }
-    .luggage-name { font-size: 12px; color: #48484A; font-weight: 600; display: block; margin-bottom: 8px; white-space: nowrap; }
-    .luggage-ctrl { display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .mini-btn { width: 24px; height: 24px; border-radius: 50%; border: none; background: #E3E3E6; color: #0071E3; font-weight: bold; cursor: pointer; }
-    .luggage-num { font-size: 15px; font-weight: 700; min-width: 15px; }
+    .luggage-card { background: #F8F8FA; border: 1px solid #EEE; border-radius: 10px; padding: 10px 5px; text-align: center; }
+    .luggage-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+    .luggage-name { font-size: 11px; color: #48484A; display: block; margin-bottom: 6px; }
+    .qty-ctrl { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .q-btn { width: 22px; height: 22px; border-radius: 50%; border: none; background: #E3E3E6; color: var(--apple-blue); font-weight: bold; cursor: pointer; }
+    .q-num { font-size: 14px; min-width: 12px; }
 
-    .delete-btn { color: #FF3B30; font-size: 11px; border: 1px solid #FF3B30; padding: 2px 5px; border-radius: 4px; cursor: pointer; }
-    .qr-box { background: white; padding: 15px; border-radius: 12px; display: inline-block; margin: 20px 0; border: 1px solid #EEE; }
-    .qr-box img { width: 200px; height: 200px; display: block; }
+    /* 通用計數器 (成人/兒童) */
+    .counter-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+    .ctrl-group { display: flex; align-items: center; gap: 15px; }
+    .circle-btn { width: 28px; height: 28px; border-radius: 50%; border: none; background: #E3E3E6; color: var(--apple-blue); font-size: 18px; cursor: pointer; }
+
+    /* 按鈕 */
+    .btn-blue { width: 100%; background: var(--apple-blue); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+    .btn-blue:disabled { background: #CCC; }
+
+    #success-screen { display: none; text-align: center; padding: 40px 20px; }
   </style>
 </head>
 <body>
@@ -43,8 +48,8 @@
 <div id="booking-container">
   <div class="section-title">👤 聯絡資訊</div>
   <div class="card">
-    <div class="input-row"><span class="label-txt">聯絡人</span><input type="text" id="contact-name" class="main-input" value=""></div>
-    <div class="input-row"><span class="label-txt">電話</span><input type="tel" id="contact-phone" class="main-input" value=""></div>
+    <div class="input-row"><span class="label-txt">聯絡人</span><input type="text" id="contact-name" class="main-input"></div>
+    <div class="input-row"><span class="label-txt">電話</span><input type="tel" id="contact-phone" class="main-input"></div>
   </div>
 
   <div class="section-title">📍 行程站點</div>
@@ -55,226 +60,149 @@
       <button class="tab-btn" onclick="switchTab('交通趟', this)">交通趟</button>
       <button class="tab-btn" onclick="switchTab('包車', this)">包車</button>
     </div>
-    <div id="station-container">
-      <div id="flight-section"><div class="input-row"><span class="label-txt">航班號碼</span><input type="text" id="flight-no" class="main-input" placeholder="例如: BR198"></div></div>
-      <div id="stops-list"></div>
-    </div>
-    <div style="text-align:center; color:#0071E3; font-size:13px; font-weight:600; padding-top:10px; cursor:pointer;" onclick="addNewStop()">+ 新增停靠點</div>
+    <div id="flight-section"><div class="input-row"><span class="label-txt">航班號碼</span><input type="text" id="flight-no" class="main-input" placeholder="例如: BR198"></div></div>
+    <div id="stops-list"></div>
+    <div style="text-align:center; color:var(--apple-blue); font-size:13px; font-weight:600; margin-top:12px; cursor:pointer;" onclick="addNewStop()">+ 新增停靠點</div>
   </div>
 
   <div class="section-title">⏰ 預約時間</div>
-  <div class="card datetime-container">
-    <input type="date" id="order-date">
-    <input type="time" id="order-time-input" step="900">
+  <div class="card" style="display:flex; gap:10px;">
+    <input type="date" id="order-date" class="main-input" style="border:1px solid #EEE; border-radius:8px; padding:8px;">
+    <input type="time" id="order-time" class="main-input" step="900" style="border:1px solid #EEE; border-radius:8px; padding:8px;">
   </div>
 
-  <div class="section-title">🧳 人數與行李</div>
+  <div class="section-title">🧳 人數與行李 (不可手輸)</div>
   <div class="card">
-    <div class="counter-row"><span>成人</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('adults',-1)">-</button><b id="adults">0</b><button class="ctrl-btn" onclick="qty('adults',1)">+</button></div></div>
-    <div class="counter-row"><span>兒童</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('children',-1)">-</button><b id="children">0</b><button class="ctrl-btn" onclick="qty('children',1)">+</button></div></div>
-    
+    <div class="counter-row"><span>成人</span><div class="ctrl-group"><button class="circle-btn" onclick="qty('adults',-1)">-</button><b id="adults">0</b><button class="circle-btn" onclick="qty('adults',1)">+</button></div></div>
+    <div class="counter-row"><span>兒童</span><div class="ctrl-group"><button class="circle-btn" onclick="qty('children',-1)">-</button><b id="children">0</b><button class="circle-btn" onclick="qty('children',1)">+</button></div></div>
     <div class="luggage-grid">
-      <div class="luggage-card">
-        <span class="luggage-icon">💼</span>
-        <span class="luggage-name">登機箱</span>
-        <div class="luggage-ctrl">
-          <button class="mini-btn" onclick="qty('luggage_S',-1)">-</button>
-          <b class="luggage-num" id="luggage_S">0</b>
-          <button class="mini-btn" onclick="qty('luggage_S',1)">+</button>
-        </div>
-      </div>
-      <div class="luggage-card">
-        <span class="luggage-icon">🧳</span>
-        <span class="luggage-name">託運行李</span>
-        <div class="luggage-ctrl">
-          <button class="mini-btn" onclick="qty('luggage_M',-1)">-</button>
-          <b class="luggage-num" id="luggage_M">0</b>
-          <button class="mini-btn" onclick="qty('luggage_M',1)">+</button>
-        </div>
-      </div>
-      <div class="luggage-card">
-        <span class="luggage-icon">🚲</span>
-        <span class="luggage-name">特大/器材</span>
-        <div class="luggage-ctrl">
-          <button class="mini-btn" onclick="qty('luggage_L',-1)">-</button>
-          <b class="luggage-num" id="luggage_L">0</b>
-          <button class="mini-btn" onclick="qty('luggage_L',1)">+</button>
-        </div>
-      </div>
+      <div class="luggage-card"><span class="luggage-icon">💼</span><span class="luggage-name">登機箱</span><div class="qty-ctrl"><button class="q-btn" onclick="qty('lugS',-1)">-</button><b class="q-num" id="lugS">0</b><button class="q-btn" onclick="qty('lugS',1)">+</button></div></div>
+      <div class="luggage-card"><span class="luggage-icon">🧳</span><span class="luggage-name">託運行李</span><div class="qty-ctrl"><button class="q-btn" onclick="qty('lugM',-1)">-</button><b class="q-num" id="lugM">0</b><button class="q-btn" onclick="qty('lugM',1)">+</button></div></div>
+      <div class="luggage-card"><span class="luggage-icon">🚲</span><span class="luggage-name">特大/器材</span><div class="qty-ctrl"><button class="q-btn" onclick="qty('lugL',-1)">-</button><b class="q-num" id="lugL">0</b><button class="q-btn" onclick="qty('lugL',1)">+</button></div></div>
     </div>
   </div>
 
   <div class="section-title">📝 備註</div>
-  <div class="card">
-    <textarea id="order-note" rows="2" placeholder="特殊需求說明（如：兒童座椅、寵物隨行等...）" style="width:100%; border:none; outline:none; font-family:inherit; font-size:14px;"></textarea>
-  </div>
+  <div class="card"><textarea id="order-note" rows="2" placeholder="特殊需求..." style="width:100%; border:none; outline:none; font-family:inherit; font-size:14px;"></textarea></div>
 
-  <div style="padding: 10px 0 30px;"><button class="btn btn-blue" id="submit-btn" onclick="sendRequest()">確認預約</button></div>
+  <button class="btn-blue" id="submit-btn" onclick="sendRequest()">確認預約</button>
+  <div style="height: 40px;"></div>
 </div>
 
 <div id="success-screen">
-  <div style="font-size: 60px; color: #34C759; margin-bottom: 10px;">✅</div>
-  <h2 style="margin: 0;">預約成功</h2>
-  <div class="qr-box" id="qrcode-container"></div>
-  <p id="display-order-id" style="font-size: 12px; color: #999; margin-top: 5px;"></p>
-  <button class="btn btn-blue" style="margin-top:20px;" onclick="closeLiffWindow()">返回首頁</button>
+  <div style="font-size: 60px;">✅</div>
+  <h2>預約成功</h2>
+  <div id="qrcode" style="margin:20px 0;"></div>
+  <p id="order-id-display" style="color:var(--apple-gray); font-size:12px;"></p>
+  <button class="btn-blue" onclick="liff.closeWindow()">關閉視窗</button>
 </div>
 
 <script type="module">
-  import { db, CONFIG } from './firebase-config.js?v=1';
+  import { db, CONFIG } from './firebase-config.js?v=2';
   import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   let currentMode = '送機';
   let stops = [];
   let userProfile = null;
 
+  // --- 核心：強行寫入聯絡人 ---
+  function fastFill() {
+    const n = localStorage.getItem('contactName');
+    const p = localStorage.getItem('contactPhone');
+    if (n) document.getElementById('contact-name').value = n;
+    if (p) document.getElementById('contact-phone').value = p;
+  }
+
+  // --- 站點渲染 ---
   window.renderStops = () => {
     const list = document.getElementById('stops-list');
-    if (!list) return;
     list.innerHTML = '';
-    stops.forEach((stop, index) => {
-      const isRemovable = index !== 0 && index !== stops.length - 1;
+    stops.forEach((stop, i) => {
+      const isRemovable = i !== 0 && i !== stops.length - 1;
       const div = document.createElement('div');
       div.className = 'input-row';
-      div.innerHTML = `
-        <span class="label-txt">${stop.type}</span>
-        <input type="text" class="main-input" placeholder="請輸入地址" value="${stop.address}" oninput="updateStop(${index}, this.value)">
-        ${isRemovable ? `<span class="delete-btn" onclick="removeStop(${index})">刪除</span>` : ''}
-      `;
+      div.innerHTML = `<span class="label-txt">${stop.type}</span><input type="text" class="main-input" placeholder="請輸入地址" value="${stop.address}" oninput="stops[${i}].address=this.value">${isRemovable ? `<span style="color:red;font-size:12px;" onclick="removeStop(${i})">刪除</span>` : ''}`;
       list.appendChild(div);
     });
   };
 
   window.switchTab = (mode, btn) => {
     currentMode = mode;
-    const allBtns = document.querySelectorAll('.tab-btn');
-    allBtns.forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    else allBtns.forEach(b => { if(b.innerText === mode) b.classList.add('active'); });
-    
-    document.getElementById('flight-section').style.display = (mode === '送機' || mode === '接機') ? 'block' : 'none';
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    document.getElementById('flight-section').style.display = (mode.includes('機')) ? 'block' : 'none';
     const t = Date.now();
-    if (mode === '送機') stops = [{ id: t, address: '', type: '起點' }, { id: t+1, address: '', type: '機場' }];
-    else if (mode === '接機') stops = [{ id: t, address: '', type: '機場' }, { id: t+1, address: '', type: '目的地' }];
-    else stops = [{ id: t, address: '', type: '起點' }, { id: t+1, address: '', type: '目的地' }];
+    if(mode==='送機') stops = [{type:'起點',address:''},{type:'機場',address:''}];
+    else if(mode==='接機') stops = [{type:'機場',address:''},{type:'目的地',address:''}];
+    else stops = [{type:'起點',address:''},{type:'目的地',address:''}];
     window.renderStops();
   };
 
-  window.updateStop = (index, value) => { stops[index].address = value; };
-  window.addNewStop = () => { stops.splice(stops.length - 1, 0, { id: Date.now(), address: '', type: '停靠點' }); window.renderStops(); };
-  window.removeStop = (index) => { stops.splice(index, 1); window.renderStops(); };
-  window.qty = (id, change) => {
-    let el = document.getElementById(id);
-    let val = parseInt(el.innerText) + change;
-    el.innerText = val < 0 ? 0 : val;
+  window.qty = (id, c) => {
+    const el = document.getElementById(id);
+    let v = parseInt(el.innerText) + c;
+    el.innerText = v < 0 ? 0 : v;
   };
 
+  window.addNewStop = () => { stops.splice(stops.length-1, 0, {type:'停靠點',address:''}); window.renderStops(); };
+  window.removeStop = (i) => { stops.splice(i, 1); window.renderStops(); };
+
+  // --- 送出到 Firebase & Make ---
   window.sendRequest = async () => {
-    const btn = document.getElementById('submit-btn');
     const name = document.getElementById('contact-name').value;
     const phone = document.getElementById('contact-phone').value;
-    const date = document.getElementById('order-date').value;
-    const time = document.getElementById('order-time-input').value;
+    if(!name || !phone || !stops[0].address) return alert("請填寫姓名、電話及地址");
 
-    if (!name || !phone || !date || !time || stops[0].address === '' || stops[stops.length-1].address === '') {
-      alert("請填寫完整資訊並確認起迄點地址"); return;
-    }
+    localStorage.setItem('contactName', name);
+    localStorage.setItem('contactPhone', phone);
 
-    btn.disabled = true;
-    btn.innerText = "正在預約...";
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true; btn.innerText = "提交中...";
 
-    const now = new Date();
-    const orderTimeStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-
-    const orderData = {
-      userId: userProfile?.userId || 'anonymous',
-      contactName: name,
-      contactPhone: phone,
-      tripType: currentMode,
-      appointmentTime: `${date} ${time}`,
-      orderTime: orderTimeStr,
+    const data = {
+      contactName: name, contactPhone: phone, tripType: currentMode,
+      appointmentTime: `${document.getElementById('order-date').value} ${document.getElementById('order-time').value}`,
       flightNo: document.getElementById('flight-no').value || '無',
-      allStops: stops.map(s => `${s.type}: ${s.address}`).join(' -> '),
-      pickupLocation: stops[0].address,
-      midStops: stops.slice(1, -1).map(s => s.address).join(', '),
-      dropoffLocation: stops[stops.length-1].address,
+      pickup: stops[0].address, 
+      dropoff: stops[stops.length-1].address,
+      midStops: stops.slice(1,-1).map(s=>s.address).join(','),
       adults: document.getElementById('adults').innerText,
       children: document.getElementById('children').innerText,
-      luggage_S: document.getElementById('luggage_S').innerText,
-      luggage_M: document.getElementById('luggage_M').innerText,
-      luggage_L: document.getElementById('luggage_L').innerText,
-      luggage_XL: "0",
-      note: document.getElementById('order-note').value || '無',
+      lugS: document.getElementById('lugS').innerText,
+      lugM: document.getElementById('lugM').innerText,
+      lugL: document.getElementById('lugL').innerText,
+      note: document.getElementById('order-note').value,
       status: 'pending'
     };
 
     try {
-      const docRef = await addDoc(collection(db, "orders"), { ...orderData, createdAt: serverTimestamp() });
+      const docRef = await addDoc(collection(db, "orders"), { ...data, createdAt: serverTimestamp() });
       await fetch('https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...orderData, orderId: docRef.id })
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ ...data, orderId: docRef.id })
       });
-      showSuccess(docRef.id);
-    } catch (e) {
-      alert("錯誤: " + e.message);
-      btn.disabled = false;
-      btn.innerText = "確認預約";
-    }
+      document.getElementById('booking-container').style.display='none';
+      document.getElementById('success-screen').style.display='block';
+      document.getElementById('order-id-display').innerText = "訂單編號：" + docRef.id;
+      document.getElementById('qrcode').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${docRef.id}">`;
+    } catch (e) { alert("出錯了: " + e.message); btn.disabled=false; }
   };
 
-  function showSuccess(orderId) {
-    document.getElementById('booking-container').style.display = 'none';
-    const successScreen = document.getElementById('success-screen');
-    successScreen.style.setProperty('display', 'block', 'important');
-    document.getElementById('display-order-id').innerText = "訂單編號：" + orderId;
-    document.getElementById('qrcode-container').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${orderId}" alt="QR">`;
-  }
-
-  window.closeLiffWindow = () => {
-    if (liff.isInClient()) liff.closeWindow(); 
-    else window.location.replace('index.html');
-  };
-
-  async function startApp() {
+  // --- 初始化 ---
+  async function init() {
+    fastFill(); // 0秒注入
     window.switchTab('送機', document.getElementById('default-tab'));
-
-    // --- 強化版資料讀取邏輯 ---
-    const urlParams = new URLSearchParams(window.location.search);
-    const nameParam = urlParams.get('name');
-    const phoneParam = urlParams.get('phone');
-    const nameField = document.getElementById('contact-name');
-    const phoneField = document.getElementById('contact-phone');
-
-    // 1. 如果 URL 有帶參數，優先填入
-    if (nameParam) nameField.value = nameParam;
-    if (phoneParam) phoneField.value = phoneParam;
-
     try {
       await liff.init({ liffId: CONFIG.LIFF_ID });
       if (liff.isLoggedIn()) {
         userProfile = await liff.getProfile();
-        
-        // 2. 定時檢查機制：如果欄位還是空的，每秒補填一次，直到成功（執行 5 次後停止）
-        let retryCount = 0;
-        const autoFillInterval = setInterval(() => {
-          if (userProfile && userProfile.displayName && !nameField.value) {
-            nameField.value = userProfile.displayName;
-          }
-          retryCount++;
-          if (nameField.value || retryCount > 5) clearInterval(autoFillInterval);
-        }, 1000);
+        if (userProfile && !document.getElementById('contact-name').value) {
+          document.getElementById('contact-name').value = userProfile.displayName;
+        }
       }
-    } catch (e) { 
-      console.log("LIFF Init Failed", e); 
-    }
+    } catch (e) { console.log("LIFF Init Error"); }
   }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startApp);
-  } else {
-    startApp();
-  }
+  init();
 </script>
 </body>
 </html>
