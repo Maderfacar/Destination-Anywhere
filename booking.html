@@ -7,7 +7,7 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link rel="stylesheet" href="style.css?v=1">
   <style>
-    /* 核心佈局修正：確保成功畫面初始絕對隱藏 */
+    /* 核心佈局：確保成功畫面初始絕對隱藏 */
     #success-screen { display: none !important; text-align: center; padding: 40px 20px; }
     #booking-container { display: block; }
 
@@ -40,7 +40,7 @@
   <div class="section-title">📍 行程站點</div>
   <div class="card">
     <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('送機', this)">送機</button>
+      <button id="default-tab" class="tab-btn active" onclick="switchTab('送機', this)">送機</button>
       <button class="tab-btn" onclick="switchTab('接機', this)">接機</button>
       <button class="tab-btn" onclick="switchTab('交通趟', this)">交通趟</button>
       <button class="tab-btn" onclick="switchTab('包車', this)">包車</button>
@@ -78,7 +78,6 @@
 <div id="success-screen">
   <div style="font-size: 60px; color: #34C759; margin-bottom: 10px;">✅</div>
   <h2 style="margin: 0;">預約成功</h2>
-  <p style="color: #666; font-size: 14px;">請保存下方預約 QR Code</p>
   <div class="qr-box" id="qrcode-container"></div>
   <p id="display-order-id" style="font-size: 12px; color: #999; margin-top: 5px;"></p>
   <button class="btn btn-blue" style="margin-top:20px;" onclick="closeLiffWindow()">返回首頁</button>
@@ -92,49 +91,10 @@
   let stops = [];
   let userProfile = null;
 
-  async function init() {
-    try {
-      await liff.init({ liffId: CONFIG.LIFF_ID });
-      if (liff.isLoggedIn()) {
-        userProfile = await liff.getProfile();
-        document.getElementById('contact-name').value = userProfile.displayName;
-      }
-    } catch (e) { console.log("LIFF Init Failed"); }
-    
-    // 確保一開始就初始化送機模式
-    resetStops('送機');
-  }
-
-  window.switchTab = (mode, btn) => {
-    currentMode = mode;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('flight-section').style.display = (mode === '送機' || mode === '接機') ? 'block' : 'none';
-    resetStops(mode);
-  }
-
-  function resetStops(mode) {
-    // 使用明確的時間戳 ID 確保渲染不重疊
-    const t1 = Date.now();
-    const t2 = Date.now() + 1;
-    if (mode === '送機') {
-      stops = [{ id: t1, address: '', type: '起點' }, { id: t2, address: '', type: '機場' }];
-    } else if (mode === '接機') {
-      stops = [{ id: t1, address: '', type: '機場' }, { id: t2, address: '', type: '目的地' }];
-    } else {
-      stops = [{ id: t1, address: '', type: '起點' }, { id: t2, address: '', type: '目的地' }];
-    }
-    renderStops();
-  }
-
-  window.qty = (id, change) => {
-    let el = document.getElementById(id);
-    let val = parseInt(el.innerText) + change;
-    el.innerText = val < 0 ? 0 : val;
-  }
-
+  // 1. 核心渲染函式 (確保立即反應)
   window.renderStops = () => {
     const list = document.getElementById('stops-list');
+    if (!list) return;
     list.innerHTML = '';
     stops.forEach((stop, index) => {
       const isRemovable = index !== 0 && index !== stops.length - 1;
@@ -147,12 +107,40 @@
       `;
       list.appendChild(div);
     });
-  }
+  };
 
-  window.updateStop = (index, value) => { stops[index].address = value; }
-  window.addNewStop = () => { stops.splice(stops.length - 1, 0, { id: Date.now(), address: '', type: '停靠點' }); renderStops(); }
-  window.removeStop = (index) => { stops.splice(index, 1); renderStops(); }
+  // 2. 切換邏輯
+  window.switchTab = (mode, btn) => {
+    currentMode = mode;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    
+    // 顯示/隱藏航班號碼
+    document.getElementById('flight-section').style.display = (mode === '送機' || mode === '接機') ? 'block' : 'none';
+    
+    // 重設地址結構
+    const t = Date.now();
+    if (mode === '送機') {
+      stops = [{ id: t, address: '', type: '起點' }, { id: t+1, address: '', type: '機場' }];
+    } else if (mode === '接機') {
+      stops = [{ id: t, address: '', type: '機場' }, { id: t+1, address: '', type: '目的地' }];
+    } else {
+      stops = [{ id: t, address: '', type: '起點' }, { id: t+1, address: '', type: '目的地' }];
+    }
+    window.renderStops();
+  };
 
+  // 3. 通用功能
+  window.updateStop = (index, value) => { stops[index].address = value; };
+  window.addNewStop = () => { stops.splice(stops.length - 1, 0, { id: Date.now(), address: '', type: '停靠點' }); window.renderStops(); };
+  window.removeStop = (index) => { stops.splice(index, 1); window.renderStops(); };
+  window.qty = (id, change) => {
+    let el = document.getElementById(id);
+    let val = parseInt(el.innerText) + change;
+    el.innerText = val < 0 ? 0 : val;
+  };
+
+  // 4. 發送請求
   window.sendRequest = async () => {
     const btn = document.getElementById('submit-btn');
     const name = document.getElementById('contact-name').value;
@@ -205,14 +193,12 @@
       btn.disabled = false;
       btn.innerText = "確認預約";
     }
-  }
+  };
 
   function showSuccess(orderId) {
-    // 徹底隱藏預約表單，顯示成功畫面
     document.getElementById('booking-container').style.display = 'none';
     const successScreen = document.getElementById('success-screen');
     successScreen.style.setProperty('display', 'block', 'important');
-    
     document.getElementById('display-order-id').innerText = "訂單編號：" + orderId;
     document.getElementById('qrcode-container').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${orderId}" alt="QR">`;
   }
@@ -220,9 +206,28 @@
   window.closeLiffWindow = () => {
     if (liff.isInClient()) liff.closeWindow(); 
     else window.location.replace('index.html');
+  };
+
+  // 5. 初始化與強效修復
+  async function startApp() {
+    try {
+      await liff.init({ liffId: CONFIG.LIFF_ID });
+      if (liff.isLoggedIn()) {
+        userProfile = await liff.getProfile();
+        document.getElementById('contact-name').value = userProfile.displayName;
+      }
+    } catch (e) { console.log("LIFF Init Failed"); }
+    
+    // 初始化 UI：強制觸發一次送機模式的渲染
+    window.switchTab('送機', document.getElementById('default-tab'));
   }
 
-  init();
+  // 確保 DOM 載入後立即執行
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+  } else {
+    startApp();
+  }
 </script>
 </body>
 </html>
