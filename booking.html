@@ -25,7 +25,6 @@
     .counter-ctrl { display: flex; align-items: center; gap: 15px; }
     .ctrl-btn { background: #E3E3E6; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; color: #0071E3; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     
-    /* 三分類行李卡片佈局 */
     .luggage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
     .luggage-card { background: #F8F8FA; border: 1px solid #EEE; border-radius: 12px; padding: 12px 5px; text-align: center; }
     .luggage-icon { font-size: 24px; margin-bottom: 5px; display: block; }
@@ -44,8 +43,8 @@
 <div id="booking-container">
   <div class="section-title">👤 聯絡資訊</div>
   <div class="card">
-    <div class="input-row"><span class="label-txt">聯絡人</span><input type="text" id="contact-name" class="main-input"></div>
-    <div class="input-row"><span class="label-txt">電話</span><input type="tel" id="contact-phone" class="main-input"></div>
+    <div class="input-row"><span class="label-txt">聯絡人</span><input type="text" id="contact-name" class="main-input" value=""></div>
+    <div class="input-row"><span class="label-txt">電話</span><input type="tel" id="contact-phone" class="main-input" value=""></div>
   </div>
 
   <div class="section-title">📍 行程站點</div>
@@ -240,21 +239,31 @@
   async function startApp() {
     window.switchTab('送機', document.getElementById('default-tab'));
 
+    // --- 強化版資料讀取邏輯 ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const nameParam = urlParams.get('name');
+    const phoneParam = urlParams.get('phone');
+    const nameField = document.getElementById('contact-name');
+    const phoneField = document.getElementById('contact-phone');
+
+    // 1. 如果 URL 有帶參數，優先填入
+    if (nameParam) nameField.value = nameParam;
+    if (phoneParam) phoneField.value = phoneParam;
+
     try {
       await liff.init({ liffId: CONFIG.LIFF_ID });
       if (liff.isLoggedIn()) {
         userProfile = await liff.getProfile();
         
-        // --- 重點修復部分 ---
-        if (userProfile && userProfile.displayName) {
-          setTimeout(() => {
-            const nameField = document.getElementById('contact-name');
+        // 2. 定時檢查機制：如果欄位還是空的，每秒補填一次，直到成功（執行 5 次後停止）
+        let retryCount = 0;
+        const autoFillInterval = setInterval(() => {
+          if (userProfile && userProfile.displayName && !nameField.value) {
             nameField.value = userProfile.displayName;
-            // 雙重保險：如果一般 value 沒效，使用 defaultValue
-            nameField.defaultValue = userProfile.displayName;
-          }, 100); // 延遲 100ms 確保 DOM 渲染完畢
-        }
-        // ------------------
+          }
+          retryCount++;
+          if (nameField.value || retryCount > 5) clearInterval(autoFillInterval);
+        }, 1000);
       }
     } catch (e) { 
       console.log("LIFF Init Failed", e); 
