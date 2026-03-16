@@ -6,83 +6,84 @@
   <title>預約接送 | Destination Anywhere</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link rel="stylesheet" href="style.css?v=1">
-
   <style>
-    /* Booking 頁面特有樣式 */
     .tabs { display: flex; background: #E3E3E6; border-radius: 12px; padding: 3px; margin-bottom: 15px; }
     .tab-btn { flex: 1; border: none; padding: 10px 0; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: #8E8E93; transition: 0.2s; }
     .tab-btn.active { background: white; color: #000; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-
     .input-row { display: flex; align-items: center; margin-bottom: 12px; gap: 10px; border-bottom: 1px solid #F2F2F7; padding-bottom: 8px; }
     .label-txt { width: 80px; font-size: 14px; font-weight: 600; color: #48484A; }
     .main-input { flex: 1; border: none; padding: 8px 0; font-size: 16px; background: transparent; color: #000; outline: none; }
-
     .datetime-container { display: flex; gap: 10px; }
     .datetime-container input { flex: 1; padding: 10px; border: 1px solid #EEE; border-radius: 8px; }
-    
     .counter-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .counter-ctrl { display: flex; align-items: center; gap: 15px; }
     .ctrl-btn { background: #E3E3E6; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; color: #0071E3; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    
     .delete-btn { color: #FF3B30; font-size: 12px; border: 1px solid #FF3B30; padding: 2px 6px; border-radius: 6px; cursor: pointer; margin-left: auto; }
+    
+    /* 成功畫面樣式 */
+    #success-screen { display: none; text-align: center; padding: 40px 20px; }
+    .qr-box { background: white; padding: 20px; border-radius: 20px; display: inline-block; margin: 20px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .hide { display: none !important; }
   </style>
 </head>
 <body>
 
-<div class="section-title">👤 聯絡資訊</div>
-<div class="card">
-  <div class="input-row">
-    <span class="label-txt">聯絡人</span>
-    <input type="text" id="contact-name" class="main-input">
+<div id="booking-form">
+  <div class="section-title">👤 聯絡資訊</div>
+  <div class="card">
+    <div class="input-row"><span class="label-txt">聯絡人</span><input type="text" id="contact-name" class="main-input"></div>
+    <div class="input-row"><span class="label-txt">電話</span><input type="tel" id="contact-phone" class="main-input" placeholder="09xx-xxx-xxx"></div>
   </div>
-  <div class="input-row">
-    <span class="label-txt">電話</span>
-    <input type="tel" id="contact-phone" class="main-input" placeholder="09xx-xxx-xxx">
-  </div>
-</div>
 
-<div class="section-title">📍 行程站點</div>
-<div class="card">
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('送機', this)">送機</button>
-    <button class="tab-btn" onclick="switchTab('接機', this)">接機</button>
-    <button class="tab-btn" onclick="switchTab('交通趟', this)">交通趟</button>
-    <button class="tab-btn" onclick="switchTab('包車', this)">包車</button>
-  </div>
-  <div id="station-container">
-    <div id="flight-section">
-      <div class="input-row">
-        <span class="label-txt">航班號碼</span>
-        <input type="text" id="flight-no" class="main-input" placeholder="例如: BR198">
-      </div>
+  <div class="section-title">📍 行程站點</div>
+  <div class="card">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('送機', this)">送機</button>
+      <button class="tab-btn" onclick="switchTab('接機', this)">接機</button>
+      <button class="tab-btn" onclick="switchTab('交通趟', this)">交通趟</button>
+      <button class="tab-btn" onclick="switchTab('包車', this)">包車</button>
     </div>
-    <div id="stops-list"></div>
+    <div id="station-container">
+      <div id="flight-section"><div class="input-row"><span class="label-txt">航班號碼</span><input type="text" id="flight-no" class="main-input" placeholder="例如: BR198"></div></div>
+      <div id="stops-list"></div>
+    </div>
+    <div style="text-align:center; color:#0071E3; font-size:13px; font-weight:600; padding-top:10px; cursor:pointer;" onclick="addNewStop()">+ 新增停靠點</div>
   </div>
-  <div style="text-align:center; color:#0071E3; font-size:13px; font-weight:600; padding-top:10px; cursor:pointer;" onclick="addNewStop()">+ 新增停靠點</div>
+
+  <div class="section-title">⏰ 預約時間</div>
+  <div class="card datetime-container">
+    <input type="date" id="order-date">
+    <input type="time" id="order-time">
+  </div>
+
+  <div class="section-title">🧳 人數行李</div>
+  <div class="card">
+    <div class="counter-row"><span>成人</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('adult-count',-1)">-</button><b id="adult-count">1</b><button class="ctrl-btn" onclick="qty('adult-count',1)">+</button></div></div>
+    <div class="counter-row"><span>兒童</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('child-count',-1)">-</button><b id="child-count">0</b><button class="ctrl-btn" onclick="qty('child-count',1)">+</button></div></div>
+    <hr style="border:0; border-top:1px solid #F2F2F7; margin:15px 0;">
+    <div class="counter-row"><span>大型行李</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('l-luggage',-1)">-</button><b id="l-luggage">0</b><button class="ctrl-btn" onclick="qty('l-luggage',1)">+</button></div></div>
+    <div class="counter-row"><span>中小型行李</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('s-luggage',-1)">-</button><b id="s-luggage">0</b><button class="ctrl-btn" onclick="qty('s-luggage',1)">+</button></div></div>
+  </div>
+
+  <div class="section-title">📝 備註</div>
+  <div class="card">
+    <textarea id="order-note" rows="2" placeholder="特殊需求..." style="width:100%; border:none; outline:none; font-size:14px;"></textarea>
+  </div>
+
+  <div style="padding: 10px 0 30px;">
+    <button class="btn btn-blue" id="submit-btn" onclick="sendRequest()">確認預約</button>
+  </div>
 </div>
 
-<div class="section-title">⏰ 預約時間</div>
-<div class="card datetime-container">
-  <input type="date" id="order-date">
-  <input type="time" id="order-time">
-</div>
-
-<div class="section-title">🧳 人數行李</div>
-<div class="card">
-  <div class="counter-row"><span>成人</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('adult-count',-1)">-</button><b id="adult-count">1</b><button class="ctrl-btn" onclick="qty('adult-count',1)">+</button></div></div>
-  <div class="counter-row"><span>兒童</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('child-count',-1)">-</button><b id="child-count">0</b><button class="ctrl-btn" onclick="qty('child-count',1)">+</button></div></div>
-  <hr style="border:0; border-top:1px solid #F2F2F7; margin:15px 0;">
-  <div class="counter-row"><span>大型行李 (28吋以上)</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('l-luggage',-1)">-</button><b id="l-luggage">0</b><button class="ctrl-btn" onclick="qty('l-luggage',1)">+</button></div></div>
-  <div class="counter-row"><span>中小型行李</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('s-luggage',-1)">-</button><b id="s-luggage">0</b><button class="ctrl-btn" onclick="qty('s-luggage',1)">+</button></div></div>
-</div>
-
-<div class="section-title">📝 備註</div>
-<div class="card">
-  <textarea id="order-note" rows="2" placeholder="特殊需求（例如：安全座椅、多點上車說明...）" style="width:100%; border:none; outline:none; font-family:inherit; font-size:14px;"></textarea>
-</div>
-
-<div style="padding: 10px 0 30px;">
-  <button class="btn btn-blue" id="submit-btn" onclick="sendRequest()">確認預約</button>
+<div id="success-screen">
+  <div style="font-size: 60px;">✅</div>
+  <h2 style="margin: 10px 0;">預約成功！</h2>
+  <p style="color: #666;">請保存下方預約 QR Code</p>
+  <div class="qr-box">
+    <div id="qrcode"></div>
+  </div>
+  <p id="display-order-id" style="font-size: 12px; color: #999;"></p>
+  <button class="btn btn-blue" style="margin-top:20px;" onclick="location.href='index.html'">回到首頁</button>
 </div>
 
 <script type="module">
@@ -90,7 +91,7 @@
   import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   let currentMode = '送機';
-  let stops = [{ id: Date.now(), address: '', type: '起點' }, { id: Date.now()+1, address: '', type: '終點' }];
+  let stops = [{ id: Date.now(), address: '', type: '起點' }, { id: Date.now()+1, address: '', type: '機場' }];
   let userProfile = null;
 
   async function init() {
@@ -104,24 +105,17 @@
     renderStops();
   }
 
-  // 1. 切換模式
   window.switchTab = (mode, btn) => {
     currentMode = mode;
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    
-    // 如果是交通趟或包車，隱藏航班資訊
     document.getElementById('flight-section').style.display = (mode === '送機' || mode === '接機') ? 'block' : 'none';
-    
-    // 根據模式預設站點名稱
     if(mode === '送機') { stops[0].type='起點'; stops[stops.length-1].type='機場'; }
     else if(mode === '接機') { stops[0].type='機場'; stops[stops.length-1].type='目的地'; }
     else { stops[0].type='起點'; stops[stops.length-1].type='目的地'; }
-    
     renderStops();
   }
 
-  // 2. 數量增減
   window.qty = (id, change) => {
     let el = document.getElementById(id);
     let val = parseInt(el.innerText) + change;
@@ -129,7 +123,6 @@
     el.innerText = val;
   }
 
-  // 3. 站點管理
   window.renderStops = () => {
     const list = document.getElementById('stops-list');
     list.innerHTML = '';
@@ -137,29 +130,15 @@
       const isRemovable = index !== 0 && index !== stops.length - 1;
       const div = document.createElement('div');
       div.className = 'input-row';
-      div.innerHTML = `
-        <span class="label-txt">${stop.type}</span>
-        <input type="text" class="main-input" placeholder="請輸入地址" value="${stop.address}" oninput="updateStop(${index}, this.value)">
-        ${isRemovable ? `<span class="delete-btn" onclick="removeStop(${index})">刪除</span>` : ''}
-      `;
+      div.innerHTML = `<span class="label-txt">${stop.type}</span><input type="text" class="main-input" placeholder="地址" value="${stop.address}" oninput="updateStop(${index}, this.value)">${isRemovable ? `<span class="delete-btn" onclick="removeStop(${index})">刪除</span>` : ''}`;
       list.appendChild(div);
     });
   }
 
   window.updateStop = (index, value) => { stops[index].address = value; }
+  window.addNewStop = () => { stops.splice(stops.length - 1, 0, { id: Date.now(), address: '', type: '停靠點' }); renderStops(); }
+  window.removeStop = (index) => { stops.splice(index, 1); renderStops(); }
 
-  window.addNewStop = () => {
-    const newStop = { id: Date.now(), address: '', type: '停靠點' };
-    stops.splice(stops.length - 1, 0, newStop);
-    renderStops();
-  }
-
-  window.removeStop = (index) => {
-    stops.splice(index, 1);
-    renderStops();
-  }
-
-  // 4. 送出預約
   window.sendRequest = async () => {
     const btn = document.getElementById('submit-btn');
     const name = document.getElementById('contact-name').value;
@@ -168,8 +147,7 @@
     const time = document.getElementById('order-time').value;
 
     if (!name || !phone || !date || !time || stops[0].address === '' || stops[stops.length-1].address === '') {
-      alert("請填寫完整聯絡資訊、時間及起訖地點");
-      return;
+      alert("請填寫完整資訊"); return;
     }
 
     btn.disabled = true;
@@ -184,29 +162,31 @@
       appointmentTime: `${date} ${time}`,
       pickupLocation: stops[0].address,
       dropoffLocation: stops[stops.length-1].address,
-      midStops: stops.slice(1, -1).map(s => s.address),
-      passengers: {
-        adult: document.getElementById('adult-count').innerText,
-        child: document.getElementById('child-count').innerText
-      },
-      luggage: {
-        large: document.getElementById('l-luggage').innerText,
-        small: document.getElementById('s-luggage').innerText
-      },
+      passengers: parseInt(document.getElementById('adult-count').innerText) + parseInt(document.getElementById('child-count').innerText),
+      luggage: parseInt(document.getElementById('l-luggage').innerText) + parseInt(document.getElementById('s-luggage').innerText),
       note: document.getElementById('order-note').value,
       status: 'pending',
       createdAt: serverTimestamp()
     };
 
     try {
-      await addDoc(collection(db, "orders"), orderData);
-      alert("預約已送出！管理員將盡快與您聯繫。");
-      liff.closeWindow();
+      const docRef = await addDoc(collection(db, "orders"), orderData);
+      showSuccess(docRef.id);
     } catch (e) {
-      alert("發生錯誤，請稍後再試: " + e.message);
+      alert("失敗: " + e.message);
       btn.disabled = false;
       btn.innerText = "確認預約";
     }
+  }
+
+  function showSuccess(orderId) {
+    document.getElementById('booking-form').classList.add('hide');
+    document.getElementById('success-screen').style.display = 'block';
+    document.getElementById('display-order-id').innerText = "訂單編號: " + orderId;
+    
+    // 產生 QR Code (使用 Google Chart API)
+    const qrUrl = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${orderId}&choe=UTF-8`;
+    document.getElementById('qrcode').innerHTML = `<img src="${qrUrl}" alt="Order QR">`;
   }
 
   init();
