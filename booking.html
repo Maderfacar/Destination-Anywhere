@@ -113,7 +113,6 @@
         document.getElementById('contact-name').value = userProfile.displayName;
       }
     } catch (e) { console.log("LIFF Init Failed"); }
-    // 確保初始化時渲染一次站點，解決預設模式不出現地址的問題
     renderStops();
   }
 
@@ -188,12 +187,23 @@
         small: document.getElementById('s-luggage').innerText
       },
       note: document.getElementById('order-note').value,
-      status: 'pending',
-      createdAt: serverTimestamp()
+      status: 'pending'
     };
 
     try {
-      const docRef = await addDoc(collection(db, "orders"), orderData);
+      // 1. 同步寫入 Firestore
+      const docRef = await addDoc(collection(db, "orders"), {
+        ...orderData,
+        createdAt: serverTimestamp()
+      });
+
+      // 2. 直接發送 Webhook 到 Make (解決 Cannot GET 問題)
+      fetch('https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...orderData, orderId: docRef.id })
+      }).catch(err => console.error("Make Webhook Error:", err));
+
       showSuccess(docRef.id);
     } catch (e) {
       alert("發生錯誤: " + e.message);
@@ -213,7 +223,7 @@
   }
 
   window.closeLiffWindow = () => {
-    // 解決問題 2：發送訊息給父視窗（index.html）要求關閉 Overlay
+    // 發送通知給父視窗 index.html 關閉 Overlay
     window.parent.postMessage('booking_success', '*');
 
     if (liff.isInClient()) {
