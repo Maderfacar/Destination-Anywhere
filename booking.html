@@ -24,7 +24,7 @@
     .btn-blue { width: 100%; background: var(--apple-blue); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; }
     .btn-blue:disabled { background: #CCC; }
     #success-screen { display: none; text-align: center; padding: 40px 20px; }
-    textarea { width: 100%; border: none; outline: none; font-size: 14px; font-family: inherit; resize: none; }
+    textarea { width: 100%; border: none; outline: none; font-size: 14px; font-family: inherit; resize: none; padding: 5px 0; }
   </style>
 </head>
 <body>
@@ -58,23 +58,23 @@
   <div class="section-title">🧳 人數與行李</div>
   <div class="card">
     <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-      <span>成人</span>
+      <span style="font-size:14px; color:#48484A; font-weight:600;">成人</span>
       <div class="qty-ctrl"><button class="q-btn" onclick="qty('adults',-1)">-</button><b id="adults">0</b><button class="q-btn" onclick="qty('adults',1)">+</button></div>
     </div>
     <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-      <span>小孩</span>
+      <span style="font-size:14px; color:#48484A; font-weight:600;">小孩</span>
       <div class="qty-ctrl"><button class="q-btn" onclick="qty('children',-1)">-</button><b id="children">0</b><button class="q-btn" onclick="qty('children',1)">+</button></div>
     </div>
     <div class="luggage-grid">
-      <div class="luggage-card"><span>登機箱</span><div class="qty-ctrl"><button class="q-btn" onclick="qty('lugS',-1)">-</button><b id="lugS">0</b><button class="q-btn" onclick="qty('lugS',1)">+</button></div></div>
-      <div class="luggage-card"><span>託運</span><div class="qty-ctrl"><button class="q-btn" onclick="qty('lugM',-1)">-</button><b id="lugM">0</b><button class="q-btn" onclick="qty('lugM',1)">+</button></div></div>
-      <div class="luggage-card"><span>特大</span><div class="qty-ctrl"><button class="q-btn" onclick="qty('lugL',-1)">-</button><b id="lugL">0</b><button class="q-btn" onclick="qty('lugL',1)">+</button></div></div>
+      <div class="luggage-card"><span style="font-size:11px; display:block;">登機箱</span><div class="qty-ctrl"><button class="q-btn" onclick="qty('lugS',-1)">-</button><b id="lugS">0</b><button class="q-btn" onclick="qty('lugS',1)">+</button></div></div>
+      <div class="luggage-card"><span style="font-size:11px; display:block;">託運</span><div class="qty-ctrl"><button class="q-btn" onclick="qty('lugM',-1)">-</button><b id="lugM">0</b><button class="q-btn" onclick="qty('lugM',1)">+</button></div></div>
+      <div class="luggage-card"><span style="font-size:11px; display:block;">特大</span><div class="qty-ctrl"><button class="q-btn" onclick="qty('lugL',-1)">-</button><b id="lugL">0</b><button class="q-btn" onclick="qty('lugL',1)">+</button></div></div>
     </div>
   </div>
 
-  <div class="section-title">📝 備註</div>
+  <div class="section-title">📝 備註需求</div>
   <div class="card">
-    <textarea id="order-note" rows="2" placeholder="備註需求..."></textarea>
+    <textarea id="order-note" rows="2" placeholder="請輸入您的特殊需求..."></textarea>
   </div>
 
   <button class="btn-blue" id="submit-btn" onclick="sendRequest()">確認預約</button>
@@ -97,13 +97,13 @@
 
   window.qty = (id, c) => {
     const el = document.getElementById(id);
-    let v = parseInt(el.innerText) + c;
-    el.innerText = v < 0 ? 0 : v;
+    if(el){
+      let v = parseInt(el.innerText) + c;
+      el.innerText = v < 0 ? 0 : v;
+    }
   };
 
-  window.updateStop = (i, v) => { 
-    if (stops[i]) stops[i].address = v; 
-  };
+  window.updateStop = (i, v) => { if (stops[i]) stops[i].address = v; };
 
   window.renderStops = () => {
     const list = document.getElementById('stops-list');
@@ -142,38 +142,38 @@
     const time = document.getElementById('order-time').value;
 
     if(!name || !phone || !date || !time || !stops[0].address) {
-      alert("請完整填寫聯絡資訊、預約時間與起迄地址");
+      alert("請完整填寫聯絡資訊、日期與起點");
       return;
     }
 
     const btn = document.getElementById('submit-btn');
     btn.disabled = true; btn.innerText = "提交中...";
 
-    const data = {
-      contactName: name,
-      contactPhone: phone,
-      tripType: currentMode,
-      appointmentTime: `${date} ${time}`,
-      flightNo: document.getElementById('flight-no')?.value || '無',
-      pickup: stops[0].address,
-      dropoff: stops[stops.length-1].address,
-      midStops: stops.slice(1,-1).map(s=>s.address).filter(a=>a).join(','),
-      adults: document.getElementById('adults').innerText,
-      children: document.getElementById('children').innerText,
-      lugS: document.getElementById('lugS').innerText,
-      lugM: document.getElementById('lugM').innerText,
-      lugL: document.getElementById('lugL').innerText,
-      note: document.getElementById('order-note').value,
-      status: 'pending'
-    };
-
     try {
+      const data = {
+        contactName: name,
+        contactPhone: phone,
+        tripType: currentMode,
+        appointmentTime: `${date} ${time}`,
+        flightNo: document.getElementById('flight-no')?.value || '無',
+        pickup: stops[0].address,
+        dropoff: stops[stops.length-1].address,
+        midStops: stops.slice(1,-1).map(s=>s.address).filter(a=>a).join(','),
+        adults: document.getElementById('adults').innerText,
+        children: document.getElementById('children').innerText,
+        lugS: document.getElementById('lugS').innerText,
+        lugM: document.getElementById('lugM').innerText,
+        lugL: document.getElementById('lugL').innerText,
+        note: document.getElementById('order-note').value,
+        status: 'pending'
+      };
+
       const docRef = await addDoc(collection(db, "orders"), { ...data, createdAt: serverTimestamp() });
       
       fetch('https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis', {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ ...data, orderId: docRef.id })
-      }).catch(e => console.error("Make hook error", e));
+      }).catch(e => console.error(e));
 
       localStorage.setItem('contactName', name);
       localStorage.setItem('contactPhone', phone);
@@ -203,7 +203,7 @@
           document.getElementById('contact-name').value = profile.displayName;
         }
       }
-    } catch (e) { console.warn("LIFF 載入跳過"); }
+    } catch (e) { console.warn("LIFF 跳過"); }
   }
   init();
 </script>
