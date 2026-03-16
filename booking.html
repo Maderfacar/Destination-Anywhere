@@ -80,7 +80,7 @@
 
   <div class="section-title">📝 備註</div>
   <div class="card">
-    <textarea id="order-note" rows="2" placeholder="特殊需求..." style="width:100%; border:none; outline:none; font-family:inherit; font-size:14px;"></textarea>
+    <textarea id="order-note" rows="2" placeholder="特殊需求（例如：安全座椅、多點上車說明...）" style="width:100%; border:none; outline:none; font-family:inherit; font-size:14px;"></textarea>
   </div>
 
   <div style="padding: 10px 0 30px;">
@@ -113,6 +113,7 @@
         document.getElementById('contact-name').value = userProfile.displayName;
       }
     } catch (e) { console.log("LIFF Init Failed"); }
+    // 確保初始化時渲染一次站點，解決預設模式不出現地址的問題
     renderStops();
   }
 
@@ -168,7 +169,6 @@
     btn.disabled = true;
     btn.innerText = "正在預約...";
 
-    // 【重要】完全還原原始資料結構，確保 Make 接收正常
     const orderData = {
       userId: userProfile?.userId || 'anonymous',
       contactName: name,
@@ -207,7 +207,6 @@
     document.getElementById('success-screen').style.display = 'block';
     document.getElementById('display-order-id').innerText = "訂單編號：" + orderId;
     
-    // 生成 QR Code
     const qrContainer = document.getElementById('qrcode-container');
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${orderId}`;
     qrContainer.innerHTML = `<img src="${qrUrl}" alt="QR Code">`;
@@ -215,9 +214,10 @@
 
   window.closeLiffWindow = () => {
     if (liff.isInClient()) {
-      liff.closeWindow(); // 這是正確關閉彈窗並回到主頁的方法
+      liff.closeWindow(); 
     } else {
-      location.href = 'index.html';
+      // 確保在瀏覽器環境下也能跳轉
+      window.location.replace('index.html');
     }
   }
 
