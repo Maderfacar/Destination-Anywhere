@@ -19,8 +19,6 @@
     .tab-btn.active { background: white; color: #000; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .luggage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
     .luggage-card { background: #F8F8FA; border: 1px solid #EEE; border-radius: 10px; padding: 10px 5px; text-align: center; }
-    .luggage-icon { font-size: 20px; display: block; margin-bottom: 4px; }
-    .luggage-name { font-size: 11px; color: #48484A; display: block; margin-bottom: 6px; }
     .qty-ctrl { display: flex; align-items: center; justify-content: center; gap: 8px; }
     .q-btn { width: 22px; height: 22px; border-radius: 50%; border: none; background: #E3E3E6; color: var(--apple-blue); font-weight: bold; cursor: pointer; }
     .btn-blue { width: 100%; background: var(--apple-blue); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; }
@@ -89,14 +87,16 @@
   let currentMode = '送機';
   let stops = [];
 
-  // --- 暴露給全域 (必須掛載在 window 否則 HTML 找不到) ---
+  // 將函數掛載到 window 以供 HTML onclick 調用
   window.qty = (id, c) => {
     const el = document.getElementById(id);
     let v = parseInt(el.innerText) + c;
     el.innerText = v < 0 ? 0 : v;
   };
 
-  window.updateStop = (i, v) => { stops[i].address = v; };
+  window.updateStop = (i, v) => { 
+    if (stops[i]) stops[i].address = v; 
+  };
 
   window.renderStops = () => {
     const list = document.getElementById('stops-list');
@@ -108,7 +108,7 @@
       div.innerHTML = `
         <span class="label-txt">${stop.type}</span>
         <input type="text" class="main-input" placeholder="請輸入地址" value="${stop.address}" oninput="window.updateStop(${i}, this.value)">
-        ${isRemovable ? `<span style="color:red; font-size:12px;" onclick="window.removeStop(${i})">刪除</span>` : ''}
+        ${isRemovable ? `<span style="color:red; font-size:12px; cursor:pointer;" onclick="window.removeStop(${i})">刪除</span>` : ''}
       `;
       list.appendChild(div);
     });
@@ -147,7 +147,7 @@
       contactPhone: phone,
       tripType: currentMode,
       appointmentTime: `${date} ${time}`,
-      flightNo: document.getElementById('flight-no').value || '無',
+      flightNo: document.getElementById('flight-no')?.value || '無',
       pickup: stops[0].address,
       dropoff: stops[stops.length-1].address,
       midStops: stops.slice(1,-1).map(s=>s.address).filter(a=>a).join(','),
@@ -164,10 +164,14 @@
       const docRef = await addDoc(collection(db, "orders"), { ...data, createdAt: serverTimestamp() });
       
       // 2. Make Webhook 觸發
-      await fetch('https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis', {
+      fetch('https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis', {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ ...data, orderId: docRef.id })
-      });
+      }).catch(e => console.error("Make hook error", e));
+
+      // 儲存聯絡資訊
+      localStorage.setItem('contactName', name);
+      localStorage.setItem('contactPhone', phone);
 
       // 3. 顯示成功
       document.getElementById('booking-container').style.display='none';
@@ -180,7 +184,6 @@
     }
   };
 
-  // --- 初始化 ---
   async function init() {
     window.switchTab('送機', document.getElementById('default-tab'));
     const n = localStorage.getItem('contactName');
