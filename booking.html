@@ -24,6 +24,7 @@
     .btn-blue { width: 100%; background: var(--apple-blue); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; }
     .btn-blue:disabled { background: #CCC; }
     #success-screen { display: none; text-align: center; padding: 40px 20px; }
+    textarea { width: 100%; border: none; outline: none; font-size: 14px; font-family: inherit; resize: none; }
   </style>
 </head>
 <body>
@@ -60,6 +61,10 @@
       <span>成人</span>
       <div class="qty-ctrl"><button class="q-btn" onclick="qty('adults',-1)">-</button><b id="adults">0</b><button class="q-btn" onclick="qty('adults',1)">+</button></div>
     </div>
+    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+      <span>小孩</span>
+      <div class="qty-ctrl"><button class="q-btn" onclick="qty('children',-1)">-</button><b id="children">0</b><button class="q-btn" onclick="qty('children',1)">+</button></div>
+    </div>
     <div class="luggage-grid">
       <div class="luggage-card"><span>登機箱</span><div class="qty-ctrl"><button class="q-btn" onclick="qty('lugS',-1)">-</button><b id="lugS">0</b><button class="q-btn" onclick="qty('lugS',1)">+</button></div></div>
       <div class="luggage-card"><span>託運</span><div class="qty-ctrl"><button class="q-btn" onclick="qty('lugM',-1)">-</button><b id="lugM">0</b><button class="q-btn" onclick="qty('lugM',1)">+</button></div></div>
@@ -67,7 +72,10 @@
     </div>
   </div>
 
-  <div class="card"><textarea id="order-note" rows="2" placeholder="備註需求..." style="width:100%; border:none; outline:none; font-size:14px;"></textarea></div>
+  <div class="section-title">📝 備註</div>
+  <div class="card">
+    <textarea id="order-note" rows="2" placeholder="備註需求..."></textarea>
+  </div>
 
   <button class="btn-blue" id="submit-btn" onclick="sendRequest()">確認預約</button>
 </div>
@@ -87,7 +95,6 @@
   let currentMode = '送機';
   let stops = [];
 
-  // 將函數掛載到 window 以供 HTML onclick 調用
   window.qty = (id, c) => {
     const el = document.getElementById(id);
     let v = parseInt(el.innerText) + c;
@@ -152,6 +159,7 @@
       dropoff: stops[stops.length-1].address,
       midStops: stops.slice(1,-1).map(s=>s.address).filter(a=>a).join(','),
       adults: document.getElementById('adults').innerText,
+      children: document.getElementById('children').innerText,
       lugS: document.getElementById('lugS').innerText,
       lugM: document.getElementById('lugM').innerText,
       lugL: document.getElementById('lugL').innerText,
@@ -160,20 +168,16 @@
     };
 
     try {
-      // 1. Firebase 儲存
       const docRef = await addDoc(collection(db, "orders"), { ...data, createdAt: serverTimestamp() });
       
-      // 2. Make Webhook 觸發
       fetch('https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis', {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ ...data, orderId: docRef.id })
       }).catch(e => console.error("Make hook error", e));
 
-      // 儲存聯絡資訊
       localStorage.setItem('contactName', name);
       localStorage.setItem('contactPhone', phone);
 
-      // 3. 顯示成功
       document.getElementById('booking-container').style.display='none';
       document.getElementById('success-screen').style.display='block';
       document.getElementById('order-id-display').innerText = "訂單編號：" + docRef.id;
