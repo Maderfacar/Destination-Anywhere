@@ -213,10 +213,12 @@
   }
 
   window.closeLiffWindow = () => {
+    // 解決問題 2：發送訊息給父視窗（index.html）要求關閉 Overlay
+    window.parent.postMessage('booking_success', '*');
+
     if (liff.isInClient()) {
       liff.closeWindow(); 
     } else {
-      // 確保在瀏覽器環境下也能跳轉
       window.location.replace('index.html');
     }
   }
