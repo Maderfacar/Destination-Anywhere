@@ -6,7 +6,9 @@
   <title>預約接送 | Destination Anywhere</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link rel="stylesheet" href="style.css?v=1">
+
   <style>
+    /* Booking 頁面樣式 */
     .tabs { display: flex; background: #E3E3E6; border-radius: 12px; padding: 3px; margin-bottom: 15px; }
     .tab-btn { flex: 1; border: none; padding: 10px 0; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: #8E8E93; transition: 0.2s; }
     .tab-btn.active { background: white; color: #000; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -19,20 +21,26 @@
     .counter-ctrl { display: flex; align-items: center; gap: 15px; }
     .ctrl-btn { background: #E3E3E6; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; color: #0071E3; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .delete-btn { color: #FF3B30; font-size: 12px; border: 1px solid #FF3B30; padding: 2px 6px; border-radius: 6px; cursor: pointer; margin-left: auto; }
-    
+
     /* 成功畫面樣式 */
     #success-screen { display: none; text-align: center; padding: 40px 20px; }
-    .qr-box { background: white; padding: 20px; border-radius: 20px; display: inline-block; margin: 20px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    .hide { display: none !important; }
+    .qr-box { background: white; padding: 15px; border-radius: 12px; display: inline-block; margin: 20px 0; border: 1px solid #EEE; }
+    .qr-box img { width: 200px; height: 200px; display: block; }
   </style>
 </head>
 <body>
 
-<div id="booking-form">
+<div id="booking-container">
   <div class="section-title">👤 聯絡資訊</div>
   <div class="card">
-    <div class="input-row"><span class="label-txt">聯絡人</span><input type="text" id="contact-name" class="main-input"></div>
-    <div class="input-row"><span class="label-txt">電話</span><input type="tel" id="contact-phone" class="main-input" placeholder="09xx-xxx-xxx"></div>
+    <div class="input-row">
+      <span class="label-txt">聯絡人</span>
+      <input type="text" id="contact-name" class="main-input">
+    </div>
+    <div class="input-row">
+      <span class="label-txt">電話</span>
+      <input type="tel" id="contact-phone" class="main-input" placeholder="09xx-xxx-xxx">
+    </div>
   </div>
 
   <div class="section-title">📍 行程站點</div>
@@ -44,7 +52,12 @@
       <button class="tab-btn" onclick="switchTab('包車', this)">包車</button>
     </div>
     <div id="station-container">
-      <div id="flight-section"><div class="input-row"><span class="label-txt">航班號碼</span><input type="text" id="flight-no" class="main-input" placeholder="例如: BR198"></div></div>
+      <div id="flight-section">
+        <div class="input-row">
+          <span class="label-txt">航班號碼</span>
+          <input type="text" id="flight-no" class="main-input" placeholder="例如: BR198">
+        </div>
+      </div>
       <div id="stops-list"></div>
     </div>
     <div style="text-align:center; color:#0071E3; font-size:13px; font-weight:600; padding-top:10px; cursor:pointer;" onclick="addNewStop()">+ 新增停靠點</div>
@@ -61,13 +74,13 @@
     <div class="counter-row"><span>成人</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('adult-count',-1)">-</button><b id="adult-count">1</b><button class="ctrl-btn" onclick="qty('adult-count',1)">+</button></div></div>
     <div class="counter-row"><span>兒童</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('child-count',-1)">-</button><b id="child-count">0</b><button class="ctrl-btn" onclick="qty('child-count',1)">+</button></div></div>
     <hr style="border:0; border-top:1px solid #F2F2F7; margin:15px 0;">
-    <div class="counter-row"><span>大型行李</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('l-luggage',-1)">-</button><b id="l-luggage">0</b><button class="ctrl-btn" onclick="qty('l-luggage',1)">+</button></div></div>
+    <div class="counter-row"><span>大型行李 (28吋以上)</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('l-luggage',-1)">-</button><b id="l-luggage">0</b><button class="ctrl-btn" onclick="qty('l-luggage',1)">+</button></div></div>
     <div class="counter-row"><span>中小型行李</span><div class="counter-ctrl"><button class="ctrl-btn" onclick="qty('s-luggage',-1)">-</button><b id="s-luggage">0</b><button class="ctrl-btn" onclick="qty('s-luggage',1)">+</button></div></div>
   </div>
 
   <div class="section-title">📝 備註</div>
   <div class="card">
-    <textarea id="order-note" rows="2" placeholder="特殊需求..." style="width:100%; border:none; outline:none; font-size:14px;"></textarea>
+    <textarea id="order-note" rows="2" placeholder="特殊需求..." style="width:100%; border:none; outline:none; font-family:inherit; font-size:14px;"></textarea>
   </div>
 
   <div style="padding: 10px 0 30px;">
@@ -76,14 +89,12 @@
 </div>
 
 <div id="success-screen">
-  <div style="font-size: 60px;">✅</div>
-  <h2 style="margin: 10px 0;">預約成功！</h2>
-  <p style="color: #666;">請保存下方預約 QR Code</p>
-  <div class="qr-box">
-    <div id="qrcode"></div>
-  </div>
-  <p id="display-order-id" style="font-size: 12px; color: #999;"></p>
-  <button class="btn btn-blue" style="margin-top:20px;" onclick="location.href='index.html'">回到首頁</button>
+  <div style="font-size: 60px; color: #34C759; margin-bottom: 10px;">✅</div>
+  <h2 style="margin: 0;">預約成功</h2>
+  <p style="color: #666; font-size: 14px;">請保存下方預約 QR Code</p>
+  <div class="qr-box" id="qrcode-container"></div>
+  <p id="display-order-id" style="font-size: 12px; color: #999; margin-top: 5px;"></p>
+  <button class="btn btn-blue" style="margin-top:20px;" onclick="closeLiffWindow()">返回首頁</button>
 </div>
 
 <script type="module">
@@ -130,7 +141,11 @@
       const isRemovable = index !== 0 && index !== stops.length - 1;
       const div = document.createElement('div');
       div.className = 'input-row';
-      div.innerHTML = `<span class="label-txt">${stop.type}</span><input type="text" class="main-input" placeholder="地址" value="${stop.address}" oninput="updateStop(${index}, this.value)">${isRemovable ? `<span class="delete-btn" onclick="removeStop(${index})">刪除</span>` : ''}`;
+      div.innerHTML = `
+        <span class="label-txt">${stop.type}</span>
+        <input type="text" class="main-input" placeholder="請輸入地址" value="${stop.address}" oninput="updateStop(${index}, this.value)">
+        ${isRemovable ? `<span class="delete-btn" onclick="removeStop(${index})">刪除</span>` : ''}
+      `;
       list.appendChild(div);
     });
   }
@@ -151,8 +166,9 @@
     }
 
     btn.disabled = true;
-    btn.innerText = "處理中...";
+    btn.innerText = "正在預約...";
 
+    // 【重要】完全還原原始資料結構，確保 Make 接收正常
     const orderData = {
       userId: userProfile?.userId || 'anonymous',
       contactName: name,
@@ -162,8 +178,15 @@
       appointmentTime: `${date} ${time}`,
       pickupLocation: stops[0].address,
       dropoffLocation: stops[stops.length-1].address,
-      passengers: parseInt(document.getElementById('adult-count').innerText) + parseInt(document.getElementById('child-count').innerText),
-      luggage: parseInt(document.getElementById('l-luggage').innerText) + parseInt(document.getElementById('s-luggage').innerText),
+      midStops: stops.slice(1, -1).map(s => s.address),
+      passengers: {
+        adult: document.getElementById('adult-count').innerText,
+        child: document.getElementById('child-count').innerText
+      },
+      luggage: {
+        large: document.getElementById('l-luggage').innerText,
+        small: document.getElementById('s-luggage').innerText
+      },
       note: document.getElementById('order-note').value,
       status: 'pending',
       createdAt: serverTimestamp()
@@ -173,20 +196,29 @@
       const docRef = await addDoc(collection(db, "orders"), orderData);
       showSuccess(docRef.id);
     } catch (e) {
-      alert("失敗: " + e.message);
+      alert("發生錯誤: " + e.message);
       btn.disabled = false;
       btn.innerText = "確認預約";
     }
   }
 
   function showSuccess(orderId) {
-    document.getElementById('booking-form').classList.add('hide');
+    document.getElementById('booking-container').style.display = 'none';
     document.getElementById('success-screen').style.display = 'block';
-    document.getElementById('display-order-id').innerText = "訂單編號: " + orderId;
+    document.getElementById('display-order-id').innerText = "訂單編號：" + orderId;
     
-    // 產生 QR Code (使用 Google Chart API)
-    const qrUrl = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${orderId}&choe=UTF-8`;
-    document.getElementById('qrcode').innerHTML = `<img src="${qrUrl}" alt="Order QR">`;
+    // 生成 QR Code
+    const qrContainer = document.getElementById('qrcode-container');
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${orderId}`;
+    qrContainer.innerHTML = `<img src="${qrUrl}" alt="QR Code">`;
+  }
+
+  window.closeLiffWindow = () => {
+    if (liff.isInClient()) {
+      liff.closeWindow(); // 這是正確關閉彈窗並回到主頁的方法
+    } else {
+      location.href = 'index.html';
+    }
   }
 
   init();
