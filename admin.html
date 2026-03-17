@@ -208,24 +208,20 @@
       if (!snap.exists()) return;
       const ord = snap.data();
       
-      // 強制讀取：優先使用 driverId，若無則回填備用 Key
-      const lineId = target === 'driver' ? ord.driverId : ord.customerId;
-      
-      if (!lineId) {
-        alert(`❌ 無法發送：${target === 'driver' ? '司機' : '顧客'} ID 為空，請檢查資料庫`);
-        return;
-      }
-
       const payload = {
-        to: lineId,           // 標準名稱
-        userId: lineId,       // 備用名稱 1
-        driverLineId: lineId, // 備用名稱 2
         target: target,
         contactName: ord.contactName || "",
         appointmentTime: ord.appointmentTime || "",
         pickup: ord.pickup || ord.pickupLocation || "",
         dropoff: ord.dropoff || ord.dropoffLocation || ""
       };
+
+      // 嚴格依照資料集對齊：司機傳 driverId，顧客傳 customerId
+      if (target === 'driver') {
+        payload.driverId = ord.driverId || "";
+      } else {
+        payload.customerId = ord.customerId || "";
+      }
 
       await fetch(MAKE_WEBHOOK_URL, {
         method: "POST",
