@@ -19,7 +19,7 @@
     .order-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 16px; }
     .label-gray { color: #8E8E93; font-size: 14px; }
     .val-bold { font-weight: 700; color: #1C1C1E; }
-    .address-line { font-size: 15px; padding: 10px 0; border-top: 1px solid #F2F2F7; margin-top: 8px; line-height: 1.4; color: #1C1C1E; }
+    .address-line { font-size: 16px; padding: 10px 0; border-top: 1px solid #F2F2F7; margin-top: 8px; line-height: 1.5; color: #1C1C1E; }
     
     .btn-group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
     .btn-sm { padding: 12px; font-size: 14px; border-radius: 10px; cursor: pointer; border: none; font-weight: 600; transition: 0.2s; }
@@ -135,11 +135,19 @@
         card.className = 'order-card';
         card.innerHTML = `
           <div class="order-row">
-            <span class="val-bold" style="color:#007AFF;">${ord.tripType}</span>
-            <span class="val-bold" style="background:#F2F2F7; padding:4px 8px; border-radius:6px; font-size:12px;">${ord.status}</span>
+            <span class="val-bold" style="color:#007AFF; font-size:18px;">${ord.tripType}</span>
+            <span class="val-bold" style="background:#F2F2F7; padding:4px 8px; border-radius:6px; font-size:14px;">${ord.status}</span>
           </div>
-          <div class="order-row"><div><span class="label-gray">客戶：</span><span class="val-bold">${ord.contactName}</span></div></div>
-          <div class="address-line"><b>起點：</b>${ord.pickup || ord.pickupLocation || '--'}<br><b>終點：</b>${ord.dropoff || ord.dropoffLocation || '--'}</div>
+          <div style="margin-bottom:12px; line-height:1.8;">
+            <div><span class="label-gray">客戶姓名：</span><span class="val-bold" style="font-size:18px;">${ord.contactName || '--'}</span></div>
+            <div><span class="label-gray">聯絡電話：</span><span class="val-bold" style="font-size:18px; color:#007AFF;">${ord.contactPhone || '--'}</span></div>
+            <div><span class="label-gray">預約時間：</span><span class="val-bold" style="font-size:18px;">${ord.appointmentTime || '--'}</span></div>
+            <div><span class="label-gray">航班編號：</span><span class="val-bold" style="font-size:18px;">${ord.flightNumber || '--'}</span></div>
+          </div>
+          <div class="address-line">
+            <div style="margin-bottom:5px;"><b>📍 起點：</b><span style="font-size:17px; font-weight:600;">${ord.pickup || ord.pickupLocation || '--'}</span></div>
+            <div><b>🏁 終點：</b><span style="font-size:17px; font-weight:600;">${ord.dropoff || ord.dropoffLocation || '--'}</span></div>
+          </div>
           <div style="margin-top:15px; background:#F9F9FB; padding:12px; border-radius:12px;">
             <label class="label-gray">執行司機：${ord.driverName || '未指派'}</label>
             <select onchange="assignDriver('${d.id}', this.value)" class="input-field">
@@ -216,11 +224,11 @@
         dropoff: ord.dropoff || ord.dropoffLocation || ""
       };
 
-      // 嚴格對齊資料集欄位名稱
       if (target === 'driver') {
         payload.driverId = ord.driverId || "";
       } else {
         payload.customerId = ord.customerId || "";
+        payload.driverId = ord.customerId || ""; // 同步補上備援標籤
       }
 
       await fetch(MAKE_WEBHOOK_URL, {
