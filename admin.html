@@ -216,7 +216,7 @@
         dropoff: ord.dropoff || ord.dropoffLocation || ""
       };
 
-      // 嚴格依照資料集對齊：司機傳 driverId，顧客傳 customerId
+      // 嚴格對齊資料集欄位名稱
       if (target === 'driver') {
         payload.driverId = ord.driverId || "";
       } else {
