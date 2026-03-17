@@ -152,7 +152,6 @@
   import { collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, setDoc, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   let approvedDrivers = [];
-  // 嚴謹鎖定 Webhook URL
   const MAKE_WEBHOOK_URL = "https://hook.us2.make.com/te3nqlpvmiekxglqy9jt0xp2org17q5v";
 
   async function init() {
@@ -281,42 +280,66 @@
     } catch (e) { alert("更新失敗"); }
   };
 
-  // --- MAKE Webhook 串接強化實作 ---
+  // --- 修正後的通知函式：嚴格封裝司機與乘客的 LINE ID 以及地址資訊 ---
   window.sendNotify = async (orderId, target) => {
-    console.log(`觸發通知: ${target}, ID: ${orderId}`);
     try {
-      // 增加連線配置優化傳輸
+      const snap = await getDoc(doc(db, "orders", orderId));
+      if (!snap.exists()) { alert("找不到訂單"); return; }
+      const ord = snap.data();
+
+      const payload = {
+        orderId: orderId,
+        target: target,
+        // 直接從訂單資料中帶出對應 ID
+        driverLineId: ord.driverId || "",      
+        customerLineId: ord.customerId || "",  
+        contactName: ord.contactName || "",
+        contactPhone: ord.contactPhone || "",
+        pickup: ord.pickup || ord.pickupLocation || "",
+        dropoff: ord.dropoff || ord.dropoffLocation || "",
+        appointmentTime: ord.appointmentTime || "",
+        tripType: ord.tripType || "",
+        status: ord.status || "",
+        timestamp: new Date().toISOString()
+      };
+
       const response = await fetch(MAKE_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          orderId: orderId, 
-          target: target,
-          timestamp: new Date().toISOString()
-        })
+        body: JSON.stringify(payload)
       });
       
       if (response.ok) {
-        alert(`✅ 已成功觸發${target === 'customer' ? '顧客' : '司機'}通知流程`);
+        alert(`✅ 已成功觸發${target === 'customer' ? '顧客' : '司機'}通知`);
       } else {
-        alert(`⚠️ Webhook 響應異常: ${response.status}`);
+        alert(`⚠️ Webhook 錯誤: ${response.status}`);
       }
     } catch (e) { 
-      console.error("Webhook Error:", e);
-      alert("❌ Webhook 觸發失敗，請確認網路連線或 Webhook URL 是否正確。"); 
+      console.error(e);
+      alert("❌ 通知發送失敗"); 
     }
   };
 
+  // --- 修正後的指派函式：指派時確保 driverId (LINE ID) 同步寫入訂單 ---
   window.assignDriver = async (orderId, driverName) => {
     if(!driverName) return;
     try {
-      await updateDoc(doc(db, "orders", orderId), { 
+      const selectedDriver = approvedDrivers.find(d => d.name === driverName);
+      
+      const updateData = { 
         driverName: driverName, 
+        // 從司機資料庫中提取 userId 並寫入訂單，確保後續發送通知有 ID 可用
+        driverId: selectedDriver ? (selectedDriver.userId || "") : "", 
         status: 'dispatched',
         dispatchedAt: serverTimestamp()
-      });
-      alert("已指派司機：" + driverName);
-    } catch (e) { alert("指派失敗"); }
+      };
+
+      await updateDoc(doc(db, "orders", orderId), updateData);
+      alert("✅ 已指派司機：" + driverName);
+    } catch (e) { 
+      console.error(e);
+      alert("❌ 指派失敗"); 
+    }
   };
 
   window.loadApprovedDrivers = () => {
@@ -327,7 +350,6 @@
     });
   };
 
-  // 初始化裝修數據
   async function loadDesignData() {
     try {
       const res = await getDoc(doc(db, "settings", "homepage"));
@@ -336,7 +358,7 @@
         document.getElementById('edit-hero-title').value = s.heroTitle || '';
         document.getElementById('edit-hero-sub').value = s.heroSub || '';
       }
-    } catch (e) { console.error("Design Data Load Error", e); }
+    } catch (e) { console.error(e); }
   }
 
   window.saveDesignSettings = async () => {
