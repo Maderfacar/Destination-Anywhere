@@ -168,6 +168,7 @@
 
         // 寫入資料庫
         await setDoc(doc(db, "drivers", uid), {
+          userId: uid, // 嚴謹寫入：確保司機的 LINE UID 被儲存
           name, phone, 
           plate: document.getElementById('reg-plate').value,
           model: document.getElementById('reg-model').value,
@@ -202,7 +203,7 @@
         div.className = 'card';
         div.innerHTML = `
           <div style="margin-bottom:10px;"><b>${ord.tripType}</b> | ${ord.appointmentTime}</div>
-          <div style="font-size:13px; color:#666;">客：${ord.contactName}<br>起：${ord.pickupLocation}</div>
+          <div style="font-size:13px; color:#666;">客：${ord.contactName}<br>起：${ord.pickupLocation || ord.pickup}</div>
           <div class="status-grid">
             <button class="btn-status ${ord.driverStatus==='onWay'?'active':''}" onclick="updateS('${d.id}','onWay')">前往中</button>
             <button class="btn-status ${ord.driverStatus==='completed'?'active':''}" onclick="updateS('${d.id}','completed')">結束</button>
