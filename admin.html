@@ -2,53 +2,61 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>DA 管理中樞 | 高階調度系統</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link rel="stylesheet" href="style.css?v=1">
   <style>
-    .header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #CCC; background: #FFF; position: sticky; top: 0; z-index: 100; }
-    .tabs { display: flex; gap: 8px; padding: 10px 15px; background: #F2F2F7; }
-    .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 10px; background: #E5E5EA; font-weight: 600; font-size: 13px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #F2F2F7; margin: 0; color: #1C1C1E; }
+    .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #E5E5EA; background: #FFF; position: sticky; top: 0; z-index: 100; }
+    .tabs { display: flex; gap: 8px; padding: 10px 15px; background: #FFF; border-bottom: 1px solid #E5E5EA; }
+    .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 10px; background: #F2F2F7; font-weight: 600; font-size: 13px; color: #8E8E93; transition: 0.3s; }
     .tab-btn.active { background: #007AFF; color: white; }
     .panel { display: none; padding: 15px; }
     .panel.active { display: block; }
 
     /* 訂單卡片樣式 */
-    .order-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #EEE; }
-    .order-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 16px; }
-    .label-gray { color: #8E8E93; font-size: 14px; }
+    .order-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #EEE; }
+    .order-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 16px; align-items: center; }
+    .label-gray { color: #8E8E93; font-size: 13px; font-weight: 500; }
     .val-bold { font-weight: 700; color: #1C1C1E; }
-    .address-line { font-size: 16px; padding: 10px 0; border-top: 1px solid #F2F2F7; margin-top: 8px; line-height: 1.5; color: #1C1C1E; }
+    .address-line { font-size: 15px; padding: 12px 0; border-top: 1px solid #F2F2F7; margin-top: 10px; line-height: 1.6; }
     
     .btn-group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-    .btn-sm { padding: 12px; font-size: 14px; border-radius: 10px; cursor: pointer; border: none; font-weight: 600; transition: 0.2s; }
+    .btn-sm { padding: 12px; font-size: 14px; border-radius: 10px; cursor: pointer; border: none; font-weight: 600; transition: 0.2s; text-align: center; }
     .btn-update { background: #F2F2F7; color: #1D1D1F; border: 1px solid #DDD; }
     .btn-customer { background: #E5F9E5; color: #28A745; }
     .btn-driver { background: #E5F1FF; color: #007AFF; }
 
-    /* 司機區塊強化樣式 */
-    .drv-v-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 2px solid #007AFF; }
-    .drv-v-title { font-size: 20px; font-weight: 800; color: #1C1C1E; margin-bottom: 5px; }
-    .drv-v-phone { font-size: 18px; color: #007AFF; font-weight: bold; }
+    /* 司機區塊樣式 */
+    .drv-v-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; border: 2px solid #007AFF; }
+    .drv-v-title { font-size: 18px; font-weight: 800; color: #1C1C1E; }
+    .drv-v-phone { font-size: 16px; color: #007AFF; font-weight: bold; margin-bottom: 10px; }
     .drv-img-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; }
-    .drv-img-box { border-radius: 8px; overflow: hidden; border: 1px solid #DDD; aspect-ratio: 1; cursor: pointer; }
+    .drv-img-box { border-radius: 8px; overflow: hidden; border: 1px solid #EEE; aspect-ratio: 1; background: #F9F9FB; }
     .drv-img-box img { width: 100%; height: 100%; object-fit: cover; }
-    .drv-btn-reject { background: #FFF2F2; color: #FF3B30; border: 1px solid #FFDCDC; }
+    .drv-btn-reject { background: #FFF2F2; color: #FF3B30; }
 
     /* Modal */
-    #edit-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; overflow-y: auto; padding: 20px 0; }
-    .modal-content { background: white; width: 90%; max-width: 500px; margin: auto; border-radius: 20px; padding: 25px; box-sizing: border-box; }
-    .input-field { width: 100%; box-sizing: border-box; border: 1px solid #DDD; border-radius: 8px; padding: 12px; font-size: 14px; margin-top: 5px; background: #FFF; }
+    #edit-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; overflow-y: auto; padding-top: 50px; }
+    .modal-content { background: white; width: 90%; max-width: 450px; margin: auto; border-radius: 20px; padding: 25px; box-sizing: border-box; }
+    .input-field { width: 100%; box-sizing: border-box; border: 1px solid #E5E5EA; border-radius: 10px; padding: 12px; font-size: 15px; margin-top: 5px; background: #F9F9FB; }
+    
+    #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:white; display:flex; justify-content:center; align-items:center; z-index:9999; flex-direction:column; }
   </style>
 </head>
 <body>
 
-<div id="loading-screen" style="padding:50px; text-align:center;">身分驗證中...</div>
+<div id="loading-screen">
+  <div style="font-size: 24px; margin-bottom: 10px;">🛡️</div>
+  <div>身分驗證中...</div>
+</div>
 
 <div id="edit-modal">
   <div class="modal-content">
-    <div style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">📝 修改訂單內容</div>
+    <div style="font-size: 18px; font-weight: bold; margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
+      <span>📝</span> 修改訂單內容
+    </div>
     <input type="hidden" id="edit-order-id">
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
       <div><label class="label-gray">聯絡人姓名</label><input type="text" id="edit-order-name" class="input-field"></div>
@@ -72,15 +80,23 @@
 <div id="admin-content" style="display:none;">
   <div class="header">
     <div style="font-weight:bold; font-size:18px;">DA 管理中樞</div>
-    <button onclick="location.href='index.html'" class="btn-sm btn-update" style="width:auto; padding:5px 15px;">返回首頁</button>
+    <button onclick="location.href='index.html'" class="btn-sm btn-update" style="width:auto; padding:6px 15px; font-size: 13px;">返回首頁</button>
   </div>
+  
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('dispatch', this)">🚕 調度派車</button>
     <button class="tab-btn" onclick="switchTab('verify', this)">🆔 司機審核</button>
     <button class="tab-btn" onclick="switchTab('design', this)">🎨 首頁裝修</button>
   </div>
-  <div id="panel-dispatch" class="panel active"><div id="orders-container">讀取中...</div></div>
-  <div id="panel-verify" class="panel"><div id="pending-drivers-list"></div></div>
+
+  <div id="panel-dispatch" class="panel active">
+    <div id="orders-container">讀取中...</div>
+  </div>
+
+  <div id="panel-verify" class="panel">
+    <div id="pending-drivers-list"></div>
+  </div>
+
   <div id="panel-design" class="panel">
     <div class="order-card">
       <label class="label-gray">首頁主標題</label>
@@ -105,7 +121,7 @@
       if (!liff.isLoggedIn()) { liff.login(); return; }
       const profile = await liff.getProfile();
       if (!CONFIG.ADMIN_UIDS.includes(profile.userId)) {
-        document.getElementById('loading-screen').innerHTML = '<h2>⚠️ 權限不足</h2>';
+        document.getElementById('loading-screen').innerHTML = '<div style="text-align:center;"><h2>⚠️ 權限不足</h2><p>此帳號無管理員權限</p></div>';
         return;
       }
       document.getElementById('loading-screen').style.display = 'none';
@@ -113,7 +129,10 @@
       loadApprovedDrivers();
       loadOrders();
       loadDesignData();
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err);
+      document.getElementById('loading-screen').innerText = "載入失敗，請檢查網路連接";
+    }
   }
 
   window.switchTab = (target, btn) => {
@@ -128,35 +147,35 @@
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snap) => {
       const container = document.getElementById('orders-container');
-      container.innerHTML = snap.empty ? '<div class="order-card">目前沒有訂單</div>' : '';
+      container.innerHTML = snap.empty ? '<div class="order-card" style="text-align:center;color:#8E8E93;">目前沒有訂單</div>' : '';
       snap.forEach(d => {
         const ord = d.data();
         const card = document.createElement('div');
         card.className = 'order-card';
         card.innerHTML = `
           <div class="order-row">
-            <span class="val-bold" style="color:#007AFF; font-size:18px;">${ord.tripType}</span>
-            <span class="val-bold" style="background:#F2F2F7; padding:4px 8px; border-radius:6px; font-size:14px;">${ord.status}</span>
+            <span class="val-bold" style="color:#007AFF; font-size:17px;">${ord.tripType}</span>
+            <span class="val-bold" style="background:#F2F2F7; padding:4px 10px; border-radius:8px; font-size:12px; color:#555;">${ord.status}</span>
           </div>
           <div style="margin-bottom:12px; line-height:1.8;">
-            <div><span class="label-gray">客戶姓名：</span><span class="val-bold" style="font-size:18px;">${ord.contactName || '--'}</span></div>
-            <div><span class="label-gray">聯絡電話：</span><span class="val-bold" style="font-size:18px; color:#007AFF;">${ord.contactPhone || '--'}</span></div>
-            <div><span class="label-gray">預約時間：</span><span class="val-bold" style="font-size:18px;">${ord.appointmentTime || '--'}</span></div>
-            <div><span class="label-gray">航班編號：</span><span class="val-bold" style="font-size:18px;">${ord.flightNumber || '--'}</span></div>
+            <div><span class="label-gray">客戶姓名：</span><span class="val-bold">${ord.contactName || '--'}</span></div>
+            <div><span class="label-gray">聯絡電話：</span><span class="val-bold" style="color:#007AFF;">${ord.contactPhone || '--'}</span></div>
+            <div><span class="label-gray">預約時間：</span><span class="val-bold">${ord.appointmentTime || '--'}</span></div>
+            <div><span class="label-gray">航班編號：</span><span class="val-bold">${ord.flightNumber || '--'}</span></div>
           </div>
           <div class="address-line">
-            <div style="margin-bottom:5px;"><b>📍 起點：</b><span style="font-size:17px; font-weight:600;">${ord.pickup || ord.pickupLocation || '--'}</span></div>
-            <div><b>🏁 終點：</b><span style="font-size:17px; font-weight:600;">${ord.dropoff || ord.dropoffLocation || '--'}</span></div>
+            <div style="margin-bottom:5px;"><b>📍 起點：</b><span style="color:#333;">${ord.pickup || ord.pickupLocation || '--'}</span></div>
+            <div><b>🏁 終點：</b><span style="color:#333;">${ord.dropoff || ord.dropoffLocation || '--'}</span></div>
           </div>
-          <div style="margin-top:15px; background:#F9F9FB; padding:12px; border-radius:12px;">
-            <label class="label-gray">執行司機：${ord.driverName || '未指派'}</label>
-            <select onchange="assignDriver('${d.id}', this.value)" class="input-field">
-              <option value="">-- 指派司機 --</option>
+          <div style="margin-top:15px; background:#F9F9FB; padding:15px; border-radius:12px; border: 1px solid #EEE;">
+            <div class="label-gray" style="margin-bottom:8px;">執行司機：${ord.driverName || '未指派'}</div>
+            <select onchange="assignDriver('${d.id}', this.value)" class="input-field" style="margin-top:0;">
+              <option value="">-- 更換指派司機 --</option>
               ${approvedDrivers.map(drv => `<option value="${drv.name}" ${ord.driverName===drv.name?'selected':''}>${drv.name}</option>`).join('')}
             </select>
           </div>
           <div class="btn-group-grid">
-            <button class="btn-sm btn-update" onclick='openEditModal("${d.id}", ${JSON.stringify(ord).replace(/'/g, "&apos;")})'>📝 修改</button>
+            <button class="btn-sm btn-update" onclick='openEditModal("${d.id}", ${JSON.stringify(ord).replace(/'/g, "&apos;")})'>📝 修改內容</button>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
               <button class="btn-sm btn-customer" onclick="sendNotify('${d.id}', 'customer')">🔔 顧客</button>
               <button class="btn-sm btn-driver" onclick="sendNotify('${d.id}', 'driver')">🆔 司機</button>
@@ -172,7 +191,7 @@
     const q = query(collection(db, "drivers"), where("status", "==", "pending"));
     onSnapshot(q, (snap) => {
       const list = document.getElementById('pending-drivers-list');
-      list.innerHTML = snap.empty ? '<div class="order-card">無待審核申請</div>' : '';
+      list.innerHTML = snap.empty ? '<div class="order-card" style="text-align:center;color:#8E8E93;">無待審核申請</div>' : '';
       snap.forEach(d => {
         const drv = d.data();
         const card = document.createElement('div');
@@ -181,9 +200,9 @@
           <div class="drv-v-title">${drv.name}</div>
           <div class="drv-v-phone">${drv.phone}</div>
           <div class="drv-img-grid">
-            <div class="drv-img-box" onclick="window.open('${drv.licenseImg}')"><img src="${drv.licenseImg}"></div>
-            <div class="drv-img-box" onclick="window.open('${drv.registrationImg}')"><img src="${drv.registrationImg}"></div>
-            <div class="drv-img-box" onclick="window.open('${drv.insuranceImg}')"><img src="${drv.insuranceImg}"></div>
+            <div class="drv-img-box" onclick="window.open('${drv.licenseImg}')"><img src="${drv.licenseImg}" alt="駕照"></div>
+            <div class="drv-img-box" onclick="window.open('${drv.registrationImg}')"><img src="${drv.registrationImg}" alt="執照"></div>
+            <div class="drv-img-box" onclick="window.open('${drv.insuranceImg}')"><img src="${drv.insuranceImg}" alt="保險"></div>
           </div>
           <div class="btn-group-grid">
             <button class="btn-sm drv-btn-reject" onclick="verifyDriver('${d.id}', 'rejected')">❌ 拒絕</button>
@@ -228,7 +247,7 @@
         payload.driverId = ord.driverId || "";
       } else {
         payload.customerId = ord.customerId || "";
-        payload.driverId = ord.customerId || ""; // 同步補上備援標籤
+        payload.driverId = ord.customerId || ""; // 同步補上備援
       }
 
       await fetch(MAKE_WEBHOOK_URL, {
@@ -241,8 +260,9 @@
   };
 
   window.verifyDriver = async (uid, s) => {
+    if(!confirm("確定要執行此審核操作嗎？")) return;
     await updateDoc(doc(db, "drivers", uid), { status: s });
-    alert("已更新");
+    alert("已完成審核");
   };
 
   window.loadApprovedDrivers = () => {
@@ -258,24 +278,33 @@
     document.getElementById('edit-order-name').value = data.contactName || '';
     document.getElementById('edit-order-phone').value = data.contactPhone || '';
     document.getElementById('edit-order-time').value = data.appointmentTime || '';
+    document.getElementById('edit-order-flight').value = data.flightNumber || '';
     document.getElementById('edit-order-pickup').value = data.pickup || data.pickupLocation || '';
     document.getElementById('edit-order-dropoff').value = data.dropoff || data.dropoffLocation || '';
     document.getElementById('edit-modal').style.display = 'block';
   };
+
   window.closeEditModal = () => document.getElementById('edit-modal').style.display = 'none';
+
   window.submitOrderUpdate = async () => {
     const id = document.getElementById('edit-order-id').value;
-    await updateDoc(doc(db, "orders", id), {
-      contactName: document.getElementById('edit-order-name').value,
-      contactPhone: document.getElementById('edit-order-phone').value,
-      appointmentTime: document.getElementById('edit-order-time').value,
-      pickup: document.getElementById('edit-order-pickup').value,
-      dropoff: document.getElementById('edit-order-dropoff').value,
-      updatedAt: serverTimestamp()
-    });
-    alert("已更新");
-    closeEditModal();
+    try {
+      await updateDoc(doc(db, "orders", id), {
+        contactName: document.getElementById('edit-order-name').value,
+        contactPhone: document.getElementById('edit-order-phone').value,
+        appointmentTime: document.getElementById('edit-order-time').value,
+        flightNumber: document.getElementById('edit-order-flight').value,
+        pickup: document.getElementById('edit-order-pickup').value,
+        dropoff: document.getElementById('edit-order-dropoff').value,
+        updatedAt: serverTimestamp()
+      });
+      alert("✅ 訂單內容已更新");
+      closeEditModal();
+    } catch (e) {
+      alert("更新失敗");
+    }
   };
+
   async function loadDesignData() {
     const res = await getDoc(doc(db, "settings", "homepage"));
     if (res.exists()) {
@@ -283,14 +312,18 @@
       document.getElementById('edit-hero-sub').value = res.data().heroSub || '';
     }
   }
+
   window.saveDesignSettings = async () => {
-    await setDoc(doc(db, "settings", "homepage"), {
-      heroTitle: document.getElementById('edit-hero-title').value,
-      heroSub: document.getElementById('edit-hero-sub').value,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-    alert("已同步");
+    try {
+      await setDoc(doc(db, "settings", "homepage"), {
+        heroTitle: document.getElementById('edit-hero-title').value,
+        heroSub: document.getElementById('edit-hero-sub').value,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      alert("✅ 裝修內容已同步至首頁");
+    } catch (e) { alert("儲存失敗"); }
   };
+
   init();
 </script>
 </body>
