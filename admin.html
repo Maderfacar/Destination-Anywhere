@@ -242,7 +242,7 @@
 
           <div class="btn-group-grid">
             <button class="btn-sm btn-update" onclick='openEditModal("${d.id}", ${JSON.stringify(ord).replace(/'/g, "&apos;")})'>更新訂單</button>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:2px;">
               <button class="btn-sm btn-customer" onclick="notifyCustomer('${d.id}')">通知顧客</button>
               <button class="btn-sm btn-driver" onclick="notifyDriver('${d.id}')">通知司機</button>
             </div>
