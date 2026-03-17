@@ -56,11 +56,27 @@
     <div class="modal-title">📝 修改訂單內容</div>
     <input type="hidden" id="edit-order-id">
     
-    <label class="label-gray">預約時間</label>
-    <input type="text" id="edit-order-time" class="input-field">
-    
-    <label class="label-gray" style="margin-top:15px; display:block;">航班編號</label>
-    <input type="text" id="edit-order-flight" class="input-field">
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+      <div>
+        <label class="label-gray">聯絡人姓名</label>
+        <input type="text" id="edit-order-name" class="input-field">
+      </div>
+      <div>
+        <label class="label-gray">聯絡電話</label>
+        <input type="text" id="edit-order-phone" class="input-field">
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
+      <div>
+        <label class="label-gray">預約時間</label>
+        <input type="text" id="edit-order-time" class="input-field">
+      </div>
+      <div>
+        <label class="label-gray">航班編號</label>
+        <input type="text" id="edit-order-flight" class="input-field">
+      </div>
+    </div>
 
     <label class="label-gray" style="margin-top:15px; display:block;">起點</label>
     <input type="text" id="edit-order-pickup" class="input-field">
@@ -240,6 +256,8 @@
   // --- 專業編輯 Modal 邏輯 ---
   window.openEditModal = (id, data) => {
     document.getElementById('edit-order-id').value = id;
+    document.getElementById('edit-order-name').value = data.contactName || '';
+    document.getElementById('edit-order-phone').value = data.contactPhone || '';
     document.getElementById('edit-order-time').value = data.appointmentTime || '';
     document.getElementById('edit-order-flight').value = data.flightNumber || '';
     document.getElementById('edit-order-pickup').value = data.pickup || data.pickupLocation || '';
@@ -260,6 +278,8 @@
   window.submitOrderUpdate = async () => {
     const id = document.getElementById('edit-order-id').value;
     const updateData = {
+      contactName: document.getElementById('edit-order-name').value,
+      contactPhone: document.getElementById('edit-order-phone').value,
       appointmentTime: document.getElementById('edit-order-time').value,
       flightNumber: document.getElementById('edit-order-flight').value,
       pickup: document.getElementById('edit-order-pickup').value,
@@ -296,7 +316,7 @@
   window.notifyCustomer = (id) => alert("已發送更新訊息給顧客，OrderID: " + id);
   window.notifyDriver = (id) => alert("已發送派車通知給司機，OrderID: " + id);
 
-  // --- 司機審核與裝修邏輯 (保持不變) ---
+  // --- 司機審核與裝修邏輯 (嚴格保持原始代碼) ---
   window.loadPendingDrivers = () => {
     const q = query(collection(db, "drivers"), where("status", "==", "pending"));
     onSnapshot(q, (snap) => {
