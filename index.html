@@ -3,180 +3,96 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Destination Anywhere | 探索未知</title>
+  <title>Destination Anywhere</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <link rel="stylesheet" href="style.css?v=101">
+  <link rel="stylesheet" href="style.css?v=105">
   <style>
     .hero { padding: 40px 25px 25px; display: flex; justify-content: space-between; align-items: center; }
     .hero-text h1 { font-size: 28px; font-weight: 700; margin: 0; }
-    .hero-text p { color: var(--text-sub); margin: 5px 0 0; font-size: 16px; }
-    #display-id { font-size: 10px; color: #BBB; word-break: break-all; margin-top: 4px; display: block; height: 12px; }
+    #display-id { font-size: 10px; color: #BBB; word-break: break-all; margin-top: 4px; display: block; }
     #user-avatar { width: 55px; height: 55px; border-radius: 50%; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #EEE; object-fit: cover; }
-    #admin-btn { display: none; margin-top: 8px; background: #007AFF; color: white; border: none; padding: 5px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; cursor: pointer; }
+    #admin-btn { display: none; margin-top: 8px; background: #007AFF; color: white; border: none; padding: 5px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
     .bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 20px 30px; }
-    .bento-item { background: white; border-radius: 24px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.02); background-size: cover; background-position: center; position: relative; overflow: hidden; min-height: 100px; }
-    .bento-content { position: relative; z-index: 2; }
-    .bento-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); z-index: 1; display: none; }
-    .has-bg .bento-overlay { display: block; }
-    .has-bg .item-title, .has-bg .item-sub { color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    .bento-item { background: white; border-radius: 24px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); position: relative; overflow: hidden; min-height: 100px; }
     .bento-main { grid-column: span 2; min-height: 130px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(135deg, #2C2C2E 0%, #000000 100%); color: white; }
-    .bento-blue { background: linear-gradient(135deg, #007AFF 0%, #0051FF 100%); color: white; }
-    .item-title { font-weight: 700; font-size: 18px; margin-bottom: 5px; display: block; }
-    .item-sub { font-size: 13px; opacity: 0.8; }
-    .section-header { padding: 0 25px 15px; display: flex; justify-content: space-between; align-items: baseline; }
-    .scroll-container { display: flex; overflow-x: auto; padding: 0 20px 40px; gap: 18px; scroll-snap-type: x mandatory; }
-    .scroll-container::-webkit-scrollbar { display: none; }
-    .spot-card { min-width: 280px; height: 380px; border-radius: 28px; position: relative; overflow: hidden; background-size: cover; background-position: center; scroll-snap-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-    .spot-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.8)); display: flex; flex-direction: column; justify-content: flex-end; padding: 25px; color: white; }
-    #booking-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #FFF; z-index: 1000; transform: translateY(100%); transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    #booking-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #FFF; z-index: 1000; transform: translateY(100%); transition: transform 0.4s ease; }
     #booking-overlay.active { transform: translateY(0); }
-    .modal-nav { display: flex; align-items: center; padding: 15px 20px; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #EEE; }
   </style>
 </head>
 <body>
-
   <div id="home-view">
     <header class="hero">
       <div class="hero-text">
         <p id="hero-sub">探索未知，隨心所行</p>
         <h1>您好，<span id="user-name">旅伴</span></h1>
-        <code id="display-id">正在取得系統 ID...</code>
+        <code id="display-id">載入中...</code>
       </div>
-      <div class="profile-wrap" style="text-align: right;">
-        <img id="user-avatar" src="https://cdn-icons-png.flaticon.com/512/147/147144.png" alt="avatar">
-        <button id="admin-btn" onclick="location.href='admin.html'">管理入口</button>
+      <div style="text-align: right;">
+        <img id="user-avatar" src="" alt="">
+        <button id="admin-btn" onclick="location.href='admin.html'">管理</button>
       </div>
     </header>
-
     <div class="bento-grid">
-      <div id="btn-booking" class="bento-item bento-main" onclick="openBooking()">
-        <div class="bento-overlay"></div>
-        <div class="bento-content">
-          <span class="item-title" id="txt-booking-title">快速預約接送 🚕</span>
-          <span class="item-sub" id="txt-booking-sub">點擊立即呼叫專業司機</span>
-        </div>
-      </div>
-
-      <div id="btn-itinerary" class="bento-item bento-blue" onclick="alert('Google API 行程規劃即將上線')">
-        <div class="bento-overlay"></div>
-        <div class="bento-content">
-          <span class="item-title" id="txt-itinerary-title">行程規劃</span>
-          <span class="item-sub" id="txt-itinerary-sub">智慧路徑優化</span>
-        </div>
-      </div>
-
-      <div class="bento-item">
-        <span class="item-title">我的里程</span>
-        <span id="mileage-val" style="font-size: 20px; font-weight: 800; color: #007AFF;">0 <small style="font-size:12px; font-weight:400; color:#8E8E93;">KM</small></span>
-      </div>
-    </div>
-
-    <div class="section-header">
-      <h2 style="font-size: 22px; margin: 0;">推薦景點</h2>
-      <span style="color:#007AFF; font-size:14px; font-weight: 600;">更多</span>
-    </div>
-    
-    <div class="scroll-container">
-      <div class="spot-card" style="background-image: url('https://images.unsplash.com/photo-1571471811631-9b4c88bb47f3?q=80&w=600');">
-        <div class="spot-overlay">
-          <span style="font-size:10px; text-transform:uppercase; letter-spacing:1px; opacity:0.8;">New Taipei City</span>
-          <b>九份山城</b>
-          <p style="font-size:13px; opacity:0.9;">茶香與石階的浪漫。</p>
-        </div>
+      <div class="bento-item bento-main" onclick="openBooking()">
+        <b style="font-size:18px;">快速預約接送 🚕</b>
+        <span style="opacity:0.8; font-size:13px;">點擊立即呼叫</span>
       </div>
     </div>
   </div>
-
   <div id="booking-overlay">
-    <div class="modal-nav">
-        <button onclick="closeBooking()" style="border:none; background:none; font-size:24px; padding: 0 10px;">✕</button>
-        <div style="flex:1; text-align:center; font-weight:700; font-size:17px;">行程預約</div>
-        <div style="width:40px;"></div>
+    <div style="padding:15px; border-bottom:1px solid #EEE; display:flex; align-items:center;">
+      <button onclick="closeBooking()" style="border:none; background:none; font-size:20px;">✕</button>
+      <div style="flex:1; text-align:center; font-weight:bold;">預約行程</div>
     </div>
-    <iframe id="booking-iframe" src="" style="width:100%; height:calc(100% - 60px); border:none;"></iframe>
+    <iframe id="booking-iframe" src="" style="width:100%; height:100%; border:none;"></iframe>
   </div>
 
   <script type="module">
-    // 使用新的版本號 v=101 避開 GitHub 快取
-    // ⚠️ 請務必確認 GitHub 上該檔案名稱真的是小寫的 firebase-config.js
-    import { db, CONFIG } from './firebase-config.js?v=101';
+    import { db, CONFIG } from './firebase-config.js?v=105';
     import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     async function init() {
-      const displayIdEl = document.getElementById('display-id');
-      const userNameEl = document.getElementById('user-name');
-      const userAvatarEl = document.getElementById('user-avatar');
-
       try {
-        // 1. 確定 LIFF ID 來源
-        const targetLiffId = CONFIG.LIFF_IDS ? CONFIG.LIFF_IDS.PASSENGER : CONFIG.LIFF_ID;
-        console.log("LIFF ID 載入中:", targetLiffId);
-
-        if (!targetLiffId) throw new Error("找不到 LIFF ID 設定");
-
-        // 2. 初始化 LIFF
-        await liff.init({ liffId: targetLiffId });
+        await liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER });
+        if (!liff.isLoggedIn()) { liff.login(); return; }
         
-        // 3. 處理登入狀態
-        if (!liff.isLoggedIn()) { 
-          console.log("導向登入...");
-          liff.login(); 
-          return; 
-        }
-        
-        // 4. 成功獲取 Profile
-        const p = await liff.getProfile();
-        console.log("Profile 獲取成功:", p);
+        const p = await liff.getProfile().catch(err => {
+          liff.logout();
+          liff.login();
+        });
 
-        // 5. 更新介面
-        displayIdEl.innerText = "UID: " + p.userId;
-        userNameEl.innerText = p.displayName || "旅伴";
-        if (p.pictureUrl) userAvatarEl.src = p.pictureUrl;
+        document.getElementById('display-id').innerText = "UID: " + p.userId;
+        document.getElementById('user-name').innerText = p.displayName;
+        document.getElementById('user-avatar').src = p.pictureUrl;
 
-        // 6. 管理員權限按鈕
-        if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(p.userId)) {
+        if (CONFIG.ADMIN_UIDS.includes(p.userId)) {
           document.getElementById('admin-btn').style.display = 'block';
         }
-        
         syncDesign();
-        
-      } catch (e) { 
-        console.error("LIFF 初始化錯誤:", e);
-        displayIdEl.innerText = "❌ 啟動失敗: " + e.message;
+      } catch (e) {
+        document.getElementById('display-id').innerText = "❌ 授權錯誤，請重開 LINE";
       }
     }
 
     function syncDesign() {
-      onSnapshot(doc(db, "siteConfig", "homePage"), (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.hero?.sub) document.getElementById('hero-sub').innerText = data.hero.sub;
-          if (data.booking?.title) document.getElementById('txt-booking-title').innerText = data.booking.title;
-          if (data.booking?.bg) {
-            const el = document.getElementById('btn-booking');
-            el.style.backgroundImage = `url('${data.booking.bg}')`;
-            el.classList.add('has-bg');
-          }
+      onSnapshot(doc(db, "siteConfig", "homePage"), (ds) => {
+        if (ds.exists()) {
+          const d = ds.data();
+          if (d.hero?.sub) document.getElementById('hero-sub').innerText = d.hero.sub;
         }
       });
     }
 
-    // 監聽 Booking iframe 成功訊息
-    window.addEventListener('message', (event) => {
-      if (event.data === 'booking_success') closeBooking();
-    });
-
     window.openBooking = () => {
       document.getElementById('booking-overlay').classList.add('active');
-      // 動態載入 iframe，避免預先載入時快取問題
       document.getElementById('booking-iframe').src = 'booking.html?v=' + Date.now();
     };
     window.closeBooking = () => {
       document.getElementById('booking-overlay').classList.remove('active');
-      document.getElementById('booking-iframe').src = ''; // 清空內容
+      document.getElementById('booking-iframe').src = '';
     };
-    
-    // 啟動程式
+
+    window.addEventListener('message', e => { if (e.data === 'booking_success') closeBooking(); });
     init();
   </script>
 </body>
