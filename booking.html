@@ -2,222 +2,65 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>預約接送 | Destination Anywhere</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    :root { --apple-blue: #0071E3; --apple-gray: #8E8E93; --apple-bg: #F5F5F7; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--apple-bg); margin: 0; padding: 15px; color: #1D1D1F; }
-    .section-title { font-size: 13px; font-weight: 600; color: var(--apple-gray); margin: 20px 0 8px 5px; text-transform: uppercase; }
-    .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 15px; }
-    .input-row { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #F2F2F7; padding: 8px 0; }
-    .input-row:last-child { border-bottom: none; }
-    .label-txt { width: 70px; font-size: 14px; font-weight: 600; color: #48484A; }
-    .main-input { flex: 1; border: none; padding: 8px 0; font-size: 16px; outline: none; background: transparent; }
-    .tabs { display: flex; background: #E3E3E6; border-radius: 10px; padding: 2px; margin-bottom: 15px; }
-    .tab-btn { flex: 1; border: none; padding: 8px 0; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: #8E8E93; }
-    .tab-btn.active { background: white; color: #000; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .luggage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
-    .luggage-card { background: #F8F8FA; border: 1px solid #EEE; border-radius: 10px; padding: 10px 5px; text-align: center; }
-    .qty-ctrl { display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .q-btn { width: 22px; height: 22px; border-radius: 50%; border: none; background: #E3E3E6; color: var(--apple-blue); font-weight: bold; cursor: pointer; }
-    .btn-blue { width: 100%; background: var(--apple-blue); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; }
-    .btn-blue:disabled { background: #CCC; }
-    #success-screen { display: none; text-align: center; padding: 40px 20px; }
-    textarea { width: 100%; border: none; outline: none; font-size: 14px; font-family: inherit; resize: none; padding: 5px 0; }
+    body { font-family: sans-serif; padding: 15px; background: #F5F5F7; }
+    .card { background: #FFF; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+    input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #DDD; border-radius: 8px; box-sizing: border-box; }
+    button { width: 100%; padding: 15px; background: #007AFF; color: #FFF; border: none; border-radius: 12px; font-weight: bold; }
   </style>
 </head>
 <body>
-
-<div id="booking-container">
-  <div class="section-title">👤 聯絡資訊</div>
   <div class="card">
-    <div class="input-row"><span class="label-txt">聯絡人</span><input type="text" id="contact-name" class="main-input"></div>
-    <div class="input-row"><span class="label-txt">電話</span><input type="tel" id="contact-phone" class="main-input"></div>
+    <input type="text" id="contact-name" placeholder="聯絡人">
+    <input type="tel" id="contact-phone" placeholder="電話">
+    <input type="text" id="pickup" placeholder="上車地點">
+    <input type="text" id="dropoff" placeholder="下車地點">
+    <button id="submit-btn" onclick="sendRequest()">確認預約</button>
   </div>
 
-  <div class="section-title">📍 行程站點</div>
-  <div class="card">
-    <div class="tabs">
-      <button id="default-tab" class="tab-btn active" onclick="switchTab('送機', this)">送機</button>
-      <button class="tab-btn" onclick="switchTab('接機', this)">接機</button>
-      <button class="tab-btn" onclick="switchTab('交通趟', this)">交通趟</button>
-      <button class="tab-btn" onclick="switchTab('包車', this)">包車</button>
-    </div>
-    <div id="flight-section"><div class="input-row"><span class="label-txt">航班號碼</span><input type="text" id="flight-no" class="main-input" placeholder="例如: BR198"></div></div>
-    <div id="stops-list"></div>
-    <div style="text-align:center; color:var(--apple-blue); font-size:13px; font-weight:600; margin-top:12px; cursor:pointer;" onclick="addNewStop()">+ 新增停靠點</div>
-  </div>
+  <script type="module">
+    import { db, CONFIG } from './firebase-config.js?v=105';
+    import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  <div class="section-title">⏰ 預約時間</div>
-  <div class="card" style="display:flex; gap:10px;">
-    <input type="date" id="order-date" class="main-input" style="border:1px solid #EEE; border-radius:8px; padding:8px;">
-    <input type="time" id="order-time" class="main-input" style="border:1px solid #EEE; border-radius:8px; padding:8px;">
-  </div>
-
-  <div class="section-title">🧳 人數與行李</div>
-  <div class="card">
-    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-      <span style="font-size:14px; color:#48484A; font-weight:600;">成人</span>
-      <div class="qty-ctrl"><button class="q-btn" onclick="qty('adults',-1)">-</button><b id="adults">0</b><button class="q-btn" onclick="qty('adults',1)">+</button></div>
-    </div>
-    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-      <span style="font-size:14px; color:#48484A; font-weight:600;">小孩</span>
-      <div class="qty-ctrl"><button class="q-btn" onclick="qty('children',-1)">-</button><b id="children">0</b><button class="q-btn" onclick="qty('children',1)">+</button></div>
-    </div>
-    <div class="luggage-grid">
-      <div class="luggage-card"><span style="font-size:11px; display:block;">登機箱</span><div class="qty-ctrl"><button class="q-btn" onclick="qty('lugS',-1)">-</button><b id="lugS">0</b><button class="q-btn" onclick="qty('lugS',1)">+</button></div></div>
-      <div class="luggage-card"><span style="font-size:11px; display:block;">託運</span><div class="qty-ctrl"><button class="q-btn" onclick="qty('lugM',-1)">-</button><b id="lugM">0</b><button class="q-btn" onclick="qty('lugM',1)">+</button></div></div>
-      <div class="luggage-card"><span style="font-size:11px; display:block;">特大</span><div class="qty-ctrl"><button class="q-btn" onclick="qty('lugL',-1)">-</button><b id="lugL">0</b><button class="q-btn" onclick="qty('lugL',1)">+</button></div></div>
-    </div>
-  </div>
-
-  <div class="section-title">📝 備註需求</div>
-  <div class="card">
-    <textarea id="order-note" rows="2" placeholder="請輸入您的特殊需求..."></textarea>
-  </div>
-
-  <button class="btn-blue" id="submit-btn" onclick="sendRequest()">確認預約</button>
-</div>
-
-<div id="success-screen">
-  <div style="font-size: 60px;">✅</div>
-  <h2>預約成功</h2>
-  <div id="qrcode" style="margin:20px 0;"></div>
-  <p id="order-id-display" style="color:var(--apple-gray); font-size:12px;"></p>
-  <button class="btn-blue" onclick="liff.closeWindow()">關閉視窗</button>
-</div>
-
-<script type="module">
-  // 核心：使用 v=99 避開所有快取，強制讀取新的 config.js
-  import { db, CONFIG } from './firebase-config.js?v=99';
-  import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-  let currentMode = '送機';
-  let stops = [];
-  let currentUserId = ""; 
-
-  window.qty = (id, c) => {
-    const el = document.getElementById(id);
-    if(el){
-      let v = parseInt(el.innerText) + c;
-      el.innerText = v < 0 ? 0 : v;
-    }
-  };
-
-  window.updateStop = (i, v) => { if (stops[i]) stops[i].address = v; };
-
-  window.renderStops = () => {
-    const list = document.getElementById('stops-list');
-    list.innerHTML = '';
-    stops.forEach((stop, i) => {
-      const isRemovable = i !== 0 && i !== stops.length - 1;
-      const div = document.createElement('div');
-      div.className = 'input-row';
-      div.innerHTML = `
-        <span class="label-txt">${stop.type}</span>
-        <input type="text" class="main-input" placeholder="請輸入地址" value="${stop.address}" oninput="window.updateStop(${i}, this.value)">
-        ${isRemovable ? `<span style="color:red; font-size:12px; cursor:pointer;" onclick="window.removeStop(${i})">刪除</span>` : ''}
-      `;
-      list.appendChild(div);
-    });
-  };
-
-  window.switchTab = (mode, btn) => {
-    currentMode = mode;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    if(btn) btn.classList.add('active');
-    document.getElementById('flight-section').style.display = mode.includes('機') ? 'block' : 'none';
-    if(mode==='送機') stops = [{type:'起點',address:''},{type:'機場',address:''}];
-    else if(mode==='接機') stops = [{type:'機場',address:''},{type:'目的地',address:''}];
-    else stops = [{type:'起點',address:''},{type:'目的地',address:''}];
-    window.renderStops();
-  };
-
-  window.addNewStop = () => { stops.splice(stops.length-1, 0, {type:'停靠點',address:''}); window.renderStops(); };
-  window.removeStop = (i) => { stops.splice(i, 1); window.renderStops(); };
-
-  window.sendRequest = async () => {
-    const name = document.getElementById('contact-name').value.trim();
-    const phone = document.getElementById('contact-phone').value.trim();
-    const date = document.getElementById('order-date').value;
-    const time = document.getElementById('order-time').value;
-
-    if(!name || !phone || !date || !time || !stops[0].address) {
-      alert("請完整填寫聯絡資訊、日期與起點");
-      return;
-    }
-
-    const btn = document.getElementById('submit-btn');
-    btn.disabled = true; btn.innerText = "提交中...";
-
-    try {
-      const data = {
-        customerId: currentUserId, 
-        contactName: name,
-        contactPhone: phone,
-        tripType: currentMode,
-        appointmentTime: `${date} ${time}`,
-        flightNo: document.getElementById('flight-no')?.value || '無',
-        pickup: stops[0].address,
-        dropoff: stops[stops.length-1].address,
-        midStops: stops.slice(1,-1).map(s=>s.address).filter(a=>a).join(','),
-        adults: document.getElementById('adults').innerText,
-        children: document.getElementById('children').innerText,
-        lugS: document.getElementById('lugS').innerText,
-        lugM: document.getElementById('lugM').innerText,
-        lugL: document.getElementById('lugL').innerText,
-        note: document.getElementById('order-note').value,
-        status: 'pending'
-      };
-
-      const docRef = await addDoc(collection(db, "orders"), { ...data, createdAt: serverTimestamp() });
-      
-      // 使用 CONFIG 中定義的 webhook 確保發送正確
-      fetch(CONFIG.webhooks.newOrder, {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ ...data, orderId: docRef.id })
-      }).catch(e => console.error(e));
-
-      localStorage.setItem('contactName', name);
-      localStorage.setItem('contactPhone', phone);
-
-      document.getElementById('booking-container').style.display='none';
-      document.getElementById('success-screen').style.display='block';
-      document.getElementById('order-id-display').innerText = "訂單編號：" + docRef.id;
-      document.getElementById('qrcode').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${docRef.id}">`;
-    } catch (e) {
-      alert("預約失敗: " + e.message);
-      btn.disabled = false; btn.innerText = "確認預約";
-    }
-  };
-
-  async function init() {
-    window.switchTab('送機', document.getElementById('default-tab'));
-    const n = localStorage.getItem('contactName');
-    const p = localStorage.getItem('contactPhone');
-    if (n) document.getElementById('contact-name').value = n;
-    if (p) document.getElementById('contact-phone').value = p;
-
-    try {
-      // 重點：從 CONFIG 中抓取當前正確的乘客端 LIFF_ID
-      const targetLiffId = CONFIG.LIFF_IDS ? CONFIG.LIFF_IDS.PASSENGER : CONFIG.LIFF_ID;
-      await liff.init({ liffId: targetLiffId });
-
-      if (liff.isLoggedIn()) {
-        const profile = await liff.getProfile();
-        currentUserId = profile.userId; 
-        if (!document.getElementById('contact-name').value) {
-          document.getElementById('contact-name').value = profile.displayName;
+    let uid = "";
+    async function init() {
+      try {
+        await liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER });
+        if (liff.isLoggedIn()) {
+          const p = await liff.getProfile();
+          uid = p.userId;
+          document.getElementById('contact-name').value = p.displayName;
         }
-      } else {
-        liff.login();
-      }
-    } catch (e) { 
-      console.warn("LIFF 加載失敗:", e); 
+      } catch (e) { console.warn("LIFF Init Fail"); }
     }
-  }
-  init();
-</script>
+
+    window.sendRequest = async () => {
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true; btn.innerText = "提交中...";
+      try {
+        const data = {
+          customerId: uid,
+          contactName: document.getElementById('contact-name').value,
+          pickup: document.getElementById('pickup').value,
+          dropoff: document.getElementById('dropoff').value,
+          status: 'pending'
+        };
+        const docRef = await addDoc(collection(db, "orders"), { ...data, createdAt: serverTimestamp() });
+        await fetch(CONFIG.webhooks.newOrder, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ ...data, orderId: docRef.id })
+        });
+        alert("預約成功");
+        window.parent.postMessage('booking_success', '*');
+      } catch (e) {
+        alert("失敗: " + e.message);
+        btn.disabled = false; btn.innerText = "重新預約";
+      }
+    };
+    init();
+  </script>
 </body>
 </html>
