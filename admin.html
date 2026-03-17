@@ -14,33 +14,20 @@
     .panel { display: none; padding: 15px; }
     .panel.active { display: block; }
 
-    /* 訂單卡片 - 專業化文字加大版本 */
+    /* 訂單卡片樣式 */
     .order-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #EEE; }
     .order-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 16px; }
     .label-gray { color: #8E8E93; font-size: 14px; }
     .val-bold { font-weight: 700; color: #1C1C1E; }
     .address-line { font-size: 15px; padding: 10px 0; border-top: 1px solid #F2F2F7; margin-top: 8px; line-height: 1.4; color: #1C1C1E; }
     
-    /* 按鈕群組 */
     .btn-group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
     .btn-sm { padding: 12px; font-size: 14px; border-radius: 10px; cursor: pointer; border: none; font-weight: 600; transition: 0.2s; }
     .btn-update { background: #F2F2F7; color: #1D1D1F; border: 1px solid #DDD; }
     .btn-customer { background: #E5F9E5; color: #28A745; }
     .btn-driver { background: #E5F1FF; color: #007AFF; }
 
-    /* 編輯視窗 (Modal) */
-    #edit-modal { 
-      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-      background: rgba(0,0,0,0.6); z-index: 2000; overflow-y: auto; padding: 20px 0;
-    }
-    .modal-content { 
-      background: white; width: 90%; max-width: 500px; margin: auto; border-radius: 20px; padding: 25px; box-sizing: border-box; 
-    }
-    .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #1C1C1E; border-bottom: 1px solid #EEE; padding-bottom: 10px; }
-
-    .input-field { width: 100%; box-sizing: border-box; border: 1px solid #DDD; border-radius: 8px; padding: 12px; font-size: 14px; margin-top: 5px; background: #FFF; }
-
-    /* --- 以下為補足之司機區塊強化樣式，不影響上方原始設定 --- */
+    /* 司機區塊強化樣式 */
     .drv-v-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 2px solid #007AFF; }
     .drv-v-title { font-size: 20px; font-weight: 800; color: #1C1C1E; margin-bottom: 5px; }
     .drv-v-phone { font-size: 18px; color: #007AFF; font-weight: bold; }
@@ -48,6 +35,11 @@
     .drv-img-box { border-radius: 8px; overflow: hidden; border: 1px solid #DDD; aspect-ratio: 1; cursor: pointer; }
     .drv-img-box img { width: 100%; height: 100%; object-fit: cover; }
     .drv-btn-reject { background: #FFF2F2; color: #FF3B30; border: 1px solid #FFDCDC; }
+
+    /* Modal */
+    #edit-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; overflow-y: auto; padding: 20px 0; }
+    .modal-content { background: white; width: 90%; max-width: 500px; margin: auto; border-radius: 20px; padding: 25px; box-sizing: border-box; }
+    .input-field { width: 100%; box-sizing: border-box; border: 1px solid #DDD; border-radius: 8px; padding: 12px; font-size: 14px; margin-top: 5px; background: #FFF; }
   </style>
 </head>
 <body>
@@ -56,66 +48,20 @@
 
 <div id="edit-modal">
   <div class="modal-content">
-    <div class="modal-title">📝 修改訂單內容</div>
+    <div style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">📝 修改訂單內容</div>
     <input type="hidden" id="edit-order-id">
-    
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-      <div>
-        <label class="label-gray">聯絡人姓名</label>
-        <input type="text" id="edit-order-name" class="input-field">
-      </div>
-      <div>
-        <label class="label-gray">聯絡電話</label>
-        <input type="text" id="edit-order-phone" class="input-field">
-      </div>
+      <div><label class="label-gray">聯絡人姓名</label><input type="text" id="edit-order-name" class="input-field"></div>
+      <div><label class="label-gray">聯絡電話</label><input type="text" id="edit-order-phone" class="input-field"></div>
     </div>
-
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
-      <div>
-        <label class="label-gray">預約時間</label>
-        <input type="text" id="edit-order-time" class="input-field">
-      </div>
-      <div>
-        <label class="label-gray">航班編號</label>
-        <input type="text" id="edit-order-flight" class="input-field">
-      </div>
+      <div><label class="label-gray">預約時間</label><input type="text" id="edit-order-time" class="input-field"></div>
+      <div><label class="label-gray">航班編號</label><input type="text" id="edit-order-flight" class="input-field"></div>
     </div>
-
     <label class="label-gray" style="margin-top:15px; display:block;">起點</label>
     <input type="text" id="edit-order-pickup" class="input-field">
-    
-    <label class="label-gray" style="margin-top:15px; display:block;">中途停靠 (逗號隔開)</label>
-    <input type="text" id="edit-order-mid" class="input-field">
-
     <label class="label-gray" style="margin-top:15px; display:block;">終點</label>
     <input type="text" id="edit-order-dropoff" class="input-field">
-
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
-      <div>
-        <label class="label-gray">大人人數</label>
-        <input type="number" id="edit-order-adults" class="input-field">
-      </div>
-      <div>
-        <label class="label-gray">孩童人數</label>
-        <input type="number" id="edit-order-children" class="input-field">
-      </div>
-    </div>
-
-    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-top:15px;">
-      <div>
-        <label class="label-gray">大型(L)</label>
-        <input type="number" id="edit-order-lugL" class="input-field">
-      </div>
-      <div>
-        <label class="label-gray">中型(M)</label>
-        <input type="number" id="edit-order-lugM" class="input-field">
-      </div>
-      <div>
-        <label class="label-gray">小型(S)</label>
-        <input type="number" id="edit-order-lugS" class="input-field">
-      </div>
-    </div>
-
     <div class="btn-group-grid" style="margin-top:25px;">
       <button class="btn-sm btn-update" onclick="closeEditModal()">取消</button>
       <button class="btn-sm btn-driver" onclick="submitOrderUpdate()">確認修改</button>
@@ -128,30 +74,20 @@
     <div style="font-weight:bold; font-size:18px;">DA 管理中樞</div>
     <button onclick="location.href='index.html'" class="btn-sm btn-update" style="width:auto; padding:5px 15px;">返回首頁</button>
   </div>
-
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('dispatch', this)">🚕 調度派車</button>
     <button class="tab-btn" onclick="switchTab('verify', this)">🆔 司機審核</button>
     <button class="tab-btn" onclick="switchTab('design', this)">🎨 首頁裝修</button>
   </div>
-
-  <div id="panel-dispatch" class="panel active">
-    <div id="orders-container">讀取中...</div>
-  </div>
-
-  <div id="panel-verify" class="panel">
-    <div class="section-title">⌛ 待審核司機</div>
-    <div id="pending-drivers-list"></div>
-  </div>
-
+  <div id="panel-dispatch" class="panel active"><div id="orders-container">讀取中...</div></div>
+  <div id="panel-verify" class="panel"><div id="pending-drivers-list"></div></div>
   <div id="panel-design" class="panel">
-    <div class="design-card">
-      <h3 style="margin-top:0;">🖼️ 核心視覺設定</h3>
+    <div class="order-card">
       <label class="label-gray">首頁主標題</label>
       <input type="text" id="edit-hero-title" class="input-field">
       <label class="label-gray" style="margin-top:10px; display:block;">首頁副標題</label>
       <input type="text" id="edit-hero-sub" class="input-field">
-      <button class="btn-sm btn-driver" style="width:100%; height:45px; margin-top:20px;" onclick="saveDesignSettings()">💾 儲存並同步全站</button>
+      <button class="btn-sm btn-driver" style="width:100%; margin-top:20px;" onclick="saveDesignSettings()">💾 儲存並同步</button>
     </div>
   </div>
 </div>
@@ -192,50 +128,30 @@
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snap) => {
       const container = document.getElementById('orders-container');
-      container.innerHTML = snap.empty ? '<div class="card">目前沒有訂單</div>' : '';
+      container.innerHTML = snap.empty ? '<div class="order-card">目前沒有訂單</div>' : '';
       snap.forEach(d => {
         const ord = d.data();
-        const midStops = ord.midStops ? ord.midStops.split(',').filter(s => s.trim()) : [];
-        
         const card = document.createElement('div');
         card.className = 'order-card';
         card.innerHTML = `
           <div class="order-row">
-            <span class="val-bold" style="color:#007AFF; font-size:18px;">${ord.tripType}</span>
+            <span class="val-bold" style="color:#007AFF;">${ord.tripType}</span>
             <span class="val-bold" style="background:#F2F2F7; padding:4px 8px; border-radius:6px; font-size:12px;">${ord.status}</span>
           </div>
-          <div class="order-row">
-            <div><span class="label-gray">時間：</span><span class="val-bold">${ord.appointmentTime}</span></div>
-            <div><span class="label-gray">航班：</span><span class="val-bold">${ord.flightNumber || '--'}</span></div>
-          </div>
-          <div class="order-row">
-            <div><span class="label-gray">客戶：</span><span class="val-bold">${ord.contactName}</span></div>
-            <div><span class="label-gray">電話：</span><span class="val-bold">${ord.contactPhone}</span></div>
-          </div>
-          <div class="order-row">
-            <div><span class="label-gray">乘客：</span><span class="val-bold">${ord.adults || 0}大人 / ${ord.children || 0}孩童</span></div>
-          </div>
-          <div class="order-row">
-            <div><span class="label-gray">行李：</span><span class="val-bold">${ord.lugL || 0}大型 / ${ord.lugM || 0}中型 / ${ord.lugS || 0}小型或手提</span></div>
-          </div>
-          
-          <div class="address-line"><b>起點：</b>${ord.pickup || ord.pickupLocation || '--'}</div>
-          ${midStops.map(s => `<div class="address-line"><b>停靠：</b>${s}</div>`).join('')}
-          <div class="address-line"><b>終點：</b>${ord.dropoff || ord.dropoffLocation || '--'}</div>
-          
-          <div style="margin-top:15px; background:#F9F9FB; padding:12px; border-radius:12px; border: 1px solid #EEE;">
+          <div class="order-row"><div><span class="label-gray">客戶：</span><span class="val-bold">${ord.contactName}</span></div></div>
+          <div class="address-line"><b>起點：</b>${ord.pickup || ord.pickupLocation || '--'}<br><b>終點：</b>${ord.dropoff || ord.dropoffLocation || '--'}</div>
+          <div style="margin-top:15px; background:#F9F9FB; padding:12px; border-radius:12px;">
             <label class="label-gray">執行司機：${ord.driverName || '未指派'}</label>
-            <select onchange="assignDriver('${d.id}', this.value)" class="input-field" style="width:100%; height:40px; margin-top:8px; font-weight:600;">
-              <option value="">-- 重新指派司機 --</option>
+            <select onchange="assignDriver('${d.id}', this.value)" class="input-field">
+              <option value="">-- 指派司機 --</option>
               ${approvedDrivers.map(drv => `<option value="${drv.name}" ${ord.driverName===drv.name?'selected':''}>${drv.name}</option>`).join('')}
             </select>
           </div>
-
           <div class="btn-group-grid">
-            <button class="btn-sm btn-update" onclick='openEditModal("${d.id}", ${JSON.stringify(ord).replace(/'/g, "&apos;")})'>📝 更新內容</button>
+            <button class="btn-sm btn-update" onclick='openEditModal("${d.id}", ${JSON.stringify(ord).replace(/'/g, "&apos;")})'>📝 修改</button>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-              <button class="btn-sm btn-customer" onclick="sendNotify('${d.id}', 'customer')">🔔 顧 客</button>
-              <button class="btn-sm btn-driver" onclick="sendNotify('${d.id}', 'driver')">🆔 司 機</button>
+              <button class="btn-sm btn-customer" onclick="sendNotify('${d.id}', 'customer')">🔔 顧客</button>
+              <button class="btn-sm btn-driver" onclick="sendNotify('${d.id}', 'driver')">🆔 司機</button>
             </div>
           </div>
         `;
@@ -244,12 +160,11 @@
     });
   };
 
-  // --- 補足：司機審核抓取功能 (套用強化樣式) ---
   window.loadPendingDrivers = () => {
     const q = query(collection(db, "drivers"), where("status", "==", "pending"));
     onSnapshot(q, (snap) => {
       const list = document.getElementById('pending-drivers-list');
-      list.innerHTML = snap.empty ? '<div class="card">目前沒有待審核申請</div>' : '';
+      list.innerHTML = snap.empty ? '<div class="order-card">無待審核申請</div>' : '';
       snap.forEach(d => {
         const drv = d.data();
         const card = document.createElement('div');
@@ -257,7 +172,6 @@
         card.innerHTML = `
           <div class="drv-v-title">${drv.name}</div>
           <div class="drv-v-phone">${drv.phone}</div>
-          <div style="margin-top:8px; font-size:15px;">車型：${drv.model} | 車號：<b>${drv.plate}</b></div>
           <div class="drv-img-grid">
             <div class="drv-img-box" onclick="window.open('${drv.licenseImg}')"><img src="${drv.licenseImg}"></div>
             <div class="drv-img-box" onclick="window.open('${drv.registrationImg}')"><img src="${drv.registrationImg}"></div>
@@ -273,16 +187,66 @@
     });
   };
 
-  window.verifyDriver = async (uid, newStatus) => {
+  window.assignDriver = async (orderId, driverName) => {
+    if(!driverName) return;
     try {
-      if(newStatus === 'rejected') {
-        if(!confirm("確定要拒絕此司機申請嗎？")) return;
-        await updateDoc(doc(db, "drivers", uid), { status: 'rejected' });
-      } else {
-        await updateDoc(doc(db, "drivers", uid), { status: 'approved' });
+      const drv = approvedDrivers.find(d => d.name === driverName);
+      if (!drv || !drv.userId) { alert("此司機無有效 ID"); return; }
+      await updateDoc(doc(db, "orders", orderId), { 
+        driverName: drv.name, 
+        driverId: drv.userId, 
+        status: 'dispatched',
+        dispatchedAt: serverTimestamp()
+      });
+      alert("✅ 指派成功");
+    } catch (e) { alert("指派失敗"); }
+  };
+
+  window.sendNotify = async (orderId, target) => {
+    try {
+      const snap = await getDoc(doc(db, "orders", orderId));
+      if (!snap.exists()) return;
+      const ord = snap.data();
+      
+      // 強制讀取：優先使用 driverId，若無則回填備用 Key
+      const lineId = target === 'driver' ? ord.driverId : ord.customerId;
+      
+      if (!lineId) {
+        alert(`❌ 無法發送：${target === 'driver' ? '司機' : '顧客'} ID 為空，請檢查資料庫`);
+        return;
       }
-      alert("✅ 已更新司機狀態");
-    } catch (e) { alert("操作失敗"); }
+
+      const payload = {
+        to: lineId,           // 標準名稱
+        userId: lineId,       // 備用名稱 1
+        driverLineId: lineId, // 備用名稱 2
+        target: target,
+        contactName: ord.contactName || "",
+        appointmentTime: ord.appointmentTime || "",
+        pickup: ord.pickup || ord.pickupLocation || "",
+        dropoff: ord.dropoff || ord.dropoffLocation || ""
+      };
+
+      await fetch(MAKE_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      alert("✅ 通知已發送");
+    } catch (e) { alert("發送失敗"); }
+  };
+
+  window.verifyDriver = async (uid, s) => {
+    await updateDoc(doc(db, "drivers", uid), { status: s });
+    alert("已更新");
+  };
+
+  window.loadApprovedDrivers = () => {
+    const q = query(collection(db, "drivers"), where("status", "==", "approved"));
+    onSnapshot(q, (snap) => {
+      approvedDrivers = [];
+      snap.forEach(d => approvedDrivers.push({ ...d.data(), id: d.id }));
+    });
   };
 
   window.openEditModal = (id, data) => {
@@ -290,118 +254,39 @@
     document.getElementById('edit-order-name').value = data.contactName || '';
     document.getElementById('edit-order-phone').value = data.contactPhone || '';
     document.getElementById('edit-order-time').value = data.appointmentTime || '';
-    document.getElementById('edit-order-flight').value = data.flightNumber || '';
     document.getElementById('edit-order-pickup').value = data.pickup || data.pickupLocation || '';
-    document.getElementById('edit-order-mid').value = data.midStops || '';
     document.getElementById('edit-order-dropoff').value = data.dropoff || data.dropoffLocation || '';
-    document.getElementById('edit-order-adults').value = data.adults || 0;
-    document.getElementById('edit-order-children').value = data.children || 0;
-    document.getElementById('edit-order-lugL').value = data.lugL || 0;
-    document.getElementById('edit-order-lugM').value = data.lugM || 0;
-    document.getElementById('edit-order-lugS').value = data.lugS || 0;
     document.getElementById('edit-modal').style.display = 'block';
   };
-
   window.closeEditModal = () => document.getElementById('edit-modal').style.display = 'none';
-
   window.submitOrderUpdate = async () => {
     const id = document.getElementById('edit-order-id').value;
-    const updateData = {
+    await updateDoc(doc(db, "orders", id), {
       contactName: document.getElementById('edit-order-name').value,
       contactPhone: document.getElementById('edit-order-phone').value,
       appointmentTime: document.getElementById('edit-order-time').value,
-      flightNumber: document.getElementById('edit-order-flight').value,
       pickup: document.getElementById('edit-order-pickup').value,
-      midStops: document.getElementById('edit-order-mid').value,
       dropoff: document.getElementById('edit-order-dropoff').value,
-      adults: parseInt(document.getElementById('edit-order-adults').value) || 0,
-      children: parseInt(document.getElementById('edit-order-children').value) || 0,
-      lugL: parseInt(document.getElementById('edit-order-lugL').value) || 0,
-      lugM: parseInt(document.getElementById('edit-order-lugM').value) || 0,
-      lugS: parseInt(document.getElementById('edit-order-lugS').value) || 0,
       updatedAt: serverTimestamp()
-    };
-    try {
-      await updateDoc(doc(db, "orders", id), updateData);
-      alert("✅ 訂單已完整更新");
-      closeEditModal();
-    } catch (e) { alert("更新失敗"); }
-  };
-
-  window.sendNotify = async (orderId, target) => {
-    try {
-      const snap = await getDoc(doc(db, "orders", orderId));
-      if (!snap.exists()) { alert("找不到訂單"); return; }
-      const ord = snap.data();
-      const payload = {
-        orderId: orderId,
-        target: target,
-        driverLineId: ord.driverId || "",      
-        customerLineId: ord.customerId || "",  
-        contactName: ord.contactName || "",
-        contactPhone: ord.contactPhone || "",
-        pickup: ord.pickup || ord.pickupLocation || "",
-        dropoff: ord.dropoff || ord.dropoffLocation || "",
-        appointmentTime: ord.appointmentTime || "",
-        flightNumber: ord.flightNumber || "--",
-        tripType: ord.tripType || "",
-        status: ord.status || "",
-        timestamp: new Date().toISOString()
-      };
-      const response = await fetch(MAKE_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      if (response.ok) alert(`✅ 已成功觸發通知`);
-    } catch (e) { alert("❌ 通知發送失敗"); }
-  };
-
-  window.assignDriver = async (orderId, driverName) => {
-    if(!driverName) return;
-    try {
-      const selectedDriver = approvedDrivers.find(d => d.name === driverName);
-      const updateData = { 
-        driverName: driverName, 
-        driverId: selectedDriver ? (selectedDriver.userId || "") : "", 
-        status: 'dispatched',
-        dispatchedAt: serverTimestamp()
-      };
-      await updateDoc(doc(db, "orders", orderId), updateData);
-      alert("✅ 已成功指派司機：" + driverName);
-    } catch (e) { alert("❌ 指派失敗"); }
-  };
-
-  window.loadApprovedDrivers = () => {
-    const q = query(collection(db, "drivers"), where("status", "==", "approved"));
-    onSnapshot(q, (snap) => {
-      approvedDrivers = [];
-      snap.forEach(d => approvedDrivers.push(d.data()));
     });
+    alert("已更新");
+    closeEditModal();
   };
-
   async function loadDesignData() {
-    try {
-      const res = await getDoc(doc(db, "settings", "homepage"));
-      if (res.exists()) {
-        const s = res.data();
-        document.getElementById('edit-hero-title').value = s.heroTitle || '';
-        document.getElementById('edit-hero-sub').value = s.heroSub || '';
-      }
-    } catch (e) { console.error(e); }
+    const res = await getDoc(doc(db, "settings", "homepage"));
+    if (res.exists()) {
+      document.getElementById('edit-hero-title').value = res.data().heroTitle || '';
+      document.getElementById('edit-hero-sub').value = res.data().heroSub || '';
+    }
   }
-
   window.saveDesignSettings = async () => {
-    try {
-      await setDoc(doc(db, "settings", "homepage"), {
-        heroTitle: document.getElementById('edit-hero-title').value,
-        heroSub: document.getElementById('edit-hero-sub').value,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-      alert("✅ 設定已同步");
-    } catch (e) { alert("儲存失敗"); }
+    await setDoc(doc(db, "settings", "homepage"), {
+      heroTitle: document.getElementById('edit-hero-title').value,
+      heroSub: document.getElementById('edit-hero-sub').value,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    alert("已同步");
   };
-
   init();
 </script>
 </body>
