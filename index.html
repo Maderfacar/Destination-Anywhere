@@ -5,69 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Destination Anywhere | 探索未知</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=2">
   <style>
-    .hero {
-      padding: 40px 25px 25px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    .hero { padding: 40px 25px 25px; display: flex; justify-content: space-between; align-items: center; }
     .hero-text h1 { font-size: 28px; font-weight: 700; margin: 0; }
     .hero-text p { color: var(--text-sub); margin: 5px 0 0; font-size: 16px; }
     #display-id { font-size: 10px; color: #BBB; word-break: break-all; margin-top: 4px; display: block; }
-    #user-avatar {
-      width: 55px; height: 55px;
-      border-radius: 50%;
-      border: 2px solid white;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      background: #EEE;
-    }
-    #admin-btn {
-      display: none; margin-top: 8px; background: var(--apple-blue);
-      color: white; border: none; padding: 5px 10px; border-radius: 10px;
-      font-size: 11px; font-weight: 600; cursor: pointer;
-    }
+    #user-avatar { width: 55px; height: 55px; border-radius: 50%; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #EEE; }
+    #admin-btn { display: none; margin-top: 8px; background: #007AFF; color: white; border: none; padding: 5px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; cursor: pointer; }
     .bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 20px 30px; }
-    .bento-item {
-      background: white; border-radius: 24px; padding: 22px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.02);
-      background-size: cover; background-position: center; position: relative; overflow: hidden;
-      min-height: 100px;
-    }
+    .bento-item { background: white; border-radius: 24px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.02); background-size: cover; background-position: center; position: relative; overflow: hidden; min-height: 100px; }
     .bento-content { position: relative; z-index: 2; }
     .bento-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); z-index: 1; display: none; }
     .has-bg .bento-overlay { display: block; }
     .has-bg .item-title, .has-bg .item-sub { color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-    .bento-main { 
-      grid-column: span 2; min-height: 130px; display: flex; flex-direction: column; justify-content: center;
-      background: linear-gradient(135deg, #2C2C2E 0%, #000000 100%); color: white; 
-    }
+    .bento-main { grid-column: span 2; min-height: 130px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(135deg, #2C2C2E 0%, #000000 100%); color: white; }
     .bento-blue { background: linear-gradient(135deg, #007AFF 0%, #0051FF 100%); color: white; }
     .item-title { font-weight: 700; font-size: 18px; margin-bottom: 5px; display: block; }
     .item-sub { font-size: 13px; opacity: 0.8; }
     .section-header { padding: 0 25px 15px; display: flex; justify-content: space-between; align-items: baseline; }
     .scroll-container { display: flex; overflow-x: auto; padding: 0 20px 40px; gap: 18px; scroll-snap-type: x mandatory; }
     .scroll-container::-webkit-scrollbar { display: none; }
-    .spot-card {
-      min-width: 280px; height: 380px; border-radius: 28px; position: relative; overflow: hidden;
-      background-size: cover; background-position: center; scroll-snap-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    }
-    .spot-overlay {
-      position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.8));
-      display: flex; flex-direction: column; justify-content: flex-end; padding: 25px; color: white;
-    }
-    #booking-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: #FFF; z-index: 1000; transform: translateY(100%);
-      transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
+    .spot-card { min-width: 280px; height: 380px; border-radius: 28px; position: relative; overflow: hidden; background-size: cover; background-position: center; scroll-snap-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .spot-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.8)); display: flex; flex-direction: column; justify-content: flex-end; padding: 25px; color: white; }
+    #booking-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #FFF; z-index: 1000; transform: translateY(100%); transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
     #booking-overlay.active { transform: translateY(0); }
-    .modal-nav {
-        display: flex; align-items: center; padding: 15px 20px;
-        background: rgba(255,255,255,0.8); backdrop-filter: blur(10px);
-        position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #EEE;
-    }
+    .modal-nav { display: flex; align-items: center; padding: 15px 20px; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #EEE; }
   </style>
 </head>
 <body>
@@ -121,13 +84,6 @@
           <p style="font-size:13px; opacity:0.9;">茶香與石階的浪漫。</p>
         </div>
       </div>
-      <div class="spot-card" style="background-image: url('https://images.unsplash.com/photo-1547900596-eb5260f95d4e?q=80&w=600');">
-        <div class="spot-overlay">
-          <span style="font-size:10px; text-transform:uppercase; letter-spacing:1px; opacity:0.8;">Hualien</span>
-          <b>太魯閣峽谷</b>
-          <p style="font-size:13px; opacity:0.9;">鬼斧神工的自然奇景。</p>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -141,69 +97,68 @@
   </div>
 
   <script type="module">
-  import { db, CONFIG } from './firebase-config.js?v=1';
-  import { doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    // 使用新的版本號確保 GitHub 讀取最新 config
+    import { db, CONFIG } from './firebase-config.js?v=99';
+    import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  async function init() {
-    const displayIdEl = document.getElementById('display-id');
-    try {
-      await liff.init({ liffId: CONFIG.LIFF_ID });
-      
-      if (!liff.isLoggedIn()) { 
-        liff.login(); 
-        return; 
-      }
-      
-      const p = await liff.getProfile();
-      displayIdEl.innerText = "ID: " + p.userId;
-      document.getElementById('user-name').innerText = p.displayName;
-      document.getElementById('user-avatar').src = p.pictureUrl || "https://cdn-icons-png.flaticon.com/512/147/147144.png";
+    async function init() {
+      const displayIdEl = document.getElementById('display-id');
+      try {
+        // 重要：確保使用的是 PASSENGER ID
+        const targetLiffId = CONFIG.LIFF_IDS ? CONFIG.LIFF_IDS.PASSENGER : CONFIG.LIFF_ID;
+        console.log("初始化 LIFF ID:", targetLiffId);
 
-      if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(p.userId)) {
-        document.getElementById('admin-btn').style.display = 'block';
+        await liff.init({ liffId: targetLiffId });
+        
+        if (!liff.isLoggedIn()) { 
+          liff.login(); 
+          return; 
+        }
+        
+        const p = await liff.getProfile();
+        displayIdEl.innerText = "UID: " + p.userId;
+        document.getElementById('user-name').innerText = p.displayName || "旅伴";
+        document.getElementById('user-avatar').src = p.pictureUrl || "https://cdn-icons-png.flaticon.com/512/147/147144.png";
+
+        // 權限檢查
+        if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(p.userId)) {
+          document.getElementById('admin-btn').style.display = 'block';
+        }
+        
+        syncDesign();
+        
+      } catch (e) { 
+        console.error("LIFF Init Error:", e);
+        displayIdEl.innerText = "❌ 啟動失敗: " + e.message;
       }
-      
-      syncDesign();
-      
-    } catch (e) { 
-      displayIdEl.innerText = "❌ 啟動失敗: " + e.message;
     }
-  }
 
-  function syncDesign() {
-    onSnapshot(doc(db, "siteConfig", "homePage"), (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.hero?.sub) document.getElementById('hero-sub').innerText = data.hero.sub;
-        if (data.booking?.title) document.getElementById('txt-booking-title').innerText = data.booking.title;
-        if (data.booking?.bg) {
-          const el = document.getElementById('btn-booking');
-          el.style.backgroundImage = `url('${data.booking.bg}')`;
-          el.classList.add('has-bg');
+    function syncDesign() {
+      onSnapshot(doc(db, "siteConfig", "homePage"), (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.hero?.sub) document.getElementById('hero-sub').innerText = data.hero.sub;
+          if (data.booking?.title) document.getElementById('txt-booking-title').innerText = data.booking.title;
+          if (data.booking?.bg) {
+            const el = document.getElementById('btn-booking');
+            el.style.backgroundImage = `url('${data.booking.bg}')`;
+            el.classList.add('has-bg');
+          }
         }
-        if (data.itinerary?.bg) {
-          const el = document.getElementById('btn-itinerary');
-          el.style.backgroundImage = `url('${data.itinerary.bg}')`;
-          el.classList.add('has-bg');
-        }
-      }
+      });
+    }
+
+    window.addEventListener('message', (event) => {
+      if (event.data === 'booking_success') closeBooking();
     });
-  }
 
-  // 新增：監聽來自 iframe 的訊號
-  window.addEventListener('message', (event) => {
-    if (event.data === 'booking_success') {
-      closeBooking();
-    }
-  });
-
-  window.openBooking = () => {
-    document.getElementById('booking-overlay').classList.add('active');
-    document.getElementById('booking-iframe').src = 'booking.html';
-  };
-  window.closeBooking = () => document.getElementById('booking-overlay').classList.remove('active');
-  
-  init();
+    window.openBooking = () => {
+      document.getElementById('booking-overlay').classList.add('active');
+      document.getElementById('booking-iframe').src = 'booking.html';
+    };
+    window.closeBooking = () => document.getElementById('booking-overlay').classList.remove('active');
+    
+    init();
   </script>
 </body>
 </html>
