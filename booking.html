@@ -89,12 +89,13 @@
 </div>
 
 <script type="module">
-  import { db, CONFIG } from './firebase-config.js?v=3';
+  // 核心：使用 v=99 避開所有快取，強制讀取新的 config.js
+  import { db, CONFIG } from './firebase-config.js?v=99';
   import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   let currentMode = '送機';
   let stops = [];
-  let currentUserId = ""; // 新增：用於儲存 LIFF 抓到的 ID
+  let currentUserId = ""; 
 
   window.qty = (id, c) => {
     const el = document.getElementById(id);
@@ -152,7 +153,7 @@
 
     try {
       const data = {
-        customerId: currentUserId, // 嚴謹寫入：顧客 LINE ID
+        customerId: currentUserId, 
         contactName: name,
         contactPhone: phone,
         tripType: currentMode,
@@ -172,7 +173,8 @@
 
       const docRef = await addDoc(collection(db, "orders"), { ...data, createdAt: serverTimestamp() });
       
-      fetch('https://hook.us2.make.com/5gmkpwbfobn8k595pnhjlwm1qim3lcis', {
+      // 使用 CONFIG 中定義的 webhook 確保發送正確
+      fetch(CONFIG.webhooks.newOrder, {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ ...data, orderId: docRef.id })
       }).catch(e => console.error(e));
@@ -198,17 +200,22 @@
     if (p) document.getElementById('contact-phone').value = p;
 
     try {
-      await liff.init({ liffId: CONFIG.LIFF_ID });
+      // 重點：從 CONFIG 中抓取當前正確的乘客端 LIFF_ID
+      const targetLiffId = CONFIG.LIFF_IDS ? CONFIG.LIFF_IDS.PASSENGER : CONFIG.LIFF_ID;
+      await liff.init({ liffId: targetLiffId });
+
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
-        currentUserId = profile.userId; // 嚴謹賦值：抓取實時 ID
+        currentUserId = profile.userId; 
         if (!document.getElementById('contact-name').value) {
           document.getElementById('contact-name').value = profile.displayName;
         }
       } else {
         liff.login();
       }
-    } catch (e) { console.warn("LIFF 跳過"); }
+    } catch (e) { 
+      console.warn("LIFF 加載失敗:", e); 
+    }
   }
   init();
 </script>
