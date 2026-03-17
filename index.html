@@ -2,16 +2,16 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Destination Anywhere | 探索未知</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=101">
   <style>
     .hero { padding: 40px 25px 25px; display: flex; justify-content: space-between; align-items: center; }
     .hero-text h1 { font-size: 28px; font-weight: 700; margin: 0; }
     .hero-text p { color: var(--text-sub); margin: 5px 0 0; font-size: 16px; }
-    #display-id { font-size: 10px; color: #BBB; word-break: break-all; margin-top: 4px; display: block; }
-    #user-avatar { width: 55px; height: 55px; border-radius: 50%; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #EEE; }
+    #display-id { font-size: 10px; color: #BBB; word-break: break-all; margin-top: 4px; display: block; height: 12px; }
+    #user-avatar { width: 55px; height: 55px; border-radius: 50%; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #EEE; object-fit: cover; }
     #admin-btn { display: none; margin-top: 8px; background: #007AFF; color: white; border: none; padding: 5px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; cursor: pointer; }
     .bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 20px 30px; }
     .bento-item { background: white; border-radius: 24px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.02); background-size: cover; background-position: center; position: relative; overflow: hidden; min-height: 100px; }
@@ -43,7 +43,7 @@
         <code id="display-id">正在取得系統 ID...</code>
       </div>
       <div class="profile-wrap" style="text-align: right;">
-        <img id="user-avatar" src="" alt="">
+        <img id="user-avatar" src="https://cdn-icons-png.flaticon.com/512/147/147144.png" alt="avatar">
         <button id="admin-btn" onclick="location.href='admin.html'">管理入口</button>
       </div>
     </header>
@@ -93,34 +93,47 @@
         <div style="flex:1; text-align:center; font-weight:700; font-size:17px;">行程預約</div>
         <div style="width:40px;"></div>
     </div>
-    <iframe id="booking-iframe" src="booking.html" style="width:100%; height:calc(100% - 60px); border:none;"></iframe>
+    <iframe id="booking-iframe" src="" style="width:100%; height:calc(100% - 60px); border:none;"></iframe>
   </div>
 
   <script type="module">
-    // 使用新的版本號確保 GitHub 讀取最新 config
-    import { db, CONFIG } from './firebase-config.js?v=99';
+    // 使用新的版本號 v=101 避開 GitHub 快取
+    // ⚠️ 請務必確認 GitHub 上該檔案名稱真的是小寫的 firebase-config.js
+    import { db, CONFIG } from './firebase-config.js?v=101';
     import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     async function init() {
       const displayIdEl = document.getElementById('display-id');
-      try {
-        // 重要：確保使用的是 PASSENGER ID
-        const targetLiffId = CONFIG.LIFF_IDS ? CONFIG.LIFF_IDS.PASSENGER : CONFIG.LIFF_ID;
-        console.log("初始化 LIFF ID:", targetLiffId);
+      const userNameEl = document.getElementById('user-name');
+      const userAvatarEl = document.getElementById('user-avatar');
 
+      try {
+        // 1. 確定 LIFF ID 來源
+        const targetLiffId = CONFIG.LIFF_IDS ? CONFIG.LIFF_IDS.PASSENGER : CONFIG.LIFF_ID;
+        console.log("LIFF ID 載入中:", targetLiffId);
+
+        if (!targetLiffId) throw new Error("找不到 LIFF ID 設定");
+
+        // 2. 初始化 LIFF
         await liff.init({ liffId: targetLiffId });
         
+        // 3. 處理登入狀態
         if (!liff.isLoggedIn()) { 
+          console.log("導向登入...");
           liff.login(); 
           return; 
         }
         
+        // 4. 成功獲取 Profile
         const p = await liff.getProfile();
-        displayIdEl.innerText = "UID: " + p.userId;
-        document.getElementById('user-name').innerText = p.displayName || "旅伴";
-        document.getElementById('user-avatar').src = p.pictureUrl || "https://cdn-icons-png.flaticon.com/512/147/147144.png";
+        console.log("Profile 獲取成功:", p);
 
-        // 權限檢查
+        // 5. 更新介面
+        displayIdEl.innerText = "UID: " + p.userId;
+        userNameEl.innerText = p.displayName || "旅伴";
+        if (p.pictureUrl) userAvatarEl.src = p.pictureUrl;
+
+        // 6. 管理員權限按鈕
         if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(p.userId)) {
           document.getElementById('admin-btn').style.display = 'block';
         }
@@ -128,7 +141,7 @@
         syncDesign();
         
       } catch (e) { 
-        console.error("LIFF Init Error:", e);
+        console.error("LIFF 初始化錯誤:", e);
         displayIdEl.innerText = "❌ 啟動失敗: " + e.message;
       }
     }
@@ -148,16 +161,22 @@
       });
     }
 
+    // 監聽 Booking iframe 成功訊息
     window.addEventListener('message', (event) => {
       if (event.data === 'booking_success') closeBooking();
     });
 
     window.openBooking = () => {
       document.getElementById('booking-overlay').classList.add('active');
-      document.getElementById('booking-iframe').src = 'booking.html';
+      // 動態載入 iframe，避免預先載入時快取問題
+      document.getElementById('booking-iframe').src = 'booking.html?v=' + Date.now();
     };
-    window.closeBooking = () => document.getElementById('booking-overlay').classList.remove('active');
+    window.closeBooking = () => {
+      document.getElementById('booking-overlay').classList.remove('active');
+      document.getElementById('booking-iframe').src = ''; // 清空內容
+    };
     
+    // 啟動程式
     init();
   </script>
 </body>
