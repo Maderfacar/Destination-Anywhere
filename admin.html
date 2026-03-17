@@ -280,17 +280,18 @@
     } catch (e) { alert("更新失敗"); }
   };
 
-  // --- 修正後的通知函式：嚴格封裝司機與乘客的 LINE ID 以及地址資訊 ---
+  // --- 關鍵修正：將所有資料直接封入 Webhook ---
   window.sendNotify = async (orderId, target) => {
     try {
       const snap = await getDoc(doc(db, "orders", orderId));
       if (!snap.exists()) { alert("找不到訂單"); return; }
       const ord = snap.data();
 
+      // 嚴謹封裝數據，讓 Make 氣泡直接顯示所有欄位
       const payload = {
         orderId: orderId,
         target: target,
-        // 直接從訂單資料中帶出對應 ID
+        // 資料帶入關鍵欄位
         driverLineId: ord.driverId || "",      
         customerLineId: ord.customerId || "",  
         contactName: ord.contactName || "",
@@ -298,6 +299,7 @@
         pickup: ord.pickup || ord.pickupLocation || "",
         dropoff: ord.dropoff || ord.dropoffLocation || "",
         appointmentTime: ord.appointmentTime || "",
+        flightNumber: ord.flightNumber || "--",
         tripType: ord.tripType || "",
         status: ord.status || "",
         timestamp: new Date().toISOString()
@@ -320,7 +322,7 @@
     }
   };
 
-  // --- 修正後的指派函式：指派時確保 driverId (LINE ID) 同步寫入訂單 ---
+  // --- 關鍵修正：指派時確保 driverId (LINE ID) 同步寫入訂單 ---
   window.assignDriver = async (orderId, driverName) => {
     if(!driverName) return;
     try {
@@ -328,14 +330,14 @@
       
       const updateData = { 
         driverName: driverName, 
-        // 從司機資料庫中提取 userId 並寫入訂單，確保後續發送通知有 ID 可用
+        // 確保將司機的 userId 寫入訂單，通知時才能抓到 ID
         driverId: selectedDriver ? (selectedDriver.userId || "") : "", 
         status: 'dispatched',
         dispatchedAt: serverTimestamp()
       };
 
       await updateDoc(doc(db, "orders", orderId), updateData);
-      alert("✅ 已指派司機：" + driverName);
+      alert("✅ 已成功指派司機：" + driverName);
     } catch (e) { 
       console.error(e);
       alert("❌ 指派失敗"); 
