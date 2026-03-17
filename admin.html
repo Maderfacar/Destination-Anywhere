@@ -152,6 +152,7 @@
   import { collection, query, orderBy, onSnapshot, doc, getDoc, updateDoc, setDoc, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   let approvedDrivers = [];
+  // 嚴謹鎖定 Webhook URL
   const MAKE_WEBHOOK_URL = "https://hook.us2.make.com/te3nqlpvmiekxglqy9jt0xp2org17q5v";
 
   async function init() {
@@ -235,7 +236,6 @@
     });
   };
 
-  // --- 專業編輯 Modal 邏輯 ---
   window.openEditModal = (id, data) => {
     document.getElementById('edit-order-id').value = id;
     document.getElementById('edit-order-name').value = data.contactName || '';
@@ -281,16 +281,30 @@
     } catch (e) { alert("更新失敗"); }
   };
 
-  // --- MAKE Webhook 串接實作 ---
+  // --- MAKE Webhook 串接強化實作 ---
   window.sendNotify = async (orderId, target) => {
+    console.log(`觸發通知: ${target}, ID: ${orderId}`);
     try {
+      // 增加連線配置優化傳輸
       const response = await fetch(MAKE_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: orderId, target: target })
+        body: JSON.stringify({ 
+          orderId: orderId, 
+          target: target,
+          timestamp: new Date().toISOString()
+        })
       });
-      if (response.ok) alert(`✅ 已成功觸發${target === 'customer' ? '顧客' : '司機'}通知流程`);
-    } catch (e) { alert("❌ Webhook 觸發失敗"); }
+      
+      if (response.ok) {
+        alert(`✅ 已成功觸發${target === 'customer' ? '顧客' : '司機'}通知流程`);
+      } else {
+        alert(`⚠️ Webhook 響應異常: ${response.status}`);
+      }
+    } catch (e) { 
+      console.error("Webhook Error:", e);
+      alert("❌ Webhook 觸發失敗，請確認網路連線或 Webhook URL 是否正確。"); 
+    }
   };
 
   window.assignDriver = async (orderId, driverName) => {
@@ -305,13 +319,35 @@
     } catch (e) { alert("指派失敗"); }
   };
 
-  // --- 其他原始邏輯 (司機審核、裝修等) 保持不變 ---
   window.loadApprovedDrivers = () => {
     const q = query(collection(db, "drivers"), where("status", "==", "approved"));
     onSnapshot(q, (snap) => {
       approvedDrivers = [];
       snap.forEach(d => approvedDrivers.push(d.data()));
     });
+  };
+
+  // 初始化裝修數據
+  async function loadDesignData() {
+    try {
+      const res = await getDoc(doc(db, "settings", "homepage"));
+      if (res.exists()) {
+        const s = res.data();
+        document.getElementById('edit-hero-title').value = s.heroTitle || '';
+        document.getElementById('edit-hero-sub').value = s.heroSub || '';
+      }
+    } catch (e) { console.error("Design Data Load Error", e); }
+  }
+
+  window.saveDesignSettings = async () => {
+    try {
+      await setDoc(doc(db, "settings", "homepage"), {
+        heroTitle: document.getElementById('edit-hero-title').value,
+        heroSub: document.getElementById('edit-hero-sub').value,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      alert("✅ 設定已同步");
+    } catch (e) { alert("儲存失敗"); }
   };
 
   init();
