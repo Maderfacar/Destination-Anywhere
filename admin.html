@@ -165,6 +165,7 @@
           </div>
           <div class="address-line">
             <div style="margin-bottom:5px;"><b>📍 起點：</b><span style="color:#333;">${ord.pickup || ord.pickupLocation || '--'}</span></div>
+            ${ord.extraStop ? `<div style="margin-bottom:5px;"><b>🛑 停靠：</b><span style="color:#E67E22;">${ord.extraStop}</span></div>` : ''}
             <div><b>🏁 終點：</b><span style="color:#333;">${ord.dropoff || ord.dropoffLocation || '--'}</span></div>
           </div>
           <div style="margin-top:15px; background:#F9F9FB; padding:15px; border-radius:12px; border: 1px solid #EEE;">
@@ -214,7 +215,6 @@
     });
   };
 
-  // 修改：指派司機時同步「影印」詳細資料到訂單，方便 Make 抓取
   window.assignDriver = async (orderId, driverName) => {
     if(!driverName) return;
     try {
@@ -231,11 +231,10 @@
         status: 'dispatched',
         dispatchedAt: serverTimestamp()
       });
-      alert("✅ 指派成功 (司機詳情已同步至訂單)");
+      alert("✅ 指派成功");
     } catch (e) { alert("指派失敗"); }
   };
 
-  // 修改：發送完整資料給 Make Webhook
   window.sendNotify = async (orderId, target) => {
     try {
       const snap = await getDoc(doc(db, "orders", orderId));
@@ -250,9 +249,15 @@
         contactPhone: ord.contactPhone || "",
         appointmentTime: ord.appointmentTime || "",
         pickup: ord.pickup || ord.pickupLocation || "",
+        extraStop: ord.extraStop || "無",
         dropoff: ord.dropoff || ord.dropoffLocation || "",
-        passengerCount: ord.passengerCount || "1",
-        luggageCount: ord.luggageCount || "0",
+        // 人數欄位 (僅大人、兒童)
+        adultCount: ord.adultCount || "0",
+        childCount: ord.childCount || "0",
+        // 行李欄位 (大、中、小)
+        l_luggage: ord.l_luggage || "0",
+        m_luggage: ord.m_luggage || "0",
+        s_luggage: ord.s_luggage || "0",
         flightNumber: ord.flightNumber || "",
         remark: ord.remark || "無",
         // 司機資料
@@ -267,7 +272,7 @@
         payload.driverId = ord.driverId || "";
       } else {
         payload.customerId = ord.customerId || "";
-        payload.driverId = ord.customerId || ""; // 同步補上備援
+        payload.driverId = ord.customerId || ""; 
       }
 
       await fetch(MAKE_WEBHOOK_URL, {
