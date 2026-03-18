@@ -241,10 +241,10 @@
       if (!snap.exists()) return;
       const ord = snap.data();
       
-      // 完全對齊您提供的資料庫欄位名稱
       const payload = {
         target: target,
         orderId: orderId,
+        customerId: ord.customerId || "", // 必帶項目
         tripType: ord.tripType || "",
         contactName: ord.contactName || "",
         contactPhone: ord.contactPhone || "",
@@ -259,20 +259,14 @@
         lugS: ord.lugS || "0",
         flightNo: ord.flightNo || "",
         note: ord.note || "無",
-        // 司機資料
+        // 司機資訊
         driverName: ord.driverName || "",
         driverPhone: ord.driverPhone || "",
         driverPlate: ord.driverPlate || "",
         driverModel: ord.driverModel || "",
-        driverColor: ord.driverColor || ""
+        driverColor: ord.driverColor || "",
+        driverId: ord.driverId || ""
       };
-
-      if (target === 'driver') {
-        payload.driverId = ord.driverId || "";
-      } else {
-        payload.customerId = ord.customerId || "";
-        payload.driverId = ord.customerId || ""; 
-      }
 
       await fetch(MAKE_WEBHOOK_URL, {
         method: "POST",
