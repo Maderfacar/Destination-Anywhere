@@ -214,21 +214,28 @@
     });
   };
 
+  // 修改：指派司機時同步「影印」詳細資料到訂單，方便 Make 抓取
   window.assignDriver = async (orderId, driverName) => {
     if(!driverName) return;
     try {
       const drv = approvedDrivers.find(d => d.name === driverName);
       if (!drv || !drv.userId) { alert("此司機無有效 ID"); return; }
+      
       await updateDoc(doc(db, "orders", orderId), { 
         driverName: drv.name, 
-        driverId: drv.userId, 
+        driverId: drv.userId,
+        driverPhone: drv.phone || "",
+        driverPlate: drv.plate || "",
+        driverModel: drv.model || "",
+        driverColor: drv.color || "",
         status: 'dispatched',
         dispatchedAt: serverTimestamp()
       });
-      alert("✅ 指派成功");
+      alert("✅ 指派成功 (司機詳情已同步至訂單)");
     } catch (e) { alert("指派失敗"); }
   };
 
+  // 修改：發送完整資料給 Make Webhook
   window.sendNotify = async (orderId, target) => {
     try {
       const snap = await getDoc(doc(db, "orders", orderId));
@@ -237,10 +244,23 @@
       
       const payload = {
         target: target,
+        orderId: orderId,
+        tripType: ord.tripType || "",
         contactName: ord.contactName || "",
+        contactPhone: ord.contactPhone || "",
         appointmentTime: ord.appointmentTime || "",
         pickup: ord.pickup || ord.pickupLocation || "",
-        dropoff: ord.dropoff || ord.dropoffLocation || ""
+        dropoff: ord.dropoff || ord.dropoffLocation || "",
+        passengerCount: ord.passengerCount || "1",
+        luggageCount: ord.luggageCount || "0",
+        flightNumber: ord.flightNumber || "",
+        remark: ord.remark || "無",
+        // 司機資料
+        driverName: ord.driverName || "",
+        driverPhone: ord.driverPhone || "",
+        driverPlate: ord.driverPlate || "",
+        driverModel: ord.driverModel || "",
+        driverColor: ord.driverColor || ""
       };
 
       if (target === 'driver') {
@@ -255,7 +275,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      alert("✅ 通知已發送");
+      alert("✅ 完整資料已發送至 Make");
     } catch (e) { alert("發送失敗"); }
   };
 
