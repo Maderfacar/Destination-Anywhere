@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Destination Anywhere</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <link rel="stylesheet" href="style.css?v=105">
+  <link rel="stylesheet" href="style.css?v=106">
   <style>
     .hero { padding: 40px 25px 25px; display: flex; justify-content: space-between; align-items: center; }
     .hero-text h1 { font-size: 28px; font-weight: 700; margin: 0; }
     #display-id { font-size: 10px; color: #BBB; word-break: break-all; margin-top: 4px; display: block; }
     #user-avatar { width: 55px; height: 55px; border-radius: 50%; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #EEE; object-fit: cover; }
-    #admin-btn { display: none; margin-top: 8px; background: #007AFF; color: white; border: none; padding: 5px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; cursor: pointer; }
+    #admin-btn { display: none; margin-top: 8px; background: #007AFF; color: white; border: none; padding: 6px 12px; border-radius: 10px; font-size: 11px; font-weight: 600; cursor: pointer; }
     .bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 20px 30px; }
     .bento-item { background: white; border-radius: 24px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); position: relative; overflow: hidden; min-height: 100px; }
-    .bento-main { grid-column: span 2; min-height: 130px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(135deg, #2C2C2E 0%, #000000 100%); color: white; }
+    .bento-main { grid-column: span 2; min-height: 130px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(135deg, #2C2C2E 0%, #000000 100%); color: white; cursor: pointer; }
     #booking-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #FFF; z-index: 1000; transform: translateY(100%); transition: transform 0.4s ease; }
     #booking-overlay.active { transform: translateY(0); }
   </style>
@@ -25,10 +25,10 @@
       <div class="hero-text">
         <p id="hero-sub">探索未知，隨心所行</p>
         <h1>您好，<span id="user-name">旅伴</span></h1>
-        <code id="display-id">正在取得系統 ID...</code>
+        <code id="display-id">正在讀取...</code>
       </div>
       <div style="text-align: right;">
-        <img id="user-avatar" src="https://cdn-icons-png.flaticon.com/512/147/147144.png" alt="User Avatar">
+        <img id="user-avatar" src="https://cdn-icons-png.flaticon.com/512/147/147144.png" alt="Avatar">
         <button id="admin-btn" onclick="location.href='admin.html'">管理入口</button>
       </div>
     </header>
@@ -50,7 +50,7 @@
   </div>
 
   <script type="module">
-    import { db, CONFIG } from './firebase-config.js?v=105';
+    import { db, CONFIG } from './firebase-config.js?v=106';
     import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     async function init() {
@@ -60,54 +60,50 @@
       const adminBtn = document.getElementById('admin-btn');
 
       try {
-        const liffId = CONFIG.LIFF_IDS ? CONFIG.LIFF_IDS.PASSENGER : CONFIG.LIFF_ID;
-        
-        await liff.init({ liffId: liffId });
+        await liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER });
 
         if (!liff.isLoggedIn()) {
           liff.login();
           return;
         }
 
-        // 嘗試獲取 Profile，若報錯 (如 Authorization Code 失效) 則強制重登
-        let profile;
-        try {
-          profile = await liff.getProfile();
-        } catch (err) {
-          console.error("Profile fetch failed, re-logging in...");
-          liff.logout();
-          liff.login();
-          return;
+        const profile = await liff.getProfile();
+        
+        // 1. 更新使用者 UI
+        displayIdEl.innerText = "UID: " + profile.userId;
+        nameEl.innerText = profile.displayName;
+        if (profile.pictureUrl) {
+          avatarEl.src = profile.pictureUrl;
         }
 
-        // 成功取得資料後填入 UI
-        if (profile) {
-          displayIdEl.innerText = "UID: " + profile.userId;
-          nameEl.innerText = profile.displayName || "旅伴";
-          if (profile.pictureUrl) {
-            avatarEl.src = profile.pictureUrl;
-          }
-
-          // 辨識管理者權限
-          if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(profile.userId)) {
-            adminBtn.style.display = 'block';
-          }
+        // 2. 嚴格比對管理員白名單
+        if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(profile.userId)) {
+          adminBtn.style.display = 'block';
+          console.log("管理員權限已驗證");
+        } else {
+          console.log("非管理員帳號:", profile.userId);
         }
 
+        // 3. 同步遠端設計
         syncDesign();
+
       } catch (e) {
-        console.error("LIFF Init Error:", e);
-        displayIdEl.innerText = "❌ 授權錯誤，請重開 LINE 或解除連動後重試";
+        console.error("Initialization Error:", e);
+        displayIdEl.innerText = "❌ 系統錯誤: " + e.message;
       }
     }
 
     function syncDesign() {
-      onSnapshot(doc(db, "siteConfig", "homePage"), (ds) => {
-        if (ds.exists()) {
-          const d = ds.data();
-          if (d.hero?.sub) document.getElementById('hero-sub').innerText = d.hero.sub;
-        }
-      });
+      try {
+        onSnapshot(doc(db, "siteConfig", "homePage"), (ds) => {
+          if (ds.exists()) {
+            const d = ds.data();
+            if (d.hero?.sub) document.getElementById('hero-sub').innerText = d.hero.sub;
+          }
+        });
+      } catch (e) {
+        console.warn("SyncDesign Skip:", e);
+      }
     }
 
     window.openBooking = () => {
