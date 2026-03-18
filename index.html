@@ -137,11 +137,12 @@
       const tripDesc = document.getElementById('trip-desc');
 
       try {
+        // 修正：使用 createdAt 排序，因為資料庫沒有單獨的 pickupDate 欄位
         const q = query(
           collection(db, "orders"),
           where("customerId", "==", userId),
           where("status", "in", ["pending", "accepted"]),
-          orderBy("pickupDate", "asc"),
+          orderBy("createdAt", "desc"), // 顯示最新建立的訂單
           limit(1)
         );
 
@@ -155,14 +156,14 @@
             tripStatus.style.background = "#34C759";
             tripStatus.style.color = "white";
             const driverStr = data.driverName ? `司機: ${data.driverName} (${data.carPlate || '派車中'})` : "司機已接單，正準備中";
-            tripTitle.innerText = `${data.pickupDate} ${data.pickupTime}`;
+            tripTitle.innerText = data.pickup || "已排定行程"; // 顯示上車地點
             tripDesc.innerHTML = `<span style="color:#007AFF; font-weight:600;">${driverStr}</span>`;
           } else {
             tripStatus.innerText = "等待接單中";
             tripStatus.style.background = "#FFCC00";
             tripStatus.style.color = "black";
-            tripTitle.innerText = `${data.pickupDate} ${data.pickupTime}`;
-            tripDesc.innerText = `起點: ${data.startPoint || '查看詳情'}`;
+            tripTitle.innerText = data.pickup || "行程處理中";
+            tripDesc.innerText = "我們正在為您安排司機";
           }
         } else {
           tripStatus.innerText = "UPCOMING";
