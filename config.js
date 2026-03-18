@@ -8,7 +8,7 @@ export const CONFIG = {
   },
   ADMIN_UIDS: [
     "U3727e111e915d4199f75e30fda2a0d79",
-    "U56239f33a1cb65c8b1b880f87ea0c2ac", 
+    "U5813df1cc07f1f5c884035f61ccfaae9", 
     "U84c34631256a829d5fd8dceed8bd38f3"
   ],
   LIFF_IDS: {
