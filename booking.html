@@ -24,12 +24,10 @@
       font-size: 16px; box-sizing: border-box; background: #F9F9F9; -webkit-appearance: none;
     }
 
-    /* 停靠站動態樣式 */
     #midStops-container { display: none; margin-bottom: 15px; position: relative; }
     .add-stop-btn { color: var(--primary); font-size: 14px; font-weight: 600; cursor: pointer; display: inline-block; margin-bottom: 15px; }
     .del-stop-btn { position: absolute; right: 10px; top: 38px; color: #FF3B30; font-weight: bold; padding: 10px; z-index: 5; }
 
-    /* 計數器樣式 */
     .counter-group { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
     .counter-label { font-size: 15px; color: #3A3A3C; }
     .counter-ctrl { display: flex; align-items: center; gap: 15px; }
@@ -159,22 +157,38 @@
     import { db, CONFIG } from './firebase-config.js?v=106';
     import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    let customerUid = "";
+    // --- 🟢 新增：從 URL 網址抓取 index.html 傳過來的 uid ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlUid = urlParams.get('uid'); 
+
+    let customerUid = urlUid || ""; // 優先使用網址傳過來的 ID
     let selectedType = "接機";
     const counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
 
     async function init() {
       try {
-        await liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER });
-        if (liff.isLoggedIn()) {
-          const p = await liff.getProfile();
-          customerUid = p.userId;
-          // 主動抓取 LINE 顯示名稱預填
-          if (p.displayName) {
-            document.getElementById('contactName').value = p.displayName;
+        // 如果網址沒帶 uid，才嘗試啟動 LIFF (作為備援)
+        if (!customerUid) {
+          await liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER });
+          if (liff.isLoggedIn()) {
+            const p = await liff.getProfile();
+            customerUid = p.userId;
+            if (p.displayName && !document.getElementById('contactName').value) {
+              document.getElementById('contactName').value = p.displayName;
+            }
+          } else {
+            liff.login();
           }
         } else {
-          liff.login();
+          // 已經有 UID 的情況下，還是可以 init LIFF 來預填姓名，但不阻塞
+          liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER }).then(async () => {
+            if (liff.isLoggedIn()) {
+              const p = await liff.getProfile();
+              if (p.displayName && !document.getElementById('contactName').value) {
+                document.getElementById('contactName').value = p.displayName;
+              }
+            }
+          }).catch(() => {});
         }
       } catch (e) { console.warn("LIFF 載入失敗"); }
     }
@@ -198,6 +212,12 @@
     };
 
     window.sendRequest = async () => {
+      // 🔴 關鍵安全檢查：如果沒抓到 UID 就禁止提交
+      if (!customerUid) {
+        alert("身分驗證失效，請關閉預約視窗重新點擊。");
+        return;
+      }
+
       const btn = document.getElementById('submit-btn');
       btn.disabled = true; btn.innerText = "正在處理訂單...";
 
@@ -217,7 +237,7 @@
           lugM: String(counts.lugM),
           lugS: String(counts.lugS),
           note: document.getElementById('note').value,
-          customerId: customerUid,
+          customerId: customerUid, // 這裡會傳入正確的 ID
           status: "pending",
           driverId: "",
           driverName: ""
