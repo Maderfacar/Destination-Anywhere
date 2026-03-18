@@ -111,10 +111,12 @@
     function startCountdown(targetJSDate) {
       if (timerInterval) clearInterval(timerInterval);
       const countdownEl = document.getElementById('trip-countdown');
-      const targetTime = targetJSDate.getTime();
+      if (!countdownEl) return;
 
       const update = () => {
-        const diff = targetTime - new Date().getTime();
+        const now = new Date().getTime();
+        const diff = targetJSDate.getTime() - now;
+        
         if (diff <= 0) {
           countdownEl.innerText = "行程準備開始";
           clearInterval(timerInterval);
@@ -135,11 +137,12 @@
       const tripContent = document.getElementById('trip-content');
 
       try {
+        // 更新：使用 appointmentTime 進行 orderBy 以對應新索引
         const q = query(
           collection(db, "orders"),
           where("customerId", "==", userId),
           where("status", "in", ["pending", "accepted"]),
-          orderBy("createdAt", "desc"),
+          orderBy("appointmentTime", "desc"),
           limit(1)
         );
 
@@ -147,13 +150,20 @@
         if (!snap.empty) {
           const data = snap.docs[0].data();
           
-          // 1. 處理時間轉換
+          // 1. 處理時間轉換 (appointmentTime 可能是 Timestamp 物件或字串)
           let jsDate = null;
           let displayTime = "未設定時間";
-          if (data.appointmentTime && typeof data.appointmentTime.toDate === 'function') {
-            jsDate = data.appointmentTime.toDate();
-            // 格式化為 2026/3/18 23:23
-            displayTime = `${jsDate.getFullYear()}/${jsDate.getMonth()+1}/${jsDate.getDate()} ${String(jsDate.getHours()).padStart(2,'0')}:${String(jsDate.getMinutes()).padStart(2,'0')}`;
+          
+          if (data.appointmentTime) {
+            if (typeof data.appointmentTime.toDate === 'function') {
+              jsDate = data.appointmentTime.toDate();
+            } else {
+              jsDate = new Date(data.appointmentTime);
+            }
+            
+            if (!isNaN(jsDate.getTime())) {
+              displayTime = `${jsDate.getFullYear()}/${jsDate.getMonth()+1}/${jsDate.getDate()} ${String(jsDate.getHours()).padStart(2,'0')}:${String(jsDate.getMinutes()).padStart(2,'0')}`;
+            }
           }
 
           // 2. 狀態顏色
@@ -162,7 +172,7 @@
           tripStatus.style.background = isAccepted ? "#34C759" : "#FFCC00";
           tripStatus.style.color = isAccepted ? "white" : "black";
 
-          // 3. 組合 HTML
+          // 3. 組合 HTML (移除 emoji)
           let html = `
             <span id="trip-countdown" class="countdown-timer">計算倒數中...</span>
             <b style="font-size:16px; color:#000; display:block; margin-bottom:8px;">預約時間: ${displayTime}</b>
@@ -189,13 +199,20 @@
           tripContent.innerHTML = html;
 
           // 4. 啟動倒數
-          if (jsDate) startCountdown(jsDate);
+          if (jsDate && !isNaN(jsDate.getTime())) {
+            startCountdown(jsDate);
+          } else {
+            document.getElementById('trip-countdown').innerText = "時間讀取中...";
+          }
 
         } else {
           tripStatus.innerText = "UPCOMING";
           tripContent.innerHTML = `<b style="font-size:15px; color:#999;">目前沒有預約行程</b>`;
         }
-      } catch (error) { console.error(error); }
+      } catch (error) { 
+        console.error("載入失敗:", error); 
+        tripContent.innerHTML = `<p style="color:red; font-size:12px;">載入錯誤，請確認索引已生效</p>`;
+      }
     }
 
     window.openBooking = () => {
