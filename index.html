@@ -168,7 +168,7 @@
 
           let html = `
             <span id="trip-countdown" class="countdown-timer">計算倒數中...</span>
-            <b style="font-size:16px; color:#000; display:block; margin-bottom:8px;">預約時間: ${data.pickupDate || ''} ${data.pickupTime || ''}</b>
+            <b style="font-size:16px; color:#000; display:block; margin-bottom:8px;">預約時間: ${data.createAt || ''} ${data.createAt || ''}</b>
             <div class="trip-info-row"><span class="trip-info-label">上車地點</span>${data.pickup || '未設定'}</div>
             <div class="trip-info-row"><span class="trip-info-label">下車地點</span>${data.dropoff || '未設定'}</div>
           `;
@@ -190,8 +190,8 @@
 
           tripContent.innerHTML = html;
 
-          if (data.pickupDate && data.pickupTime) {
-            startCountdown(data.pickupDate, data.pickupTime);
+          if (data.pickupDate && data.createAt) {
+            startCountdown(data.pickupDate, data.createAt);
           }
         } else {
           tripStatus.innerText = "UPCOMING";
