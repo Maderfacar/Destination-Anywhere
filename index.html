@@ -77,7 +77,6 @@
   </div>
 
   <script type="module">
-    // 這裡改用 getDocs 一次性讀取
     import { db, CONFIG } from './firebase-config.js?v=106';
     import { doc, onSnapshot, collection, query, where, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -111,7 +110,7 @@
         }
 
         syncDesign();
-        loadNextTrip(profile.userId); // 改為一次性讀取
+        loadNextTrip(profile.userId);
 
       } catch (e) {
         console.error("Initialization Error:", e);
@@ -132,7 +131,6 @@
       }
     }
 
-    // 改良版：頁面載入時僅執行一次讀取
     async function loadNextTrip(userId) {
       const tripStatus = document.getElementById('trip-status');
       const tripTitle = document.getElementById('trip-title');
@@ -167,7 +165,6 @@
             tripDesc.innerText = `起點: ${data.startPoint || '查看詳情'}`;
           }
         } else {
-          // 無符合行程時的預設顯示
           tripStatus.innerText = "UPCOMING";
           tripStatus.style.background = "#FFCC00";
           tripStatus.style.color = "black";
@@ -202,7 +199,6 @@
     window.addEventListener('message', e => { 
       if (e.data === 'booking_success') {
         closeBooking();
-        // 預約成功後，手動重刷一次行程區塊（可選）
         if (globalProfile) loadNextTrip(globalProfile.userId);
       }
     });
