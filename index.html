@@ -16,14 +16,14 @@
     .bento-item { background: white; border-radius: 24px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); position: relative; overflow: hidden; min-height: 100px; }
     .bento-main { grid-column: span 2; min-height: 130px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(135deg, #2C2C2E 0%, #000000 100%); color: white; cursor: pointer; }
     
-    /* 新增預留區塊的樣式適配 */
-    .bento-reminder { background: #FFF9E6; border: 1px solid #FFE58F; grid-column: span 2; display: flex; flex-direction: column; justify-content: center; }
+    /* 預約排程提醒樣式 (橘黃提醒色) */
+    .bento-reminder { grid-column: span 2; background: #FFF9E6; border: 1px solid #FFE58F; display: flex; flex-direction: column; justify-content: center; }
     .label-tag { background: #FFCC00; color: #000; font-size: 10px; padding: 2px 6px; border-radius: 4px; width: fit-content; margin-bottom: 8px; font-weight: bold; }
     
     #booking-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #FFF; z-index: 1000; transform: translateY(100%); transition: transform 0.4s ease; }
     #booking-overlay.active { transform: translateY(0); }
 
-    /* 懸浮客服按鈕樣式 */
+    /* 一鍵撥打客服樣式 (圓形懸浮鈕) */
     .floating-support { position: fixed; bottom: 30px; right: 25px; width: 55px; height: 55px; background: #FFF; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; z-index: 999; text-decoration: none; border: 1px solid rgba(0,0,0,0.05); }
   </style>
 </head>
@@ -47,25 +47,25 @@
         <span style="opacity:0.8; font-size:13px;">點擊立即呼叫專業司機</span>
       </div>
 
-      <div class="bento-item bento-reminder" id="next-trip-box">
+      <div class="bento-item bento-reminder" onclick="alert('行程提醒開發中')">
         <div class="label-tag">UPCOMING</div>
         <b style="font-size:16px;">尚無即將到來的行程</b>
-        <p style="font-size:12px; color:#8E8E93; margin:4px 0;">您的下一場冒險將顯示在此</p>
+        <p style="font-size:12px; color:#8E8E93; margin:4px 0;">您的下一場預約行程將顯示在此</p>
       </div>
 
-      <div class="bento-item" onclick="alert('行程管理功能開發中')">
-        <b style="font-size:16px;">行程管理 📋</b>
-        <p style="font-size:12px; color:#8E8E93; margin:4px 0;">查看司機與過往紀錄</p>
+      <div class="bento-item" onclick="alert('車種選擇開發中')">
+        <b style="font-size:16px;">多元車種選擇 🚘</b>
+        <p style="font-size:12px; color:#8E8E93; margin:4px 0;">5人座 / 9人座 / 豪華車</p>
       </div>
 
-      <div class="bento-item" onclick="alert('常用地點功能開發中')">
-        <b style="font-size:16px;">常用地點 📍</b>
-        <p style="font-size:12px; color:#8E8E93; margin:4px 0;">快速設定您的常用路线</p>
+      <div class="bento-item" onclick="alert('價格試算開發中')">
+        <b style="font-size:16px;">即時價格試算 💰</b>
+        <p style="font-size:12px; color:#8E8E93; margin:4px 0;">輸入起訖點估算車資</p>
       </div>
     </div>
   </div>
 
-  <a href="tel:0912345678" class="floating-support" title="聯絡客服">
+  <a href="tel:0912345678" class="floating-support">
     <img src="https://cdn-icons-png.flaticon.com/512/3616/3616215.png" width="28" alt="Support">
   </a>
 
