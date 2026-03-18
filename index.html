@@ -47,10 +47,10 @@
         <span style="opacity:0.8; font-size:13px;">點擊立即呼叫專業司機</span>
       </div>
 
-      <div class="bento-item bento-reminder" onclick="alert('行程提醒開發中')">
-        <div class="label-tag">UPCOMING</div>
-        <b style="font-size:16px;">尚無即將到來的行程</b>
-        <p style="font-size:12px; color:#8E8E93; margin:4px 0;">您的下一場預約行程將顯示在此</p>
+      <div class="bento-item bento-reminder" id="next-trip-item" onclick="alert('詳細行程頁面開發中')">
+        <div class="label-tag" id="trip-status">UPCOMING</div>
+        <b style="font-size:16px;" id="trip-title">尚無即將到來的行程</b>
+        <p style="font-size:12px; color:#8E8E93; margin:4px 0;" id="trip-desc">您的下一場預約行程將顯示在此</p>
       </div>
 
       <div class="bento-item" onclick="alert('車種選擇開發中')">
@@ -80,7 +80,7 @@
 
   <script type="module">
     import { db, CONFIG } from './firebase-config.js?v=106';
-    import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { doc, onSnapshot, collection, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     let globalProfile = null;
 
@@ -112,6 +112,7 @@
         }
 
         syncDesign();
+        listenNextTrip(profile.userId); // 啟動行程監聽
 
       } catch (e) {
         console.error("Initialization Error:", e);
@@ -130,6 +131,52 @@
       } catch (e) {
         console.warn("SyncDesign Skip:", e);
       }
+    }
+
+    // 新增：監聽最新行程邏輯
+    function listenNextTrip(userId) {
+      const tripStatus = document.getElementById('trip-status');
+      const tripTitle = document.getElementById('trip-title');
+      const tripDesc = document.getElementById('trip-desc');
+
+      // 查詢該用戶尚未完成且日期最近的訂單
+      const q = query(
+        collection(db, "orders"),
+        where("customerId", "==", userId),
+        where("status", "in", ["pending", "accepted"]),
+        orderBy("pickupDate", "asc"),
+        limit(1)
+      );
+
+      onSnapshot(q, (snapshot) => {
+        if (!snapshot.empty) {
+          const data = snapshot.docs[0].data();
+          
+          // 更新狀態標籤
+          if (data.status === 'accepted') {
+            tripStatus.innerText = "司機已接單";
+            tripStatus.style.background = "#34C759"; // 蘋果綠
+            tripStatus.style.color = "white";
+            
+            const driverStr = data.driverName ? `司機: ${data.driverName} (${data.carPlate || '派車中'})` : "正在排程中";
+            tripTitle.innerText = `${data.pickupDate} ${data.pickupTime}`;
+            tripDesc.innerHTML = `<span style="color:#007AFF; font-weight:600;">${driverStr}</span>`;
+          } else {
+            tripStatus.innerText = "等待接單中";
+            tripStatus.style.background = "#FFCC00";
+            tripStatus.style.color = "black";
+            tripTitle.innerText = `${data.pickupDate} ${data.pickupTime}`;
+            tripDesc.innerText = `起點: ${data.startPoint || '查看詳情'}`;
+          }
+        } else {
+          // 無行程時恢復原樣
+          tripStatus.innerText = "UPCOMING";
+          tripStatus.style.background = "#FFCC00";
+          tripStatus.style.color = "black";
+          tripTitle.innerText = "尚無即將到來的行程";
+          tripDesc.innerText = "您的下一場預約行程將顯示在此";
+        }
+      });
     }
 
     window.openBooking = () => {
