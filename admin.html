@@ -161,12 +161,12 @@
             <div><span class="label-gray">客戶姓名：</span><span class="val-bold">${ord.contactName || '--'}</span></div>
             <div><span class="label-gray">聯絡電話：</span><span class="val-bold" style="color:#007AFF;">${ord.contactPhone || '--'}</span></div>
             <div><span class="label-gray">預約時間：</span><span class="val-bold">${ord.appointmentTime || '--'}</span></div>
-            <div><span class="label-gray">航班編號：</span><span class="val-bold">${ord.flightNumber || '--'}</span></div>
+            <div><span class="label-gray">航班編號：</span><span class="val-bold">${ord.flightNo || '--'}</span></div>
           </div>
           <div class="address-line">
-            <div style="margin-bottom:5px;"><b>📍 起點：</b><span style="color:#333;">${ord.pickup || ord.pickupLocation || '--'}</span></div>
-            ${ord.extraStop ? `<div style="margin-bottom:5px;"><b>🛑 停靠：</b><span style="color:#E67E22;">${ord.extraStop}</span></div>` : ''}
-            <div><b>🏁 終點：</b><span style="color:#333;">${ord.dropoff || ord.dropoffLocation || '--'}</span></div>
+            <div style="margin-bottom:5px;"><b>📍 起點：</b><span style="color:#333;">${ord.pickup || '--'}</span></div>
+            ${ord.midStops ? `<div style="margin-bottom:5px;"><b>🛑 停靠：</b><span style="color:#E67E22;">${ord.midStops}</span></div>` : ''}
+            <div><b>🏁 終點：</b><span style="color:#333;">${ord.dropoff || '--'}</span></div>
           </div>
           <div style="margin-top:15px; background:#F9F9FB; padding:15px; border-radius:12px; border: 1px solid #EEE;">
             <div class="label-gray" style="margin-bottom:8px;">執行司機：${ord.driverName || '未指派'}</div>
@@ -241,6 +241,7 @@
       if (!snap.exists()) return;
       const ord = snap.data();
       
+      // 完全對齊您提供的資料庫欄位名稱
       const payload = {
         target: target,
         orderId: orderId,
@@ -248,17 +249,16 @@
         contactName: ord.contactName || "",
         contactPhone: ord.contactPhone || "",
         appointmentTime: ord.appointmentTime || "",
-        pickup: ord.pickup || ord.pickupLocation || "",
+        pickup: ord.pickup || "",
         midStops: ord.midStops || "無",
-        dropoff: ord.dropoff || ord.dropoffLocation || "",
-        // 人數與行李欄位，精確對齊資料庫欄位名稱
-        adult: ord.adult || "0",
-        child: ord.child || "0",
+        dropoff: ord.dropoff || "",
+        adults: ord.adults || "0",
+        children: ord.children || "0",
         lugL: ord.lugL || "0",
         lugM: ord.lugM || "0",
         lugS: ord.lugS || "0",
-        flightNumber: ord.flightNumber || "",
-        remark: ord.remark || "無",
+        flightNo: ord.flightNo || "",
+        note: ord.note || "無",
         // 司機資料
         driverName: ord.driverName || "",
         driverPhone: ord.driverPhone || "",
@@ -302,9 +302,9 @@
     document.getElementById('edit-order-name').value = data.contactName || '';
     document.getElementById('edit-order-phone').value = data.contactPhone || '';
     document.getElementById('edit-order-time').value = data.appointmentTime || '';
-    document.getElementById('edit-order-flight').value = data.flightNumber || '';
-    document.getElementById('edit-order-pickup').value = data.pickup || data.pickupLocation || '';
-    document.getElementById('edit-order-dropoff').value = data.dropoff || data.dropoffLocation || '';
+    document.getElementById('edit-order-flight').value = data.flightNo || '';
+    document.getElementById('edit-order-pickup').value = data.pickup || '';
+    document.getElementById('edit-order-dropoff').value = data.dropoff || '';
     document.getElementById('edit-modal').style.display = 'block';
   };
 
@@ -317,7 +317,7 @@
         contactName: document.getElementById('edit-order-name').value,
         contactPhone: document.getElementById('edit-order-phone').value,
         appointmentTime: document.getElementById('edit-order-time').value,
-        flightNumber: document.getElementById('edit-order-flight').value,
+        flightNo: document.getElementById('edit-order-flight').value,
         pickup: document.getElementById('edit-order-pickup').value,
         dropoff: document.getElementById('edit-order-dropoff').value,
         updatedAt: serverTimestamp()
