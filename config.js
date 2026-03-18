@@ -7,7 +7,7 @@ export const CONFIG = {
     appId: "1:718691467645:web:fb37ce5fa5708c1f788c14"
   },
   ADMIN_UIDS: [
-    "Uc5716677131e3d507708995b4e9f7b79",
+    "U3727e111e915d4199f75e30fda2a0d79",
     "U56239f33a1cb65c8b1b880f87ea0c2ac", 
     "U84c34631256a829d5fd8dceed8bd38f3"
   ],
