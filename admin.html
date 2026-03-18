@@ -251,10 +251,9 @@
         pickup: ord.pickup || ord.pickupLocation || "",
         extraStop: ord.extraStop || "無",
         dropoff: ord.dropoff || ord.dropoffLocation || "",
-        // 人數欄位 (僅大人、兒童)
+        // 人數與行李欄位，精確對齊資料庫欄位名稱
         adultCount: ord.adultCount || "0",
         childCount: ord.childCount || "0",
-        // 行李欄位 (大、中、小)
         l_luggage: ord.l_luggage || "0",
         m_luggage: ord.m_luggage || "0",
         s_luggage: ord.s_luggage || "0",
