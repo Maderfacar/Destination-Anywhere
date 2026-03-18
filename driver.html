@@ -78,8 +78,8 @@
   import { doc, getDoc, setDoc, updateDoc, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
   import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-  // 確認此 ID 為新 Provider 下的 LIFF ID
-  const DRIVER_LIFF_ID = "2009434590-3t2KvScf"; 
+  // 已更新為新 Provider (209) 下的司機專用 LIFF ID
+  const DRIVER_LIFF_ID = "2009509209-2hGUMoYt"; 
 
   async function start() {
     const loader = document.getElementById('loading');
@@ -189,7 +189,7 @@
     document.getElementById('disp-name').innerText = data.name;
     document.getElementById('disp-car').innerText = `${data.plate} (${data.model})`;
     
-    // 查詢指派給該司機的訂單 (改用 driverId 查詢更精準，避免同名問題)
+    // 查詢指派給該司機的訂單
     const q = query(collection(db, "orders"), where("driverId", "==", uid));
     
     onSnapshot(q, (snap) => {
