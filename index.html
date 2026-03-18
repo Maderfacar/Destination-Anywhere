@@ -53,6 +53,9 @@
     import { db, CONFIG } from './firebase-config.js?v=106';
     import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    // 定義一個全域變數來儲存 profile，供 openBooking 使用
+    let globalProfile = null;
+
     async function init() {
       const displayIdEl = document.getElementById('display-id');
       const nameEl = document.getElementById('user-name');
@@ -68,6 +71,7 @@
         }
 
         const profile = await liff.getProfile();
+        globalProfile = profile; // 將抓到的 profile 存入全域
         
         // 1. 更新使用者 UI
         displayIdEl.innerText = "UID: " + profile.userId;
@@ -106,9 +110,18 @@
       }
     }
 
+    // --- 修改後的 openBooking 函數 ---
     window.openBooking = () => {
+      if (!globalProfile || !globalProfile.userId) {
+        alert("身分驗證中，請稍候...");
+        return;
+      }
+      
+      const userId = globalProfile.userId;
       document.getElementById('booking-overlay').classList.add('active');
-      document.getElementById('booking-iframe').src = 'booking.html?v=' + Date.now();
+      
+      // 將 userId 作為 URL 參數 'uid' 傳入 iframe
+      document.getElementById('booking-iframe').src = `booking.html?uid=${userId}&v=${Date.now()}`;
     };
 
     window.closeBooking = () => {
