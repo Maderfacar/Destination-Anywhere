@@ -16,12 +16,12 @@
     .bento-item { background: white; border-radius: 24px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); position: relative; overflow: hidden; min-height: 100px; }
     .bento-main { grid-column: span 2; min-height: 130px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(135deg, #2C2C2E 0%, #000000 100%); color: white; cursor: pointer; }
     
-    .bento-reminder { grid-column: span 2; background: #FFF9E6; border: 1px solid #FFE58F; display: flex; flex-direction: column; justify-content: center; min-height: 160px; }
+    .bento-reminder { grid-column: span 2; background: #FFF9E6; border: 1px solid #FFE58F; display: flex; flex-direction: column; justify-content: center; min-height: 180px; }
     .label-tag { background: #FFCC00; color: #000; font-size: 10px; padding: 2px 6px; border-radius: 4px; width: fit-content; margin-bottom: 8px; font-weight: bold; }
     
-    /* 詳細資訊文字樣式 */
-    .trip-info-row { font-size: 13px; margin: 2px 0; color: #444; line-height: 1.4; }
-    .trip-info-label { color: #8E8E93; font-weight: 500; margin-right: 4px; }
+    .trip-info-row { font-size: 13px; margin: 3px 0; color: #333; line-height: 1.4; }
+    .trip-info-label { color: #777; font-weight: 500; margin-right: 6px; display: inline-block; width: 65px; }
+    .countdown-timer { font-size: 14px; color: #D70015; font-weight: 700; margin-bottom: 8px; display: block; }
 
     #booking-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #FFF; z-index: 1000; transform: translateY(100%); transition: transform 0.4s ease; }
     #booking-overlay.active { transform: translateY(0); }
@@ -44,25 +44,24 @@
 
     <div class="bento-grid">
       <div class="bento-item bento-main" onclick="openBooking()">
-        <b style="font-size:18px;">快速預約接送 🚕</b>
+        <b style="font-size:18px;">快速預約接送</b>
         <span style="opacity:0.8; font-size:13px;">點擊立即呼叫專業司機</span>
       </div>
 
-      <div class="bento-item bento-reminder" id="next-trip-item" onclick="alert('詳細行程頁面開發中')">
+      <div class="bento-item bento-reminder" id="next-trip-item">
         <div class="label-tag" id="trip-status">UPCOMING</div>
         <div id="trip-content">
-          <b style="font-size:16px;" id="trip-title">正在載入行程...</b>
-          <p style="font-size:12px; color:#8E8E93; margin:4px 0;" id="trip-desc">請稍候</p>
+          <b style="font-size:16px;">載入中...</b>
         </div>
       </div>
 
       <div class="bento-item" onclick="alert('車種選擇開發中')">
-        <b style="font-size:16px;">多元車種選擇 🚘</b>
+        <b style="font-size:16px;">多元車種選擇</b>
         <p style="font-size:12px; color:#8E8E93; margin:4px 0;">5人座 / 9人座 / 豪華車</p>
       </div>
 
       <div class="bento-item" onclick="alert('價格試算開發中')">
-        <b style="font-size:16px;">即時價格試算 💰</b>
+        <b style="font-size:16px;">即時價格試算</b>
         <p style="font-size:12px; color:#8E8E93; margin:4px 0;">輸入起訖點估算車資</p>
       </div>
     </div>
@@ -86,28 +85,22 @@
     import { doc, onSnapshot, collection, query, where, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     let globalProfile = null;
+    let timerInterval = null;
 
     async function init() {
-      const displayIdEl = document.getElementById('display-id');
-      const nameEl = document.getElementById('user-name');
-      const avatarEl = document.getElementById('user-avatar');
-      const adminBtn = document.getElementById('admin-btn');
-
       try {
         await liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER });
         if (!liff.isLoggedIn()) { liff.login(); return; }
         const profile = await liff.getProfile();
         globalProfile = profile; 
-        displayIdEl.innerText = "UID: " + profile.userId;
-        nameEl.innerText = profile.displayName;
-        if (profile.pictureUrl) avatarEl.src = profile.pictureUrl;
-        if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(profile.userId)) adminBtn.style.display = 'block';
+        document.getElementById('display-id').innerText = "UID: " + profile.userId;
+        document.getElementById('user-name').innerText = profile.displayName;
+        if (profile.pictureUrl) document.getElementById('user-avatar').src = profile.pictureUrl;
+        if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(profile.userId)) document.getElementById('admin-btn').style.display = 'block';
 
         syncDesign();
         loadNextTrip(profile.userId);
-      } catch (e) {
-        console.error("Initialization Error:", e);
-      }
+      } catch (e) { console.error(e); }
     }
 
     function syncDesign() {
@@ -117,6 +110,32 @@
           if (d.hero?.sub) document.getElementById('hero-sub').innerText = d.hero.sub;
         }
       });
+    }
+
+    function startCountdown(targetDateStr, targetTimeStr) {
+      if (timerInterval) clearInterval(timerInterval);
+      const countdownEl = document.getElementById('trip-countdown');
+      if (!countdownEl) return;
+
+      const target = new Date(`${targetDateStr} ${targetTimeStr}`).getTime();
+      
+      timerInterval = setInterval(() => {
+        const now = new Date().getTime();
+        const diff = target - now;
+
+        if (diff <= 0) {
+          countdownEl.innerText = "行程即將開始";
+          clearInterval(timerInterval);
+          return;
+        }
+
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+        countdownEl.innerText = `距離行程還有: ${d}天 ${h}時 ${m}分 ${s}秒`;
+      }, 1000);
     }
 
     async function loadNextTrip(userId) {
@@ -137,7 +156,6 @@
         if (!querySnapshot.empty) {
           const data = querySnapshot.docs[0].data();
           
-          // 狀態顏色設定
           if (data.status === 'accepted') {
             tripStatus.innerText = "司機已接單";
             tripStatus.style.background = "#34C759";
@@ -148,43 +166,38 @@
             tripStatus.style.color = "black";
           }
 
-          // 組合詳細資訊
           let html = `
-            <b style="font-size:17px; color:#000; display:block; margin-bottom:6px;">${data.pickupDate || ''} ${data.pickupTime || ''}</b>
-            <div class="trip-info-row"><span class="trip-info-label">📍 起點:</span>${data.pickup || '未設定'}</div>
-            <div class="trip-info-row"><span class="trip-info-label">🏁 終點:</span>${data.destination || '未設定'}</div>
+            <span id="trip-countdown" class="countdown-timer">計算倒數中...</span>
+            <b style="font-size:16px; color:#000; display:block; margin-bottom:8px;">預約時間: ${data.pickupDate || ''} ${data.pickupTime || ''}</b>
+            <div class="trip-info-row"><span class="trip-info-label">上車地點</span>${data.pickup || '未設定'}</div>
+            <div class="trip-info-row"><span class="trip-info-label">下車地點</span>${data.dropoff || '未設定'}</div>
           `;
 
-          // 如果有航班號碼則顯示
           if (data.flightNumber) {
-            html += `<div class="trip-info-row"><span class="trip-info-label">✈️ 航班:</span>${data.flightNumber}</div>`;
+            html += `<div class="trip-info-row"><span class="trip-info-label">航班號碼</span>${data.flightNumber}</div>`;
           }
 
-          // 司機資訊 (只有已接單時顯示詳細)
           if (data.status === 'accepted') {
             html += `
-              <hr style="border:0; border-top:1px solid #EEE; margin:8px 0;">
-              <div class="trip-info-row"><span class="trip-info-label">👤 司機:</span>${data.driverName || '安排中'}</div>
-              <div class="trip-info-row"><span class="trip-info-label">📞 電話:</span><a href="tel:${data.driverPhone}" style="color:#007AFF; text-decoration:none;">${data.driverPhone || '無'}</a></div>
-              <div class="trip-info-row"><span class="trip-info-label">🚗 車輛:</span>${data.carModel || ''} (${data.carColor || ''}) - ${data.carPlate || ''}</div>
+              <hr style="border:0; border-top:1px solid #EEE; margin:10px 0;">
+              <div class="trip-info-row"><span class="trip-info-label">司機姓名</span>${data.driverName || ''}</div>
+              <div class="trip-info-row"><span class="trip-info-label">聯絡電話</span><a href="tel:${data.driverPhone}" style="color:#007AFF; text-decoration:none;">${data.driverPhone || ''}</a></div>
+              <div class="trip-info-row"><span class="trip-info-label">車輛資訊</span>${data.driverModel || ''} ${data.driverColor || ''} (${data.drivePlate || ''})</div>
             `;
           } else {
-            html += `<p style="font-size:12px; color:#8E8E93; margin-top:8px;">正在為您媒合最合適的司機...</p>`;
+            html += `<p style="font-size:12px; color:#8E8E93; margin-top:10px;">系統正在為您調度車輛</p>`;
           }
 
           tripContent.innerHTML = html;
+
+          if (data.pickupDate && data.pickupTime) {
+            startCountdown(data.pickupDate, data.pickupTime);
+          }
         } else {
           tripStatus.innerText = "UPCOMING";
-          tripStatus.style.background = "#FFCC00";
-          tripStatus.style.color = "black";
-          tripContent.innerHTML = `
-            <b style="font-size:16px;">尚無即將到來的行程</b>
-            <p style="font-size:12px; color:#8E8E93; margin:4px 0;">您的下一場預約行程將顯示在此</p>
-          `;
+          tripContent.innerHTML = `<b style="font-size:15px; color:#8E8E93;">尚無即將到來的行程</b>`;
         }
-      } catch (error) {
-        console.error("載入失敗:", error);
-      }
+      } catch (error) { console.error(error); }
     }
 
     window.openBooking = () => {
