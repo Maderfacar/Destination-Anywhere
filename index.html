@@ -12,16 +12,24 @@
     #display-id { font-size: 10px; color: #BBB; word-break: break-all; margin-top: 4px; display: block; }
     #user-avatar { width: 55px; height: 55px; border-radius: 50%; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #EEE; object-fit: cover; }
     #admin-btn { display: none; margin-top: 8px; background: #007AFF; color: white; border: none; padding: 6px 12px; border-radius: 10px; font-size: 11px; font-weight: 600; cursor: pointer; }
+    
     .bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 20px 30px; }
     .bento-item { background: white; border-radius: 24px; padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); position: relative; overflow: hidden; min-height: 100px; }
     .bento-main { grid-column: span 2; min-height: 130px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(135deg, #2C2C2E 0%, #000000 100%); color: white; cursor: pointer; }
     
-    .bento-reminder { grid-column: span 2; background: #FFF9E6; border: 1px solid #FFE58F; display: flex; flex-direction: column; justify-content: center; min-height: 180px; }
-    .label-tag { background: #FFCC00; color: #000; font-size: 10px; padding: 2px 6px; border-radius: 4px; width: fit-content; margin-bottom: 8px; font-weight: bold; }
+    .bento-reminder { grid-column: span 2; background: #FFF9E6; border: 1px solid #FFE58F; display: flex; flex-direction: column; justify-content: center; min-height: 200px; }
+    .label-tag { background: #FFCC00; color: #000; font-size: 10px; padding: 2px 6px; border-radius: 4px; width: fit-content; margin-bottom: 12px; font-weight: bold; }
     
-    .trip-info-row { font-size: 13px; margin: 3px 0; color: #333; line-height: 1.4; }
-    .trip-info-label { color: #777; font-weight: 500; margin-right: 6px; display: inline-block; width: 65px; }
-    .countdown-timer { font-size: 14px; color: #D70015; font-weight: 700; margin-bottom: 8px; display: block; }
+    .trip-info-row { font-size: 14px; margin: 4px 0; color: #333; line-height: 1.5; }
+    .trip-info-label { color: #888; font-weight: 500; margin-right: 8px; display: inline-block; width: 70px; }
+    
+    .countdown-timer { 
+      font-size: 20px; 
+      color: #D70015; 
+      font-weight: 900; 
+      margin-bottom: 12px; 
+      display: block; 
+    }
 
     #booking-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #FFF; z-index: 1000; transform: translateY(100%); transition: transform 0.4s ease; }
     #booking-overlay.active { transform: translateY(0); }
@@ -51,18 +59,15 @@
       <div class="bento-item bento-reminder" id="next-trip-item">
         <div class="label-tag" id="trip-status">UPCOMING</div>
         <div id="trip-content">
-          <b style="font-size:16px;">載入中...</b>
+          <b style="font-size:16px;">正在搜尋行程...</b>
         </div>
       </div>
 
-      <div class="bento-item" onclick="alert('車種選擇開發中')">
+      <div class="bento-item" onclick="alert('服務開發中')">
         <b style="font-size:16px;">多元車種選擇</b>
-        <p style="font-size:12px; color:#8E8E93; margin:4px 0;">5人座 / 9人座 / 豪華車</p>
       </div>
-
-      <div class="bento-item" onclick="alert('價格試算開發中')">
+      <div class="bento-item" onclick="alert('功能開發中')">
         <b style="font-size:16px;">即時價格試算</b>
-        <p style="font-size:12px; color:#8E8E93; margin:4px 0;">輸入起訖點估算車資</p>
       </div>
     </div>
   </div>
@@ -98,44 +103,31 @@
         if (profile.pictureUrl) document.getElementById('user-avatar').src = profile.pictureUrl;
         if (CONFIG.ADMIN_UIDS && CONFIG.ADMIN_UIDS.includes(profile.userId)) document.getElementById('admin-btn').style.display = 'block';
 
-        syncDesign();
         loadNextTrip(profile.userId);
       } catch (e) { console.error(e); }
     }
 
-    function syncDesign() {
-      onSnapshot(doc(db, "siteConfig", "homePage"), (ds) => {
-        if (ds.exists()) {
-          const d = ds.data();
-          if (d.hero?.sub) document.getElementById('hero-sub').innerText = d.hero.sub;
-        }
-      });
-    }
-
-    function startCountdown(targetDateStr, targetTimeStr) {
+    // 倒數計時器
+    function startCountdown(targetJSDate) {
       if (timerInterval) clearInterval(timerInterval);
       const countdownEl = document.getElementById('trip-countdown');
-      if (!countdownEl) return;
+      const targetTime = targetJSDate.getTime();
 
-      const target = new Date(`${targetDateStr} ${targetTimeStr}`).getTime();
-      
-      timerInterval = setInterval(() => {
-        const now = new Date().getTime();
-        const diff = target - now;
-
+      const update = () => {
+        const diff = targetTime - new Date().getTime();
         if (diff <= 0) {
-          countdownEl.innerText = "行程即將開始";
+          countdownEl.innerText = "行程準備開始";
           clearInterval(timerInterval);
           return;
         }
-
-        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const s = Math.floor((diff % (1000 * 60)) / 1000);
-
-        countdownEl.innerText = `距離行程還有: ${d}天 ${h}時 ${m}分 ${s}秒`;
-      }, 1000);
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        countdownEl.innerText = `距離行程還有 ${d}天 ${h}時 ${m}分 ${s}秒`;
+      };
+      update();
+      timerInterval = setInterval(update, 1000);
     }
 
     async function loadNextTrip(userId) {
@@ -151,24 +143,29 @@
           limit(1)
         );
 
-        const querySnapshot = await getDocs(q);
-
-        if (!querySnapshot.empty) {
-          const data = querySnapshot.docs[0].data();
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          const data = snap.docs[0].data();
           
-          if (data.status === 'accepted') {
-            tripStatus.innerText = "您的下一個行程";
-            tripStatus.style.background = "#34C759";
-            tripStatus.style.color = "white";
-          } else {
-            tripStatus.innerText = "等待接單中";
-            tripStatus.style.background = "#FFCC00";
-            tripStatus.style.color = "black";
+          // 1. 處理時間轉換
+          let jsDate = null;
+          let displayTime = "未設定時間";
+          if (data.appointmentTime && typeof data.appointmentTime.toDate === 'function') {
+            jsDate = data.appointmentTime.toDate();
+            // 格式化為 2026/3/18 23:23
+            displayTime = `${jsDate.getFullYear()}/${jsDate.getMonth()+1}/${jsDate.getDate()} ${String(jsDate.getHours()).padStart(2,'0')}:${String(jsDate.getMinutes()).padStart(2,'0')}`;
           }
 
+          // 2. 狀態顏色
+          const isAccepted = data.status === 'accepted';
+          tripStatus.innerText = isAccepted ? "司機已接單" : "等待接單中";
+          tripStatus.style.background = isAccepted ? "#34C759" : "#FFCC00";
+          tripStatus.style.color = isAccepted ? "white" : "black";
+
+          // 3. 組合 HTML
           let html = `
             <span id="trip-countdown" class="countdown-timer">計算倒數中...</span>
-            <b style="font-size:16px; color:#000; display:block; margin-bottom:8px;">預約時間: ${data.createAt || ''} ${data.createAt || ''}</b>
+            <b style="font-size:16px; color:#000; display:block; margin-bottom:8px;">預約時間: ${displayTime}</b>
             <div class="trip-info-row"><span class="trip-info-label">上車地點</span>${data.pickup || '未設定'}</div>
             <div class="trip-info-row"><span class="trip-info-label">下車地點</span>${data.dropoff || '未設定'}</div>
           `;
@@ -177,34 +174,33 @@
             html += `<div class="trip-info-row"><span class="trip-info-label">航班號碼</span>${data.flightNumber}</div>`;
           }
 
-          if (data.status === 'accepted') {
+          if (isAccepted) {
             html += `
-              <hr style="border:0; border-top:1px solid #EEE; margin:10px 0;">
+              <hr style="border:0; border-top:1px solid #EEE; margin:12px 0;">
               <div class="trip-info-row"><span class="trip-info-label">司機姓名</span>${data.driverName || ''}</div>
               <div class="trip-info-row"><span class="trip-info-label">聯絡電話</span><a href="tel:${data.driverPhone}" style="color:#007AFF; text-decoration:none;">${data.driverPhone || ''}</a></div>
-              <div class="trip-info-row"><span class="trip-info-label">車輛資訊</span>${data.driverModel || ''} ${data.driverColor || ''} (${data.drivePlate || ''})</div>
+              <div class="trip-info-row"><span class="trip-info-label">車牌號碼</span>${data.driverPlate || ''}</div>
+              <div class="trip-info-row"><span class="trip-info-label">車輛資訊</span>${data.driverModel || ''} ${data.driverColor || ''}</div>
             `;
           } else {
-            html += `<p style="font-size:12px; color:#8E8E93; margin-top:10px;">系統正在為您調度車輛</p>`;
+            html += `<p style="font-size:13px; color:#999; margin-top:12px; border-top: 1px dashed #EEE; padding-top:10px;">正在調度專業司機中</p>`;
           }
 
           tripContent.innerHTML = html;
 
-          if (data.pickupDate && data.createAt) {
-            startCountdown(data.pickupDate, data.createAt);
-          }
+          // 4. 啟動倒數
+          if (jsDate) startCountdown(jsDate);
+
         } else {
           tripStatus.innerText = "UPCOMING";
-          tripContent.innerHTML = `<b style="font-size:15px; color:#8E8E93;">尚無即將到來的行程</b>`;
+          tripContent.innerHTML = `<b style="font-size:15px; color:#999;">目前沒有預約行程</b>`;
         }
       } catch (error) { console.error(error); }
     }
 
     window.openBooking = () => {
-      const overlay = document.getElementById('booking-overlay');
-      const iframe = document.getElementById('booking-iframe');
-      overlay.classList.add('active');
-      iframe.src = `booking.html?uid=${globalProfile.userId}&v=${new Date().getTime()}`;
+      document.getElementById('booking-overlay').classList.add('active');
+      document.getElementById('booking-iframe').src = `booking.html?uid=${globalProfile.userId}&v=${new Date().getTime()}`;
     };
 
     window.closeBooking = () => {
