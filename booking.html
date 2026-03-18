@@ -157,17 +157,16 @@
     import { db, CONFIG } from './firebase-config.js?v=106';
     import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // --- 🟢 新增：從 URL 網址抓取 index.html 傳過來的 uid ---
+    // --- 🟢 從 URL 網址抓取 index.html 傳過來的 uid ---
     const urlParams = new URLSearchParams(window.location.search);
     const urlUid = urlParams.get('uid'); 
 
-    let customerUid = urlUid || ""; // 優先使用網址傳過來的 ID
+    let customerUid = urlUid || ""; 
     let selectedType = "接機";
     const counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
 
     async function init() {
       try {
-        // 如果網址沒帶 uid，才嘗試啟動 LIFF (作為備援)
         if (!customerUid) {
           await liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER });
           if (liff.isLoggedIn()) {
@@ -180,7 +179,6 @@
             liff.login();
           }
         } else {
-          // 已經有 UID 的情況下，還是可以 init LIFF 來預填姓名，但不阻塞
           liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER }).then(async () => {
             if (liff.isLoggedIn()) {
               const p = await liff.getProfile();
@@ -212,8 +210,11 @@
     };
 
     window.sendRequest = async () => {
-      // 🔴 關鍵安全檢查：如果沒抓到 UID 就禁止提交
-      if (!customerUid) {
+      // 🟢 最終防線：按下按鈕時再次即時檢查 URL 參數，確保 customerId 不會因非同步而遺失
+      const currentParams = new URLSearchParams(window.location.search);
+      const finalUid = currentParams.get('uid') || customerUid;
+
+      if (!finalUid || finalUid === "") {
         alert("身分驗證失效，請關閉預約視窗重新點擊。");
         return;
       }
@@ -237,7 +238,7 @@
           lugM: String(counts.lugM),
           lugS: String(counts.lugS),
           note: document.getElementById('note').value,
-          customerId: customerUid, // 這裡會傳入正確的 ID
+          customerId: finalUid, // 👈 使用經確認的 finalUid
           status: "pending",
           driverId: "",
           driverName: ""
