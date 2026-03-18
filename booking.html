@@ -9,7 +9,6 @@
     :root { --primary: #007AFF; --bg: #F2F2F7; }
     body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1C1C1E; }
     
-    /* 行程類型分頁樣式 */
     .type-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
     .tab-btn { 
       background: #FFF; border: none; padding: 12px 5px; border-radius: 12px; font-size: 13px; font-weight: 600;
@@ -19,14 +18,18 @@
 
     .card { background: #FFF; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .label-row { display: flex; align-items: center; margin-bottom: 12px; font-weight: 600; font-size: 15px; }
-    .label-row i { margin-right: 8px; font-style: normal; }
 
     input, textarea { 
-      width: 100%; padding: 12px; border: 1px solid #E5E5EA; border-radius: 12px; 
-      font-size: 16px; box-sizing: border-box; background: #F9F9F9;
+      width: 100%; padding: 14px; border: 1px solid #E5E5EA; border-radius: 12px; 
+      font-size: 16px; box-sizing: border-box; background: #F9F9F9; -webkit-appearance: none;
     }
 
-    /* 加減按鈕樣式 */
+    /* 停靠站動態樣式 */
+    #midStops-container { display: none; margin-bottom: 15px; position: relative; }
+    .add-stop-btn { color: var(--primary); font-size: 14px; font-weight: 600; cursor: pointer; display: inline-block; margin-bottom: 15px; }
+    .del-stop-btn { position: absolute; right: 10px; top: 38px; color: #FF3B30; font-weight: bold; padding: 10px; z-index: 5; }
+
+    /* 計數器樣式 */
     .counter-group { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
     .counter-label { font-size: 15px; color: #3A3A3C; }
     .counter-ctrl { display: flex; align-items: center; gap: 15px; }
@@ -56,15 +59,19 @@
 
   <div class="card">
     <div class="form-group" style="margin-bottom:15px;">
-      <div class="label-row">📍 上車地點</div>
+      <div class="label-row">上車地點</div>
       <input type="text" id="pickup" placeholder="請輸入起點或航廈">
     </div>
-    <div class="form-group" style="margin-bottom:15px;">
-      <div class="label-row">🛑 停靠點 (選填)</div>
-      <input type="text" id="midStops" placeholder="中途停靠地點">
+
+    <div id="midStops-container">
+      <div class="label-row">中途停靠站</div>
+      <input type="text" id="midStops" placeholder="請輸入停靠地點">
+      <span class="del-stop-btn" onclick="toggleMidStop(false)">✕</span>
     </div>
+    <div class="add-stop-btn" id="add-btn" onclick="toggleMidStop(true)">+ 新增停靠站</div>
+
     <div class="form-group">
-      <div class="label-row">🏁 下車地點</div>
+      <div class="label-row">下車地點</div>
       <input type="text" id="dropoff" placeholder="請輸入目的地">
     </div>
   </div>
@@ -72,19 +79,17 @@
   <div class="card">
     <div class="grid-2">
       <div class="form-group">
-        <div class="label-row">📅 預約時間</div>
+        <div class="label-row">預約時間</div>
         <input type="datetime-local" id="appointmentTime">
       </div>
       <div class="form-group">
-        <div class="label-row">✈️ 航班號碼</div>
+        <div class="label-row">航班號碼</div>
         <input type="text" id="flightNo" placeholder="CX450">
       </div>
     </div>
   </div>
 
   <div class="card">
-    <div class="section-title" style="margin-bottom:15px; color:#8E8E93; font-size:13px;">乘客與行李</div>
-    
     <div class="counter-group">
       <span class="counter-label">成人人數</span>
       <div class="counter-ctrl">
@@ -93,7 +98,6 @@
         <div class="btn-circle" onclick="change('adults', 1)">+</div>
       </div>
     </div>
-
     <div class="counter-group">
       <span class="counter-label">兒童人數</span>
       <div class="counter-ctrl">
@@ -113,7 +117,6 @@
         <div class="btn-circle" onclick="change('lugL', 1)">+</div>
       </div>
     </div>
-
     <div class="counter-group">
       <span class="counter-label">中型行李 (24-26吋)</span>
       <div class="counter-ctrl">
@@ -122,7 +125,6 @@
         <div class="btn-circle" onclick="change('lugM', 1)">+</div>
       </div>
     </div>
-
     <div class="counter-group">
       <span class="counter-label">小型行李 (20吋以下)</span>
       <div class="counter-ctrl">
@@ -136,16 +138,16 @@
   <div class="card">
     <div class="grid-2">
       <div class="form-group">
-        <div class="label-row">👤 聯絡姓名</div>
+        <div class="label-row">聯絡姓名</div>
         <input type="text" id="contactName">
       </div>
       <div class="form-group">
-        <div class="label-row">📞 聯絡電話</div>
+        <div class="label-row">聯絡電話</div>
         <input type="tel" id="contactPhone">
       </div>
     </div>
     <div class="form-group" style="margin-top:10px;">
-      <textarea id="note" rows="2" placeholder="備註需求..."></textarea>
+      <textarea id="note" rows="2" placeholder="如推車、滑雪板、球具…等大型拖運需求"></textarea>
     </div>
   </div>
 
@@ -161,33 +163,40 @@
     let selectedType = "接機";
     const counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
 
-    // 初始化 LIFF
     async function init() {
       try {
         await liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER });
         if (liff.isLoggedIn()) {
           const p = await liff.getProfile();
           customerUid = p.userId;
-          document.getElementById('contactName').value = p.displayName;
+          // 主動抓取 LINE 顯示名稱預填
+          if (p.displayName) {
+            document.getElementById('contactName').value = p.displayName;
+          }
+        } else {
+          liff.login();
         }
       } catch (e) { console.warn("LIFF 載入失敗"); }
     }
 
-    // 分頁切換邏輯
     window.setType = (type, btn) => {
       selectedType = type;
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     };
 
-    // 加減按鈕邏輯
+    window.toggleMidStop = (show) => {
+      document.getElementById('midStops-container').style.display = show ? 'block' : 'none';
+      document.getElementById('add-btn').style.display = show ? 'none' : 'inline-block';
+      if (!show) document.getElementById('midStops').value = ""; 
+    };
+
     window.change = (key, delta) => {
       const min = (key === 'adults') ? 1 : 0;
       counts[key] = Math.max(min, counts[key] + delta);
       document.getElementById(`val-${key}`).innerText = counts[key];
     };
 
-    // 發送預約
     window.sendRequest = async () => {
       const btn = document.getElementById('submit-btn');
       btn.disabled = true; btn.innerText = "正在處理訂單...";
