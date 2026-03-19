@@ -21,10 +21,8 @@
     #price-preview { display: none; margin-top: 15px; padding: 15px; background: #F2F9FF; border-radius: 12px; border: 1px dashed var(--primary); text-align: center; }
     .price-text { color: #D70015; font-size: 24px; font-weight: 800; }
     #submit-btn { width: 100%; padding: 18px; background: var(--primary); color: #FFF; border: none; border-radius: 16px; font-size: 18px; font-weight: 700; margin-top: 20px; }
-    
-    /* 為了閃避 Google 報錯而自製的簡單下拉選單樣式 */
-    .custom-pac { position: absolute; background: white; width: calc(100% - 70px); z-index: 1000; border-radius: 0 0 12px 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: none; max-height: 200px; overflow-y: auto; }
-    .pac-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 14px; }
+    .custom-pac { position: absolute; background: white; width: calc(100% - 70px); z-index: 1000; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: none; max-height: 200px; overflow-y: auto; }
+    .pac-item { padding: 15px; border-bottom: 1px solid #F2F2F7; cursor: pointer; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -78,6 +76,7 @@
       <div><span class="label-row">聯絡姓名</span><input type="text" id="contactName"></div>
       <div><span class="label-row">電話號碼</span><input type="tel" id="contactPhone"></div>
     </div>
+    <span class="label-row">備註需求</span>
     <textarea id="note" rows="2" placeholder="備註需求..."></textarea>
   </div>
 
@@ -87,33 +86,27 @@
     let tripType = "接機";
     let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
     let currentKm = 0, currentPrice = 0;
-    let RouteClass, AutocompleteSessionToken, SuggestionService;
+    let RouteClass;
 
-    // ✅ 2026 旗艦除錯：手動處理 Autocomplete 以避開 Google 封鎖與 LIFF 庫衝突
     async function initMap() {
       const { AutocompleteSessionToken, AutocompleteSuggestion } = await google.maps.importLibrary("places");
       const { Route } = await google.maps.importLibrary("routes");
       RouteClass = Route;
       
-      setupField('pickup', 'pac-pickup', AutocompleteSessionToken);
-      setupField('midStops', 'pac-midStops', AutocompleteSessionToken);
-      setupField('dropoff', 'pac-dropoff', AutocompleteSessionToken);
-      
-      console.log("💎 2026 底層引擎啟動：避開所有過時警告與庫衝突");
+      const token = new AutocompleteSessionToken();
+      setupField('pickup', 'pac-pickup', token);
+      setupField('midStops', 'pac-midStops', token);
+      setupField('dropoff', 'pac-dropoff', token);
     }
 
-    function setupField(inputId, pacId, TokenClass) {
+    function setupField(inputId, pacId, token) {
       const input = document.getElementById(inputId);
       const pac = document.getElementById(pacId);
-      
       input.addEventListener('input', async () => {
         if (!input.value) { pac.style.display = 'none'; return; }
         const { suggestions } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
-          input: input.value,
-          sessionToken: new TokenClass(),
-          region: 'tw'
+          input: input.value, sessionToken: token, region: 'tw'
         });
-        
         pac.innerHTML = '';
         suggestions.forEach(s => {
           const div = document.createElement('div');
@@ -135,13 +128,10 @@
       const p3 = document.getElementById('dropoff').value;
       const p2 = document.getElementById('midStops').value;
       if (!p1 || !p3 || !RouteClass) return;
-
       try {
         const { routes } = await RouteClass.computeRoutes({
-          origin: { address: p1 },
-          destination: { address: p3 },
-          intermediates: p2 ? [{ address: p2 }] : [],
-          travelMode: 'DRIVE'
+          origin: { address: p1 }, destination: { address: p3 },
+          intermediates: p2 ? [{ address: p2 }] : [], travelMode: 'DRIVE'
         });
         if (routes && routes.length > 0) {
           currentKm = routes[0].distanceMeters / 1000;
@@ -154,8 +144,7 @@
     }
 
     window.setType = (t) => { 
-      tripType = t; 
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      tripType = t; document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('btn-'+t).classList.add('active');
     };
     window.toggleMid = (s) => { 
@@ -174,12 +163,16 @@
     import { db, CONFIG } from './firebase-config.js?v=106';
     import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    // ✅ 關鍵：初始化 LIFF 並自動填入使用者姓名
     liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER }).then(async () => {
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
+        // 抓到名字後直接填入對應的 input
         document.getElementById('contactName').value = profile.displayName;
+      } else {
+        liff.login();
       }
-    });
+    }).catch(err => console.error("LIFF Init Error", err));
 
     window.sendOrder = async function() {
       const btn = document.getElementById('submit-btn');
@@ -194,8 +187,9 @@
           flightNo: document.getElementById('flightNo').value,
           contactName: document.getElementById('contactName').value,
           contactPhone: document.getElementById('contactPhone').value,
+          // 完整 5 項數據
           adults: counts.adults, children: counts.children,
-          lugL: counts.lugL, lugM: counts.lugM, lugS: counts.lugS,
+          lugLarge: counts.lugL, lugMedium: counts.lugM, lugSmall: counts.lugS,
           price: currentPrice, km: currentKm.toFixed(1),
           note: document.getElementById('note').value,
           status: "pending", createdAt: serverTimestamp()
