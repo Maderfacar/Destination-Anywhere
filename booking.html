@@ -147,7 +147,7 @@
       });
     }
 
-    async function calculateNewRoute() {
+   async function calculateNewRoute() {
   const pickupPid = document.getElementById('pickup').dataset.pid;
   const dropoffPid = document.getElementById('dropoff').dataset.pid;
   const midPid = document.getElementById('midStops').dataset.pid;
@@ -164,7 +164,7 @@
       origin: new PlaceClass({ id: pickupPid }),
       destination: new PlaceClass({ id: dropoffPid }),
       travelMode: 'DRIVE',
-      // routingPreference: 'TRAFFIC_AWARE_OPTIMAL'  // 先註解，成功後可開啟
+      // routingPreference: 'TRAFFIC_AWARE_OPTIMAL'  // beta 版先註解，若成功可開啟
     };
 
     if (midVisible && midPid) {
@@ -175,7 +175,7 @@
 
     const response = await RouteClass.computeRoutes({
       ...request,
-      fields: ['distanceMeters', 'durationMillis']  // 關鍵修正：duration → durationMillis
+      fields: ['distanceMeters', 'durationMillis']  // 正確欄位：durationMillis 而非 duration
     });
 
     if (response.routes && response.routes.length > 0) {
@@ -187,7 +187,7 @@
       document.getElementById('dist-val').innerText = currentKm.toFixed(1);
       document.getElementById('price-val').innerText = currentPrice;
 
-      console.log(`成功！距離：${currentKm.toFixed(1)} km，時間：${route.durationMillis / 1000 / 60} 分鐘，費用：$${currentPrice}`);
+      console.log(`成功！距離：${currentKm.toFixed(1)} km，時間（毫秒）：${route.durationMillis}，費用：$${currentPrice}`);
     } else {
       console.warn("API 回傳無有效路線");
       document.getElementById('price-preview').style.display = 'none';
