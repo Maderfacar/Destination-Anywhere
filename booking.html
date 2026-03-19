@@ -98,181 +98,140 @@
     });
   </script>
 
-  <script>
-    let tripType = "接機";
-    let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
-    let currentKm = 0, currentPrice = 0;
-    let RouteClass, SuggestionClass, sessionToken, PlaceClass;
+ <script>
+  let tripType = "接機";
+  let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
+  let currentKm = 0, currentPrice = 0;
+  let RouteClass, SuggestionClass, sessionToken, PlaceClass;
 
-    async function initMap() {
-      const [places, routes] = await Promise.all([
-        google.maps.importLibrary("places"),
-        google.maps.importLibrary("routes")
-      ]);
-      RouteClass = routes.Route;
-      PlaceClass = places.Place;
-      SuggestionClass = places.AutocompleteSuggestion;
-      sessionToken = new places.AutocompleteSessionToken();
-      setupField('pickup', 'pac-pickup');
-      setupField('midStops', 'pac-midStops');
-      setupField('dropoff', 'pac-dropoff');
-    }
+  async function initMap() {
+    const [places, routes] = await Promise.all([
+      google.maps.importLibrary("places"),
+      google.maps.importLibrary("routes")
+    ]);
+    RouteClass = routes.Route;
+    PlaceClass = places.Place;
+    SuggestionClass = places.AutocompleteSuggestion;
+    sessionToken = new places.AutocompleteSessionToken();
+    setupField('pickup', 'pac-pickup');
+    setupField('midStops', 'pac-midStops');
+    setupField('dropoff', 'pac-dropoff');
+  }
 
-    function setupField(inputId, pacId) {
-      const input = document.getElementById(inputId);
-      const pac = document.getElementById(pacId);
-      input.addEventListener('input', async () => {
-        const val = input.value;
-        if (val.length < 2) { pac.style.display = 'none'; return; }
-        try {
-          const { suggestions } = await SuggestionClass.fetchAutocompleteSuggestions({
-            input: val,
-            sessionToken: sessionToken,
-            region: 'TW',
-            language: 'zh-TW'
-          });
-          if (suggestions && suggestions.length > 0) {
-            pac.innerHTML = '';
-            suggestions.forEach(s => {
-              const div = document.createElement('div');
-              div.className = 'pac-item';
-              div.innerText = s.placePrediction.text.text;
-              div.onclick = () => {
-                input.value = s.placePrediction.text.text;
-                input.dataset.pid = s.placePrediction.placeId;
-                pac.style.display = 'none';
-                calculateNewRoute();
-              };
-              pac.appendChild(div);
-            });
-            pac.style.display = 'block';
-          }
-        } catch (e) {
-          console.error("自動完成建議錯誤：", e);
-        }
-      });
-    }
-
-    async function calculateNewRoute() {
-      const pickupPid = document.getElementById('pickup').dataset.pid;
-      const dropoffPid = document.getElementById('dropoff').dataset.pid;
-      const midPid = document.getElementById('midStops').dataset.pid;
-      const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
-
-      if (!pickupPid || !dropoffPid) {
-        console.log("尚未選擇完整的起點與終點，無法計算路線");
-        document.getElementById('price-preview').style.display = 'none';
-        return;
-      }
-
+  function setupField(inputId, pacId) {
+    const input = document.getElementById(inputId);
+    const pac = document.getElementById(pacId);
+    input.addEventListener('input', async () => {
+      const val = input.value;
+      if (val.length < 2) { pac.style.display = 'none'; return; }
       try {
-        const request = {
-          origin: new PlaceClass({ id: pickupPid }),
-          destination: new PlaceClass({ id: dropoffPid }),
-          travelMode: 'DRIVE'
-          // routingPreference: 'TRAFFIC_AWARE_OPTIMAL'  // 先註解，成功後再開啟
-        };
-
-        if (midVisible && midPid) {
-          request.intermediates = [new PlaceClass({ id: midPid })];
-        }
-
-        console.log("開始計算路線...");
-
-        const response = await RouteClass.computeRoutes({
-          ...request,
-          fields: ['distanceMeters']  // 先只取距離，避免 field 錯誤
+        const { suggestions } = await SuggestionClass.fetchAutocompleteSuggestions({
+          input: val,
+          sessionToken: sessionToken,
+          region: 'TW',
+          language: 'zh-TW'
         });
-
-        if (response.routes && response.routes.length > 0) {
-          const route = response.routes[0];
-          currentKm = route.distanceMeters / 1000;
-          currentPrice = Math.round(150 + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
-
-          document.getElementById('price-preview').style.display = 'block';
-          document.getElementById('dist-val').innerText = currentKm.toFixed(1);
-          document.getElementById('price-val').innerText = currentPrice;
-
-          console.log(`成功！距離：${currentKm.toFixed(1)} km，費用：$${currentPrice}`);
-        } else {
-          console.warn("API 沒有回傳有效路線");
-          document.getElementById('price-preview').style.display = 'none';
+        if (suggestions && suggestions.length > 0) {
+          pac.innerHTML = '';
+          suggestions.forEach(s => {
+            const div = document.createElement('div');
+            div.className = 'pac-item';
+            div.innerText = s.placePrediction.text.text;
+            div.onclick = () => {
+              input.value = s.placePrediction.text.text;
+              input.dataset.pid = s.placePrediction.placeId;
+              pac.style.display = 'none';
+              calculateNewRoute();
+            };
+            pac.appendChild(div);
+          });
+          pac.style.display = 'block';
         }
       } catch (e) {
-        console.error("路線計算失敗：", e.message);
-        document.getElementById('price-preview').style.display = 'none';
-      }
-    }
-
-    window.setType = (t) => {
-      tripType = t;
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('btn-'+t).classList.add('active');
-    };
-
-    window.toggleMid = (show) => {
-      const wrap = document.getElementById('mid-wrap');
-      const btn = document.getElementById('add-mid-btn');
-      const input = document.getElementById('midStops');
-      wrap.style.display = show ? 'block' : 'none';
-      btn.style.display = show ? 'none' : 'block';
-      if (!show) {
-        input.value = '';
-        input.dataset.pid = '';
-        calculateNewRoute();
-      }
-    };
-
-    window.change = (k, d) => {
-      counts[k] = Math.max((k==='adults'?1:0), counts[k]+d);
-      document.getElementById(`val-${k}`).innerText = counts[k];
-    };
-
-    initMap();
-  </script>
-
-  <script type="module">
-    import { db, CONFIG } from './firebase-config.js?v=106';
-    import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    let currentUid = new URLSearchParams(window.location.search).get('uid');
-
-    liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER }).then(async () => {
-      if (liff.isLoggedIn()) {
-        const profile = await liff.getProfile();
-        document.getElementById('contactName').value = profile.displayName;
-        if (!currentUid) currentUid = profile.userId;
+        console.error("自動完成建議錯誤：", e);
       }
     });
+  }
 
-    window.sendOrder = async function() {
-      if (!currentUid) { alert("UID 缺失"); return; }
-      const btn = document.getElementById('submit-btn');
-      btn.disabled = true;
-      try {
-        await addDoc(collection(db, "orders"), {
-          customerId: currentUid,
-          tripType,
-          pickup: document.getElementById('pickup').value,
-          midStops: document.getElementById('mid-wrap').style.display !== 'none' ? document.getElementById('midStops').value : "",
-          dropoff: document.getElementById('dropoff').value,
-          appointmentTime: document.getElementById('appointmentTime').value,
-          flightNo: document.getElementById('flightNo').value,
-          contactName: document.getElementById('contactName').value,
-          contactPhone: document.getElementById('contactPhone').value,
-          adults: counts.adults, children: counts.children,
-          lugLarge: counts.lugL, lugMedium: counts.lugM, lugSmall: counts.lugS,
-          price: currentPrice, km: currentKm.toFixed(1),
-          note: document.getElementById('note').value,
-          status: "pending", createdAt: serverTimestamp()
-        });
-        alert("預約成功！");
-        window.parent.postMessage('booking_success', '*');
-      } catch (e) {
-        alert("送出失敗：" + e.message);
-        btn.disabled = false;
+  // ────────────────────────────────────────────────
+  // 這裡是關鍵：保證有 async
+  async function calculateNewRoute() {
+    const pickupPid = document.getElementById('pickup').dataset.pid;
+    const dropoffPid = document.getElementById('dropoff').dataset.pid;
+    const midPid = document.getElementById('midStops').dataset.pid;
+    const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
+
+    if (!pickupPid || !dropoffPid) {
+      console.log("尚未選擇完整的起點與終點，無法計算路線");
+      document.getElementById('price-preview').style.display = 'none';
+      return;
+    }
+
+    try {
+      const request = {
+        origin: new PlaceClass({ id: pickupPid }),
+        destination: new PlaceClass({ id: dropoffPid }),
+        travelMode: 'DRIVE'
+        // routingPreference: 'TRAFFIC_AWARE_OPTIMAL'  // 先註解
+      };
+
+      if (midVisible && midPid) {
+        request.intermediates = [new PlaceClass({ id: midPid })];
       }
-    };
-  </script>
+
+      console.log("開始計算路線...");
+
+      const response = await RouteClass.computeRoutes({
+        ...request,
+        fields: ['distanceMeters']   // 最小化測試，先只取距離
+      });
+
+      if (response.routes && response.routes.length > 0) {
+        const route = response.routes[0];
+        currentKm = route.distanceMeters / 1000;
+        currentPrice = Math.round(150 + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
+
+        document.getElementById('price-preview').style.display = 'block';
+        document.getElementById('dist-val').innerText = currentKm.toFixed(1);
+        document.getElementById('price-val').innerText = currentPrice;
+
+        console.log(`成功！距離：${currentKm.toFixed(1)} km，費用：$${currentPrice}`);
+      } else {
+        console.warn("API 沒有回傳有效路線");
+        document.getElementById('price-preview').style.display = 'none';
+      }
+    } catch (e) {
+      console.error("路線計算失敗：", e.message);
+      document.getElementById('price-preview').style.display = 'none';
+    }
+  }
+  // ────────────────────────────────────────────────
+
+  window.setType = (t) => {
+    tripType = t;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-'+t).classList.add('active');
+  };
+
+  window.toggleMid = (show) => {
+    const wrap = document.getElementById('mid-wrap');
+    const btn = document.getElementById('add-mid-btn');
+    const input = document.getElementById('midStops');
+    wrap.style.display = show ? 'block' : 'none';
+    btn.style.display = show ? 'none' : 'block';
+    if (!show) {
+      input.value = '';
+      input.dataset.pid = '';
+      calculateNewRoute();
+    }
+  };
+
+  window.change = (k, d) => {
+    counts[k] = Math.max((k==='adults'?1:0), counts[k]+d);
+    document.getElementById(`val-${k}`).innerText = counts[k];
+  };
+
+  initMap();
+</script>
 </body>
 </html>
