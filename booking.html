@@ -17,7 +17,7 @@
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .counter-group { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .counter-ctrl { display: flex; align-items: center; gap: 12px; }
-    .btn-circle { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--primary); color: var(--primary); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .btn-circle { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--primary); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
     #price-preview { display: none; margin-top: 15px; padding: 15px; background: #F2F9FF; border-radius: 12px; border: 1px dashed var(--primary); text-align: center; }
     .price-text { color: #D70015; font-size: 24px; font-weight: 800; }
     #submit-btn { width: 100%; padding: 18px; background: var(--primary); color: #FFF; border: none; border-radius: 16px; font-size: 18px; font-weight: 700; margin-top: 20px; }
@@ -57,6 +57,7 @@
 
   <div class="card">
     <div class="counter-group"><span>成人</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('adults',-1)">-</div><span id="val-adults">1</span><div class="btn-circle" onclick="change('adults',1)">+</div></div></div>
+    <div class="counter-group"><span>兒童</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('children',-1)">-</div><span id="val-children">0</span><div class="btn-circle" onclick="change('children',1)">+</div></div></div>
     <div class="counter-group"><span>行李 (大)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugL',-1)">-</div><span id="val-lugL">0</span><div class="btn-circle" onclick="change('lugL',1)">+</div></div></div>
     <div class="counter-group"><span>行李 (中)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugM',-1)">-</div><span id="val-lugM">0</span><div class="btn-circle" onclick="change('lugM',1)">+</div></div></div>
   </div>
@@ -72,60 +73,72 @@
   <button id="submit-btn" onclick="sendOrder()">立即發送預約</button>
 
   <script>
-    // 🟢 第一部分：解決 Google Maps 2026 警告與欄位載入
     let directionsService;
-    let counts = { adults: 1, lugL: 0, lugM: 0 };
+    let counts = { adults: 1, children: 0, lugL: 0, lugM: 0 };
     let tripType = "接機";
+    let currentKm = 0, currentPrice = 0;
 
+    // 🟢 2026 正確載入流程
     async function initMap() {
-      try {
-        const { Autocomplete } = await google.maps.importLibrary("places");
-        const { DirectionsService } = await google.maps.importLibrary("routes");
-        directionsService = new DirectionsService();
+      // 解決 Autocomplete 警告：使用動態庫加載
+      const { Autocomplete } = await google.maps.importLibrary("places");
+      // 解決 Directions 警告：使用 routes 庫
+      const { DirectionsService } = await google.maps.importLibrary("routes");
+      
+      directionsService = new DirectionsService();
+      const opts = { componentRestrictions: { country: "tw" } };
+      
+      const p1 = new Autocomplete(document.getElementById('pickup'), opts);
+      const p2 = new Autocomplete(document.getElementById('midStops'), opts);
+      const p3 = new Autocomplete(document.getElementById('dropoff'), opts);
 
-        const opts = { componentRestrictions: { country: "tw" } };
-        const p1 = new Autocomplete(document.getElementById('pickup'), opts);
-        const p2 = new Autocomplete(document.getElementById('midStops'), opts);
-        const p3 = new Autocomplete(document.getElementById('dropoff'), opts);
-
-        const calc = () => calculateDistance();
-        p1.addListener('place_changed', calc);
-        p2.addListener('place_changed', calc);
-        p3.addListener('place_changed', calc);
-        console.log("✅ 2026 標準載入成功，欄位已就緒");
-      } catch (e) { console.error("地圖載入錯誤:", e); }
+      const trigger = () => calculateDistance();
+      p1.addListener('place_changed', trigger);
+      p2.addListener('place_changed', trigger);
+      p3.addListener('place_changed', trigger);
+      
+      console.log("🚀 2026 最新標準地圖引擎已啟動");
     }
 
     function calculateDistance() {
       const start = document.getElementById('pickup').value;
       const end = document.getElementById('dropoff').value;
       const mid = document.getElementById('midStops').value;
+
       if (!start || !end || !directionsService) return;
 
       directionsService.route({
-        origin: start, destination: end,
+        origin: start,
+        destination: end,
         waypoints: mid ? [{ location: mid, stopover: true }] : [],
-        travelMode: 'DRIVING'
+        travelMode: google.maps.TravelMode.DRIVING
       }, (res, status) => {
         if (status === 'OK') {
           let meters = 0;
           res.routes[0].legs.forEach(leg => meters += leg.distance.value);
-          const km = meters / 1000;
-          const price = Math.round(150 + (km > 5 ? (km - 5) * 35 : 0));
+          currentKm = meters / 1000;
+          currentPrice = Math.round(150 + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
+
           document.getElementById('price-preview').style.display = 'block';
-          document.getElementById('dist-val').innerText = km.toFixed(1);
-          document.getElementById('price-val').innerText = price;
+          document.getElementById('dist-val').innerText = currentKm.toFixed(1);
+          document.getElementById('price-val').innerText = currentPrice;
+        } else if (status === 'REQUEST_DENIED') {
+          console.error("❌ 權限錯誤：請檢查 Google Cloud 後台的 Directions API 是否真的有「儲存」設定。");
         }
       });
     }
 
-    // UI 輔助函式
+    // UI 邏輯
     window.setType = (t, b) => { tripType = t; document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); };
-    window.toggleMid = (s) => { document.getElementById('mid-wrap').style.display = s ? 'block' : 'none'; document.getElementById('add-btn').style.display = s ? 'none' : 'block'; };
+    window.toggleMid = (s) => { 
+      document.getElementById('mid-wrap').style.display = s ? 'block' : 'none'; 
+      document.getElementById('add-btn').style.display = s ? 'none' : 'block'; 
+      if(!s) { document.getElementById('midStops').value = ""; calculateDistance(); }
+    };
     window.change = (k, d) => { counts[k] = Math.max((k==='adults'?1:0), counts[k]+d); document.getElementById(`val-${k}`).innerText = counts[k]; };
   </script>
 
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&callback=initMap&loading=async" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&callback=initMap&libraries=places&loading=async" async defer></script>
 
   <script type="module">
     import { db, CONFIG } from './firebase-config.js?v=106';
@@ -138,15 +151,25 @@
         const data = {
           tripType,
           pickup: document.getElementById('pickup').value,
+          midStops: document.getElementById('midStops').value,
           dropoff: document.getElementById('dropoff').value,
-          price: document.getElementById('price-val').innerText,
+          appointmentTime: document.getElementById('appointmentTime').value,
+          flightNo: document.getElementById('flightNo').value,
+          contactName: document.getElementById('contactName').value,
+          contactPhone: document.getElementById('contactPhone').value,
           adults: counts.adults,
+          children: counts.children,
+          lugL: counts.lugL,
+          lugM: counts.lugM,
+          price: currentPrice,
+          km: currentKm.toFixed(1),
+          status: "pending",
           createdAt: serverTimestamp()
         };
         await addDoc(collection(db, "orders"), data);
         alert("預約成功！");
         liff.closeWindow();
-      } catch (e) { alert("失敗: " + e.message); btn.disabled = false; }
+      } catch (e) { alert("失敗: " + e.message); btn.disabled = false; btn.innerText = "重新發送"; }
     };
     liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER });
   </script>
