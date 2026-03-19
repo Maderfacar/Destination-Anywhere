@@ -164,18 +164,18 @@
       origin: new PlaceClass({ id: pickupPid }),
       destination: new PlaceClass({ id: dropoffPid }),
       travelMode: 'DRIVE',
-      // routingPreference: 'TRAFFIC_AWARE_OPTIMAL'  // beta 版先註解，若成功可開啟
+      // routingPreference: 'TRAFFIC_AWARE_OPTIMAL'  // 註解掉先
     };
 
     if (midVisible && midPid) {
       request.intermediates = [new PlaceClass({ id: midPid })];
     }
 
-    console.log("開始計算路線（使用 place ID + fields: distanceMeters, durationMillis）...");
+    console.log("開始計算路線...");
 
     const response = await RouteClass.computeRoutes({
       ...request,
-      fields: ['distanceMeters', 'durationMillis']  // 正確欄位：durationMillis 而非 duration
+      fields: ['distanceMeters']  // 只取 distanceMeters，避免 invalid field 問題
     });
 
     if (response.routes && response.routes.length > 0) {
@@ -187,15 +187,12 @@
       document.getElementById('dist-val').innerText = currentKm.toFixed(1);
       document.getElementById('price-val').innerText = currentPrice;
 
-      console.log(`成功！距離：${currentKm.toFixed(1)} km，時間（毫秒）：${route.durationMillis}，費用：$${currentPrice}`);
+      console.log(`成功！距離：${currentKm.toFixed(1)} km`);
     } else {
-      console.warn("API 回傳無有效路線");
-      document.getElementById('price-preview').style.display = 'none';
+      console.warn("沒有找到路線");
     }
   } catch (e) {
-    console.error("路線計算失敗：", e);
-    console.error("錯誤細節：", e.message, e.stack);
-    document.getElementById('price-preview').style.display = 'none';
+    console.error("路線計算失敗：", e.message);
   }
 }
 
