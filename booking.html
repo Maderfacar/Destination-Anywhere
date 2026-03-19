@@ -111,7 +111,7 @@
         google.maps.importLibrary("routes")
       ]);
       RouteClass = routes.Route;
-      PlaceClass = places.Place; // 導入 Place 類別
+      PlaceClass = places.Place;
       SuggestionClass = places.AutocompleteSuggestion;
       sessionToken = new places.AutocompleteSessionToken();
       setupField('pickup', 'pac-pickup');
@@ -155,10 +155,10 @@
       const p2Id = document.getElementById('midStops').dataset.placeId;
       const isMidVisible = document.getElementById('mid-wrap').style.display !== 'none';
 
-      if (!p1Id || !p3Id || !RouteClass) return;
+      if (!p1Id || !p3Id || !RouteClass || !PlaceClass) return;
 
       try {
-        // 2026 最嚴格修正：必須使用 new Place({ id: ... }) 實例
+        // 修正：Place 實例化時使用 { id: ... }，且在 request 中直接傳入實例
         const request = {
           origin: new PlaceClass({ id: p1Id }),
           destination: new PlaceClass({ id: p3Id }),
@@ -170,7 +170,7 @@
           request.intermediates = [new PlaceClass({ id: p2Id })];
         }
 
-        console.log("💎 正在使用 Place 實例進行計算...");
+        console.log("💎 正在執行里程計算 (Place Instance Mode)...");
         const { routes } = await RouteClass.computeRoutes(request);
 
         if (routes && routes.length > 0) {
@@ -181,7 +181,7 @@
           document.getElementById('price-val').innerText = currentPrice;
         }
       } catch (e) {
-        console.error("❌ 里程計算失敗：", e);
+        console.error("❌ 里程引擎報錯：", e);
       }
     }
 
