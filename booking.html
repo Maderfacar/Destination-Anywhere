@@ -131,7 +131,7 @@
             region: 'TW',
             language: 'zh-TW'
           });
-          if (suggestions) {
+          if (suggestions && suggestions.length > 0) {
             pac.innerHTML = '';
             suggestions.forEach(s => {
               const div = document.createElement('div');
@@ -148,7 +148,7 @@
             pac.style.display = 'block';
           }
         } catch (e) {
-          console.error("地點建議錯誤：", e);
+          console.error("自動完成建議錯誤：", e);
         }
       });
     }
@@ -160,7 +160,8 @@
       const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
 
       if (!pickupPid || !dropoffPid) {
-        console.log("起點或終點尚未選擇");
+        console.log("尚未選擇完整的起點與終點，無法計算路線");
+        document.getElementById('price-preview').style.display = 'none';
         return;
       }
 
@@ -176,13 +177,13 @@
           request.intermediates = [new PlaceClass({ id: midPid })];
         }
 
-        console.log("開始計算路線，使用 place ID 模式...");
+        console.log("開始計算路線（使用 place ID）...");
 
         const response = await RouteClass.computeRoutes({
           ...request,
-          // 關鍵修正：加上 field mask（Routes API beta 版必填）
+          // 修正重點：fields 必須是字串形式（非陣列）
           fields: 'routes.distanceMeters,routes.duration'
-          // 如果之後要顯示路線，可再加 'routes.polyline.encodedPolyline'
+          // 若需要畫路線 polyline，可改成： 'routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline'
         });
 
         if (response.routes && response.routes.length > 0) {
@@ -194,12 +195,16 @@
           document.getElementById('dist-val').innerText = currentKm.toFixed(1);
           document.getElementById('price-val').innerText = currentPrice;
 
-          console.log(`路線距離：${currentKm.toFixed(1)} km，預估費用：$${currentPrice}`);
+          console.log(`成功！距離：${currentKm.toFixed(1)} km，預估費用：$${currentPrice}`);
         } else {
-          console.warn("未找到有效路線");
+          console.warn("API 回傳無有效路線");
+          document.getElementById('price-preview').style.display = 'none';
         }
       } catch (e) {
         console.error("路線計算失敗：", e);
+        console.error("錯誤細節：", e.message, e.stack);
+        document.getElementById('price-preview').style.display = 'none';
+        // 可視需求加 alert("無法計算路線，請確認地點是否正確");
       }
     }
 
