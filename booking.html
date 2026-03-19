@@ -45,9 +45,10 @@
     }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
+    /* 🟢 確保預覽區塊有明顯的視覺高度 */
     #price-preview { 
       display: none; margin-top: 15px; padding: 15px; background: #F2F9FF; 
-      border-radius: 12px; border: 1px dashed var(--primary); 
+      border-radius: 12px; border: 1.5px dashed var(--primary); 
     }
     .price-text { color: #D70015; font-size: 20px; font-weight: 800; }
   </style>
@@ -64,19 +65,19 @@
   <div class="card">
     <div class="form-group" style="margin-bottom:15px;">
       <div class="label-row">上車地點</div>
-      <input type="text" id="pickup" placeholder="請輸入起點或航廈">
+      <input type="text" id="pickup" placeholder="請輸入起點或航廈" onblur="calculateDistance()">
     </div>
 
     <div id="midStops-container">
       <div class="label-row">中途停靠站</div>
-      <input type="text" id="midStops" placeholder="請輸入停靠地點">
+      <input type="text" id="midStops" placeholder="請輸入停靠地點" onblur="calculateDistance()">
       <span class="del-stop-btn" onclick="toggleMidStop(false)">✕</span>
     </div>
     <div class="add-stop-btn" id="add-btn" onclick="toggleMidStop(true)">+ 新增停靠站</div>
 
     <div class="form-group">
       <div class="label-row">下車地點</div>
-      <input type="text" id="dropoff" placeholder="請輸入目的地">
+      <input type="text" id="dropoff" placeholder="請輸入目的地" onblur="calculateDistance()">
     </div>
 
     <div id="price-preview">
@@ -166,13 +167,11 @@
     import { db, CONFIG } from './firebase-config.js?v=106';
     import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // --- 🟢 Google Maps 邏輯實作 ---
     const PRICING_CONFIG = { baseFare: 150, baseKm: 5, perKm: 35 };
     let pickupAuto, midAuto, dropoffAuto, distService;
     let currentKm = 0;
     let currentEstimatePrice = 0;
 
-    // 將 initMap 明確掛載至 window 解決 ES Module 封裝問題
     window.initMap = () => {
       distService = new google.maps.DistanceMatrixService();
       const options = { 
@@ -185,20 +184,29 @@
       midAuto = new google.maps.places.Autocomplete(document.getElementById('midStops'), options);
       dropoffAuto = new google.maps.places.Autocomplete(document.getElementById('dropoff'), options);
 
-      const calc = () => calculateDistance();
+      // 監聽點選選單事件
+      const calc = () => window.calculateDistance();
       pickupAuto.addListener('place_changed', calc);
       midAuto.addListener('place_changed', calc);
       dropoffAuto.addListener('place_changed', calc);
     };
 
-    function calculateDistance() {
+    // 🟢 將計算函式掛載到 window 供 HTML 的 onblur 呼叫
+    window.calculateDistance = () => {
       const origin = document.getElementById('pickup').value;
       const destination = document.getElementById('dropoff').value;
       const waypoint = document.getElementById('midStops').value;
 
-      if (!origin || !destination) return;
+      // 只有當起點與終點都有文字時才執行
+      if (!origin || !destination) {
+        document.getElementById('price-preview').style.display = 'none';
+        return;
+      }
 
       const destinations = waypoint ? [waypoint, destination] : [destination];
+      
+      if (!distService) distService = new google.maps.DistanceMatrixService();
+
       distService.getDistanceMatrix({
         origins: [origin],
         destinations: destinations,
@@ -207,25 +215,34 @@
         if (status === "OK") {
           const elements = response.rows[0].elements;
           let totalMeters = 0;
+          let allOk = true;
           for (let el of elements) {
-            if (el.status === "OK") totalMeters += el.distance.value;
+            if (el.status === "OK") {
+              totalMeters += el.distance.value;
+            } else {
+              allOk = false;
+            }
           }
-          currentKm = totalMeters / 1000;
-          updatePriceUI(currentKm);
+          if (allOk && totalMeters > 0) {
+            currentKm = totalMeters / 1000;
+            updatePriceUI(currentKm);
+          }
         }
       });
-    }
+    };
 
     function updatePriceUI(km) {
       let price = PRICING_CONFIG.baseFare;
       if (km > PRICING_CONFIG.baseKm) price += (km - PRICING_CONFIG.baseKm) * PRICING_CONFIG.perKm;
       currentEstimatePrice = Math.round(price);
-      document.getElementById('price-preview').style.display = 'block';
+      
+      const previewBox = document.getElementById('price-preview');
+      previewBox.style.display = 'block'; // 🟢 強制顯示
       document.getElementById('dist-val').innerText = km.toFixed(1);
       document.getElementById('price-val').innerText = currentEstimatePrice;
     }
 
-    // --- 🟢 Firebase & LIFF 邏輯 ---
+    // --- LIFF & Firebase 邏輯 (保持不變) ---
     const urlParams = new URLSearchParams(window.location.search);
     const urlUid = urlParams.get('uid'); 
     let customerUid = urlUid || ""; 
@@ -258,7 +275,7 @@
       document.getElementById('add-btn').style.display = show ? 'none' : 'inline-block';
       if (!show) {
         document.getElementById('midStops').value = "";
-        calculateDistance();
+        window.calculateDistance();
       }
     };
 
@@ -271,10 +288,8 @@
     window.sendRequest = async () => {
       const finalUid = new URLSearchParams(window.location.search).get('uid') || customerUid;
       if (!finalUid) { alert("身分驗證失效"); return; }
-      
       const btn = document.getElementById('submit-btn');
       btn.disabled = true; btn.innerText = "正在處理訂單...";
-
       try {
         const data = {
           tripType: selectedType,
@@ -297,17 +312,14 @@
           estimateDistance: currentKm.toFixed(1),
           estimatePrice: currentEstimatePrice
         };
-
         const docRef = await addDoc(collection(db, "orders"), {
           ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
         });
-
         await fetch(CONFIG.webhooks.newOrder, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...data, orderId: docRef.id })
         });
-
         alert("預約已發送！");
         window.parent.postMessage('booking_success', '*');
       } catch (e) {
