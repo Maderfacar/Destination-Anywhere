@@ -22,10 +22,10 @@
     .price-text { color: #D70015; font-size: 24px; font-weight: 800; }
     #submit-btn { width: 100%; padding: 18px; background: var(--primary); color: #FFF; border: none; border-radius: 16px; font-size: 18px; font-weight: 700; margin-top: 20px; }
     
-    /* 自定義地址下拉選單 - 確保在 LIFF 中顯示正常 */
+    /* 下拉選單樣式 */
     .pac-box { position: relative; width: 100%; }
     .custom-pac { position: absolute; background: white; width: 100%; z-index: 2000; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: none; max-height: 250px; overflow-y: auto; top: 50px; }
-    .pac-item { padding: 15px; border-bottom: 1px solid #F2F2F7; cursor: pointer; font-size: 14px; color: #333; }
+    .pac-item { padding: 15px; border-bottom: 1px solid #F2F2F7; cursor: pointer; font-size: 14px; color: #333; text-align: left; }
     .pac-item:last-child { border: none; }
   </style>
 </head>
@@ -87,7 +87,7 @@
       <div><span class="label-row">電話號碼</span><input type="tel" id="contactPhone"></div>
     </div>
     <span class="label-row">備註需求</span>
-    <textarea id="note" rows="2" placeholder="是否有特殊行李或座椅需求..."></textarea>
+    <textarea id="note" rows="2" placeholder="備註需求..."></textarea>
   </div>
 
   <button id="submit-btn" onclick="sendOrder()">立即發送預約</button>
@@ -96,97 +96,93 @@
     let tripType = "接機";
     let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
     let currentKm = 0, currentPrice = 0;
-    let RouteClass, SuggestionClass, SessionToken;
+    let directionsService, autocompleteService;
 
-    async function initMap() {
-      const places = await google.maps.importLibrary("places");
-      const routes = await google.maps.importLibrary("routes");
-      
-      SuggestionClass = places.AutocompleteSuggestion;
-      SessionToken = new places.AutocompleteSessionToken();
-      RouteClass = routes.Route;
+    // ✅ 改用穩定度最高的 Service 模式
+    function initMap() {
+      directionsService = new google.maps.DirectionsService();
+      autocompleteService = new google.maps.places.AutocompleteService();
       
       setupField('pickup', 'pac-pickup');
       setupField('midStops', 'pac-midStops');
       setupField('dropoff', 'pac-dropoff');
+      console.log("💎 穩定版地址引擎已就緒");
     }
 
     function setupField(inputId, pacId) {
       const input = document.getElementById(inputId);
       const pac = document.getElementById(pacId);
 
-      input.addEventListener('input', async () => {
-        const query = input.value;
-        if (!query) { pac.style.display = 'none'; return; }
+      input.addEventListener('input', () => {
+        const val = input.value;
+        if (!val) { pac.style.display = 'none'; return; }
 
-        try {
-          const { suggestions } = await SuggestionClass.fetchAutocompleteSuggestions({
-            input: query, sessionToken: SessionToken, region: 'tw', language: 'zh-TW'
-          });
-
-          if (suggestions && suggestions.length > 0) {
+        autocompleteService.getPlacePredictions({
+          input: val,
+          componentRestrictions: { country: 'tw' },
+          language: 'zh-TW'
+        }, (predictions, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
             pac.innerHTML = '';
-            suggestions.forEach(s => {
+            predictions.forEach(p => {
               const div = document.createElement('div');
               div.className = 'pac-item';
-              div.innerText = s.placePrediction.text.text;
+              div.innerText = p.description;
               div.onclick = () => {
-                input.value = s.placePrediction.text.text;
+                input.value = p.description;
                 pac.style.display = 'none';
-                calculatePrice();
+                calculateRoute();
               };
               pac.appendChild(div);
             });
             pac.style.display = 'block';
           } else { pac.style.display = 'none'; }
-        } catch (e) { console.error("Autocomplete Error:", e); }
+        });
       });
 
-      document.addEventListener('click', (e) => {
-        if (e.target !== input) pac.style.display = 'none';
-      });
+      document.addEventListener('click', (e) => { if (e.target !== input) pac.style.display = 'none'; });
     }
 
-    async function calculatePrice() {
+    function calculateRoute() {
       const p1 = document.getElementById('pickup').value;
       const p3 = document.getElementById('dropoff').value;
       const p2 = document.getElementById('midStops').value;
-      if (!p1 || !p3 || !RouteClass) return;
+      if (!p1 || !p3 || !directionsService) return;
 
-      try {
-        const { routes } = await RouteClass.computeRoutes({
-          origin: { address: p1 },
-          destination: { address: p3 },
-          intermediates: p2 ? [{ address: p2 }] : [],
-          travelMode: 'DRIVE'
-        });
-
-        if (routes && routes.length > 0) {
-          currentKm = routes[0].distanceMeters / 1000;
+      directionsService.route({
+        origin: p1,
+        destination: p3,
+        waypoints: p2 ? [{ location: p2, stopover: true }] : [],
+        travelMode: google.maps.TravelMode.DRIVING
+      }, (result, status) => {
+        if (status === 'OK') {
+          let totalMeters = 0;
+          result.routes[0].legs.forEach(leg => totalMeters += leg.distance.value);
+          currentKm = totalMeters / 1000;
           currentPrice = Math.round(150 + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
           document.getElementById('price-preview').style.display = 'block';
           document.getElementById('dist-val').innerText = currentKm.toFixed(1);
           document.getElementById('price-val').innerText = currentPrice;
         }
-      } catch (e) { console.error("Routes Error:", e); }
+      });
     }
 
-    window.setType = (t) => { 
+    window.setType = (t) => {
       tripType = t;
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('btn-'+t).classList.add('active');
     };
-    window.toggleMid = (s) => { 
+    window.toggleMid = (s) => {
       document.getElementById('mid-wrap').style.display = s ? 'block' : 'none';
       document.getElementById('add-mid-btn').style.display = s ? 'none' : 'block';
     };
-    window.change = (k, d) => { 
+    window.change = (k, d) => {
       counts[k] = Math.max((k==='adults'?1:0), counts[k]+d);
       document.getElementById(`val-${k}`).innerText = counts[k];
     };
   </script>
 
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&callback=initMap&libraries=places&v=beta&loading=async" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&libraries=places&callback=initMap" async defer></script>
 
   <script type="module">
     import { db, CONFIG } from './firebase-config.js?v=106';
@@ -195,51 +191,32 @@
     liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER }).then(async () => {
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
-        // 核心：預填使用者姓名
         document.getElementById('contactName').value = profile.displayName;
-      } else {
-        liff.login();
       }
     });
 
     window.sendOrder = async function() {
       const btn = document.getElementById('submit-btn');
-      const p1 = document.getElementById('pickup').value;
-      const p3 = document.getElementById('dropoff').value;
-
-      if(!p1 || !p3) return alert("請填寫完整地點");
-
       btn.disabled = true;
-      btn.innerText = "提交預約中...";
-
       try {
         await addDoc(collection(db, "orders"), {
           tripType,
-          pickup: p1,
+          pickup: document.getElementById('pickup').value,
           midStops: document.getElementById('midStops').value,
-          dropoff: p3,
+          dropoff: document.getElementById('dropoff').value,
           appointmentTime: document.getElementById('appointmentTime').value,
           flightNo: document.getElementById('flightNo').value,
           contactName: document.getElementById('contactName').value,
           contactPhone: document.getElementById('contactPhone').value,
-          adults: counts.adults,
-          children: counts.children,
-          lugLarge: counts.lugL,
-          lugMedium: counts.lugM,
-          lugSmall: counts.lugS,
-          price: currentPrice,
-          km: currentKm.toFixed(1),
+          adults: counts.adults, children: counts.children,
+          lugLarge: counts.lugL, lugMedium: counts.lugM, lugSmall: counts.lugS,
+          price: currentPrice, km: currentKm.toFixed(1),
           note: document.getElementById('note').value,
-          status: "pending",
-          createdAt: serverTimestamp()
+          status: "pending", createdAt: serverTimestamp()
         });
         alert("預約成功！");
         liff.closeWindow();
-      } catch (e) {
-        alert("錯誤: " + e.message);
-        btn.disabled = false;
-        btn.innerText = "立即發送預約";
-      }
+      } catch (e) { alert(e.message); btn.disabled = false; }
     };
   </script>
 </body>
