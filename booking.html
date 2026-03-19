@@ -45,7 +45,7 @@
     }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-    /* 🆕 價格顯示樣式 */
+    /* 價格顯示樣式 */
     #price-preview { 
       display: none; margin-top: 15px; padding: 15px; background: #F2F9FF; 
       border-radius: 12px; border: 1px dashed var(--primary); 
@@ -165,7 +165,7 @@
     <button id="submit-btn" onclick="sendRequest()">立即發送預約行程</button>
   </div>
 
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&libraries=places&callback=initMap" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&libraries=places&callback=initMap&loading=async" async defer></script>
 
   <script type="module">
     import { db, CONFIG } from './firebase-config.js?v=106';
@@ -184,7 +184,13 @@
 
     window.initMap = () => {
       distService = new google.maps.DistanceMatrixService();
-      const options = { componentRestrictions: { country: "tw" }, fields: ["formatted_address", "geometry"] };
+      
+      // 🟢 修正：增強 Autocomplete 搜尋選項
+      const options = { 
+        componentRestrictions: { country: "tw" }, 
+        fields: ["formatted_address", "geometry", "name"],
+        types: ["establishment", "geocode"] 
+      };
       
       pickupAuto = new google.maps.places.Autocomplete(document.getElementById('pickup'), options);
       midAuto = new google.maps.places.Autocomplete(document.getElementById('midStops'), options);
@@ -319,7 +325,6 @@
           status: "pending",
           driverId: "",
           driverName: "",
-          // 🆕 將計算結果也存入資料庫
           estimateDistance: currentKm.toFixed(1),
           estimatePrice: currentEstimatePrice
         };
