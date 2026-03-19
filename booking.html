@@ -156,55 +156,55 @@
   // ────────────────────────────────────────────────
   // 這裡是關鍵：保證有 async
   async function calculateNewRoute() {
-    const pickupPid = document.getElementById('pickup').dataset.pid;
-    const dropoffPid = document.getElementById('dropoff').dataset.pid;
-    const midPid = document.getElementById('midStops').dataset.pid;
-    const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
+  const pickupPid = document.getElementById('pickup').dataset.pid;
+  const dropoffPid = document.getElementById('dropoff').dataset.pid;
+  const midPid = document.getElementById('midStops').dataset.pid;
+  const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
 
-    if (!pickupPid || !dropoffPid) {
-      console.log("尚未選擇完整的起點與終點，無法計算路線");
-      document.getElementById('price-preview').style.display = 'none';
-      return;
-    }
-
-    try {
-      const request = {
-        origin: new PlaceClass({ id: pickupPid }),
-        destination: new PlaceClass({ id: dropoffPid }),
-        travelMode: 'DRIVE'
-        // routingPreference: 'TRAFFIC_AWARE_OPTIMAL'  // 先註解
-      };
-
-      if (midVisible && midPid) {
-        request.intermediates = [new PlaceClass({ id: midPid })];
-      }
-
-      console.log("開始計算路線...");
-
-      const response = await RouteClass.computeRoutes({
-        ...request,
-        fields: ['distanceMeters']   // 最小化測試，先只取距離
-      });
-
-      if (response.routes && response.routes.length > 0) {
-        const route = response.routes[0];
-        currentKm = route.distanceMeters / 1000;
-        currentPrice = Math.round(150 + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
-
-        document.getElementById('price-preview').style.display = 'block';
-        document.getElementById('dist-val').innerText = currentKm.toFixed(1);
-        document.getElementById('price-val').innerText = currentPrice;
-
-        console.log(`成功！距離：${currentKm.toFixed(1)} km，費用：$${currentPrice}`);
-      } else {
-        console.warn("API 沒有回傳有效路線");
-        document.getElementById('price-preview').style.display = 'none';
-      }
-    } catch (e) {
-      console.error("路線計算失敗：", e.message);
-      document.getElementById('price-preview').style.display = 'none';
-    }
+  if (!pickupPid || !dropoffPid) {
+    console.log("尚未選擇完整的起點與終點，無法計算路線");
+    document.getElementById('price-preview').style.display = 'none';
+    return;
   }
+
+  try {
+    const request = {
+      origin: new PlaceClass({ id: pickupPid }),
+      destination: new PlaceClass({ id: dropoffPid }),
+      travelMode: 'DRIVING',  // 修正為 'DRIVING'
+      // routingPreference: 'TRAFFIC_AWARE_OPTIMAL'  // 可以試著開啟，看是否支援
+    };
+
+    if (midVisible && midPid) {
+      request.intermediates = [new PlaceClass({ id: midPid })];
+    }
+
+    console.log("開始計算路線...");
+
+    const response = await RouteClass.computeRoutes({
+      ...request,
+      fields: ['distanceMeters']  // 先保持簡單，成功後可加 'durationMillis'
+    });
+
+    if (response.routes && response.routes.length > 0) {
+      const route = response.routes[0];
+      currentKm = route.distanceMeters / 1000;
+      currentPrice = Math.round(150 + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
+
+      document.getElementById('price-preview').style.display = 'block';
+      document.getElementById('dist-val').innerText = currentKm.toFixed(1);
+      document.getElementById('price-val').innerText = currentPrice;
+
+      console.log(`成功！距離：${currentKm.toFixed(1)} km，費用：$${currentPrice}`);
+    } else {
+      console.warn("API 沒有回傳有效路線");
+      document.getElementById('price-preview').style.display = 'none';
+    }
+  } catch (e) {
+    console.error("路線計算失敗：", e.message);
+    document.getElementById('price-preview').style.display = 'none';
+  }
+}
   // ────────────────────────────────────────────────
 
   window.setType = (t) => {
