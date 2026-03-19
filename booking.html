@@ -164,7 +164,7 @@
           origin: new PlaceClass({ id: pickupPid }),
           destination: new PlaceClass({ id: dropoffPid }),
           travelMode: 'DRIVE',
-          // routingPreference: 'TRAFFIC_AWARE_OPTIMAL'  // 先註解，避免 beta 版衝突；成功後可開啟
+          // routingPreference: 'TRAFFIC_AWARE_OPTIMAL'  // 先註解，避免 beta 版衝突；成功後可再開啟
         };
 
         if (midVisible && midPid) {
@@ -175,7 +175,8 @@
 
         const response = await RouteClass.computeRoutes({
           ...request,
-          fields: ['distanceMeters', 'duration']
+          fields: ['distanceMeters', 'duration']  // 關鍵修正：無 routes. 前綴，直接用 Route 物件的欄位名稱
+          // 若之後要畫路線，可加 'polyline' 到陣列
         });
 
         if (response.routes && response.routes.length > 0) {
