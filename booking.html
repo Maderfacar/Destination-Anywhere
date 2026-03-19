@@ -166,47 +166,55 @@
       const p3 = document.getElementById('dropoff').value;
       const p2 = document.getElementById('midStops').value;
       
-      // 核心檢查：確保起點、終點以及 Route 類別皆已加載
       if (!p1 || !p3 || !RouteClass) return;
 
       try {
-        // 修正 1: origin 與 destination 必須符合 { location: { address: "..." } } 結構
+        // 2026 最終標準：使用 location: { address: "..." }
+        // 注意：某些版本要求這是一個 Place 物件，我們改用最嚴謹的結構
         const request = {
-          origin: { 
-            location: { address: p1 } 
+          origin: {
+            location: {
+              address: p1
+            }
           },
-          destination: { 
-            location: { address: p3 } 
+          destination: {
+            location: {
+              address: p3
+            }
           },
           travelMode: 'DRIVE',
           routingPreference: 'TRAFFIC_AWARE'
         };
 
-        // 修正 2: 中途站 (intermediates) 也是同樣的 location 包裹結構
+        // 如果有中途站
         if (p2) {
-          request.intermediates = [{ 
-            location: { address: p2 } 
+          request.intermediates = [{
+            location: {
+              address: p2
+            }
           }];
         }
 
-        console.log("💎 正在使用 Routes v1 引擎計算...", request);
+        console.log("💎 正在發送 Routes 請求結構:", JSON.stringify(request));
         
         const { routes } = await RouteClass.computeRoutes(request);
 
         if (routes && routes.length > 0) {
-          // routes[0].distanceMeters 是數字（單位：公尺）
-          currentKm = routes[0].distanceMeters / 1000;
+          // 注意：新版回傳欄位可能是 distanceMeters (整數)
+          const meters = routes[0].distanceMeters;
+          currentKm = meters / 1000;
           
-          // 計費邏輯（可依需求調整）：起步 150，超過 5km 每公里 35 元
+          // 計算價格：起步 150，5km 後每公里 35
           currentPrice = Math.round(150 + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
           
           document.getElementById('price-preview').style.display = 'block';
           document.getElementById('dist-val').innerText = currentKm.toFixed(1);
           document.getElementById('price-val').innerText = currentPrice;
+        } else {
+          console.warn("計算成功但未找到路徑");
         }
       } catch (e) { 
-        console.error("❌ 里程計算失敗：", e);
-        // 如果報 403，請確認 Google Console 已開啟 "Routes API" (不是 Directions API)
+        console.error("里程計算失敗，請檢查下方 Request 結構：", e);
       }
     }
 
