@@ -22,7 +22,6 @@
     .price-text { color: #D70015; font-size: 24px; font-weight: 800; }
     #submit-btn { width: 100%; padding: 18px; background: var(--primary); color: #FFF; border: none; border-radius: 16px; font-size: 18px; font-weight: 700; margin-top: 20px; }
     
-    /* 下拉選單自定義樣式 */
     .pac-box { position: relative; width: 100%; }
     .custom-pac { position: absolute; background: white; width: 100%; z-index: 2000; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: none; max-height: 250px; overflow-y: auto; top: 50px; }
     .pac-item { padding: 15px; border-bottom: 1px solid #F2F2F7; cursor: pointer; font-size: 14px; color: #333; text-align: left; }
@@ -93,82 +92,95 @@
   <button id="submit-btn" onclick="sendOrder()">立即發送預約</button>
 
   <script>
+    (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. 此警告正常"):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
+      key: "AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY",
+      v: "beta"
+    });
+  </script>
+
+  <script>
     let tripType = "接機";
     let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
     let currentKm = 0, currentPrice = 0;
-    let directionsService, autocompleteService;
+    let RouteClass, SuggestionClass, sessionToken;
 
-    // ✅ 核心修正：回歸最穩定的 AutocompleteService，跳過 403 報錯的新版 Rpc
-    function initMap() {
-      directionsService = new google.maps.DirectionsService();
-      autocompleteService = new google.maps.places.AutocompleteService();
+    // 修正 2: 使用 2026 最新的模塊化加載
+    async function initMap() {
+      const { AutocompleteSessionToken, AutocompleteSuggestion } = await google.maps.importLibrary("places");
+      const { Route } = await google.maps.importLibrary("routes");
+      
+      RouteClass = Route;
+      SuggestionClass = AutocompleteSuggestion;
+      sessionToken = new AutocompleteSessionToken();
       
       setupField('pickup', 'pac-pickup');
       setupField('midStops', 'pac-midStops');
       setupField('dropoff', 'pac-dropoff');
-      console.log("💎 地址引擎已切換為穩定模式");
+      console.log("💎 2026 標準引擎已啟動");
     }
 
     function setupField(inputId, pacId) {
       const input = document.getElementById(inputId);
       const pac = document.getElementById(pacId);
 
-      input.addEventListener('input', () => {
+      input.addEventListener('input', async () => {
         const val = input.value;
         if (!val) { pac.style.display = 'none'; return; }
 
-        autocompleteService.getPlacePredictions({
-          input: val,
-          componentRestrictions: { country: 'tw' },
-          language: 'zh-TW'
-        }, (predictions, status) => {
-          if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+        try {
+          // 修正 3: 使用 fetchAutocompleteSuggestions 替代舊版 Service
+          const { suggestions } = await SuggestionClass.fetchAutocompleteSuggestions({
+            input: val,
+            sessionToken: sessionToken,
+            region: 'tw',
+            language: 'zh-TW'
+          });
+
+          if (suggestions && suggestions.length > 0) {
             pac.innerHTML = '';
-            predictions.forEach(p => {
+            suggestions.forEach(s => {
               const div = document.createElement('div');
               div.className = 'pac-item';
-              div.innerText = p.description;
+              div.innerText = s.placePrediction.text.text;
               div.onclick = () => {
-                input.value = p.description;
+                input.value = s.placePrediction.text.text;
                 pac.style.display = 'none';
                 calculateRoute();
               };
               pac.appendChild(div);
             });
             pac.style.display = 'block';
-          } else {
-            pac.style.display = 'none';
           }
-        });
+        } catch (e) { console.error("地址建議出錯", e); }
       });
 
-      document.addEventListener('click', (e) => {
-        if (e.target !== input) pac.style.display = 'none';
-      });
+      document.addEventListener('click', (e) => { if (e.target !== input) pac.style.display = 'none'; });
     }
 
-    function calculateRoute() {
+    async function calculateRoute() {
       const p1 = document.getElementById('pickup').value;
       const p3 = document.getElementById('dropoff').value;
       const p2 = document.getElementById('midStops').value;
-      if (!p1 || !p3 || !directionsService) return;
+      if (!p1 || !p3 || !RouteClass) return;
 
-      directionsService.route({
-        origin: p1,
-        destination: p3,
-        waypoints: p2 ? [{ location: p2, stopover: true }] : [],
-        travelMode: google.maps.TravelMode.DRIVING
-      }, (result, status) => {
-        if (status === 'OK') {
-          let totalMeters = 0;
-          result.routes[0].legs.forEach(leg => totalMeters += leg.distance.value);
-          currentKm = totalMeters / 1000;
+      try {
+        // 修正 4: 使用 computeRoutes 替代廢棄的 DirectionsService
+        const { routes } = await RouteClass.computeRoutes({
+          origin: { address: p1 },
+          destination: { address: p3 },
+          intermediates: p2 ? [{ address: p2 }] : [],
+          travelMode: 'DRIVE',
+          routingPreference: 'TRAFFIC_AWARE'
+        });
+
+        if (routes && routes.length > 0) {
+          currentKm = routes[0].distanceMeters / 1000;
           currentPrice = Math.round(150 + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
           document.getElementById('price-preview').style.display = 'block';
           document.getElementById('dist-val').innerText = currentKm.toFixed(1);
           document.getElementById('price-val').innerText = currentPrice;
         }
-      });
+      } catch (e) { console.error("路由計算失敗", e); }
     }
 
     window.setType = (t) => {
@@ -184,9 +196,10 @@
       counts[k] = Math.max((k==='adults'?1:0), counts[k]+d);
       document.getElementById(`val-${k}`).innerText = counts[k];
     };
-  </script>
 
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&libraries=places&callback=initMap" async defer></script>
+    // 啟動地圖
+    initMap();
+  </script>
 
   <script type="module">
     import { db, CONFIG } from './firebase-config.js?v=106';
@@ -195,18 +208,19 @@
     liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER }).then(async () => {
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
-        // 姓名預填
         document.getElementById('contactName').value = profile.displayName;
-      } else {
-        liff.login();
       }
     });
 
     window.sendOrder = async function() {
       const btn = document.getElementById('submit-btn');
+      const uid = new URLSearchParams(window.location.search).get('uid');
+      if (!uid) { alert("UID 缺失，請重新從主頁開啟"); return; }
+      
       btn.disabled = true;
       try {
         await addDoc(collection(db, "orders"), {
+          customerId: uid,
           tripType,
           pickup: document.getElementById('pickup').value,
           midStops: document.getElementById('midStops').value,
@@ -222,7 +236,7 @@
           status: "pending", createdAt: serverTimestamp()
         });
         alert("預約成功！");
-        liff.closeWindow();
+        window.parent.postMessage('booking_success', '*');
       } catch (e) { alert(e.message); btn.disabled = false; }
     };
   </script>
