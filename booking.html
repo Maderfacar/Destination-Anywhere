@@ -45,7 +45,6 @@
     }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-    /* 價格顯示樣式 */
     #price-preview { 
       display: none; margin-top: 15px; padding: 15px; background: #F2F9FF; 
       border-radius: 12px; border: 1px dashed var(--primary); 
@@ -116,9 +115,7 @@
         <div class="btn-circle" onclick="change('children', 1)">+</div>
       </div>
     </div>
-
     <div style="height:1px; background:#F2F2F7; margin:15px 0;"></div>
-
     <div class="counter-group">
       <span class="counter-label">大型行李 (28吋以上)</span>
       <div class="counter-ctrl">
@@ -165,27 +162,19 @@
     <button id="submit-btn" onclick="sendRequest()">立即發送預約行程</button>
   </div>
 
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&libraries=places&callback=initMap&loading=async" async defer></script>
-
   <script type="module">
     import { db, CONFIG } from './firebase-config.js?v=106';
     import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // --- 🟢 Google Maps Logic ---
-    const PRICING_CONFIG = {
-      baseFare: 150,  // 起步價
-      baseKm: 5,      // 起步里程
-      perKm: 35       // 每公里加價
-    };
-
+    // --- 🟢 Google Maps 邏輯實作 ---
+    const PRICING_CONFIG = { baseFare: 150, baseKm: 5, perKm: 35 };
     let pickupAuto, midAuto, dropoffAuto, distService;
     let currentKm = 0;
     let currentEstimatePrice = 0;
 
+    // 將 initMap 明確掛載至 window 解決 ES Module 封裝問題
     window.initMap = () => {
       distService = new google.maps.DistanceMatrixService();
-      
-      // 🟢 修正：增強 Autocomplete 搜尋選項
       const options = { 
         componentRestrictions: { country: "tw" }, 
         fields: ["formatted_address", "geometry", "name"],
@@ -196,9 +185,10 @@
       midAuto = new google.maps.places.Autocomplete(document.getElementById('midStops'), options);
       dropoffAuto = new google.maps.places.Autocomplete(document.getElementById('dropoff'), options);
 
-      pickupAuto.addListener('place_changed', calculateDistance);
-      midAuto.addListener('place_changed', calculateDistance);
-      dropoffAuto.addListener('place_changed', calculateDistance);
+      const calc = () => calculateDistance();
+      pickupAuto.addListener('place_changed', calc);
+      midAuto.addListener('place_changed', calc);
+      dropoffAuto.addListener('place_changed', calc);
     };
 
     function calculateDistance() {
@@ -209,7 +199,6 @@
       if (!origin || !destination) return;
 
       const destinations = waypoint ? [waypoint, destination] : [destination];
-
       distService.getDistanceMatrix({
         origins: [origin],
         destinations: destinations,
@@ -229,45 +218,31 @@
 
     function updatePriceUI(km) {
       let price = PRICING_CONFIG.baseFare;
-      if (km > PRICING_CONFIG.baseKm) {
-        price += (km - PRICING_CONFIG.baseKm) * PRICING_CONFIG.perKm;
-      }
+      if (km > PRICING_CONFIG.baseKm) price += (km - PRICING_CONFIG.baseKm) * PRICING_CONFIG.perKm;
       currentEstimatePrice = Math.round(price);
       document.getElementById('price-preview').style.display = 'block';
       document.getElementById('dist-val').innerText = km.toFixed(1);
       document.getElementById('price-val').innerText = currentEstimatePrice;
     }
 
-    // --- 🟢 Firebase & LIFF Logic ---
+    // --- 🟢 Firebase & LIFF 邏輯 ---
     const urlParams = new URLSearchParams(window.location.search);
     const urlUid = urlParams.get('uid'); 
-
     let customerUid = urlUid || ""; 
     let selectedType = "接機";
     const counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
 
     async function init() {
       try {
-        if (!customerUid) {
-          await liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER });
-          if (liff.isLoggedIn()) {
-            const p = await liff.getProfile();
-            customerUid = p.userId;
-            if (p.displayName && !document.getElementById('contactName').value) {
-              document.getElementById('contactName').value = p.displayName;
-            }
-          } else {
-            liff.login();
+        await liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER });
+        if (liff.isLoggedIn()) {
+          const p = await liff.getProfile();
+          customerUid = p.userId;
+          if (p.displayName && !document.getElementById('contactName').value) {
+            document.getElementById('contactName').value = p.displayName;
           }
         } else {
-          liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER }).then(async () => {
-            if (liff.isLoggedIn()) {
-              const p = await liff.getProfile();
-              if (p.displayName && !document.getElementById('contactName').value) {
-                document.getElementById('contactName').value = p.displayName;
-              }
-            }
-          }).catch(() => {});
+          liff.login();
         }
       } catch (e) { console.warn("LIFF 載入失敗"); }
     }
@@ -294,14 +269,9 @@
     };
 
     window.sendRequest = async () => {
-      const currentParams = new URLSearchParams(window.location.search);
-      const finalUid = currentParams.get('uid') || customerUid;
-
-      if (!finalUid || finalUid === "") {
-        alert("身分驗證失效，請關閉預約視窗重新點擊。");
-        return;
-      }
-
+      const finalUid = new URLSearchParams(window.location.search).get('uid') || customerUid;
+      if (!finalUid) { alert("身分驗證失效"); return; }
+      
       const btn = document.getElementById('submit-btn');
       btn.disabled = true; btn.innerText = "正在處理訂單...";
 
@@ -323,16 +293,13 @@
           note: document.getElementById('note').value,
           customerId: finalUid,
           status: "pending",
-          driverId: "",
-          driverName: "",
+          driverId: "", driverName: "",
           estimateDistance: currentKm.toFixed(1),
           estimatePrice: currentEstimatePrice
         };
 
         const docRef = await addDoc(collection(db, "orders"), {
-          ...data,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
+          ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
         });
 
         await fetch(CONFIG.webhooks.newOrder, {
@@ -351,5 +318,7 @@
 
     init();
   </script>
+
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&libraries=places&callback=initMap&loading=async" async defer></script>
 </body>
 </html>
