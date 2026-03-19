@@ -164,19 +164,18 @@
           origin: new PlaceClass({ id: pickupPid }),
           destination: new PlaceClass({ id: dropoffPid }),
           travelMode: 'DRIVE',
-          // routingPreference: 'TRAFFIC_AWARE_OPTIMAL'   // 先註解，避免 beta 版衝突；成功後可再開啟測試
+          // routingPreference: 'TRAFFIC_AWARE_OPTIMAL'  // 先註解，避免 beta 版衝突；成功後可開啟
         };
 
         if (midVisible && midPid) {
           request.intermediates = [new PlaceClass({ id: midPid })];
         }
 
-        console.log("開始計算路線（使用 place ID + fields 陣列）...");
+        console.log("開始計算路線（使用 place ID + 正確 fields 無 routes. 前綴）...");
 
         const response = await RouteClass.computeRoutes({
           ...request,
-          fields: ['routes.distanceMeters', 'routes.duration']
-          // 若之後要畫路線，可加 'routes.polyline.encodedPolyline' 到陣列
+          fields: ['distanceMeters', 'duration']
         });
 
         if (response.routes && response.routes.length > 0) {
