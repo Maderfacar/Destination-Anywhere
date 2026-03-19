@@ -41,21 +41,18 @@
   <div class="card">
     <div class="form-group" style="margin-bottom:15px;">
       <div class="label-row">上車地點</div>
-      <input type="text" id="pickup" placeholder="請輸入起點或航廈">
+      <input type="text" id="pickup" placeholder="請輸入起點或航廈" onblur="window.calculateDistance()">
     </div>
-
     <div id="midStops-container">
       <div class="label-row">中途停靠站</div>
-      <input type="text" id="midStops" placeholder="請輸入停靠地點">
+      <input type="text" id="midStops" placeholder="請輸入停靠地點" onblur="window.calculateDistance()">
       <span class="del-stop-btn" onclick="toggleMidStop(false)">✕</span>
     </div>
     <div class="add-stop-btn" id="add-btn" onclick="toggleMidStop(true)">+ 新增停靠站</div>
-
     <div class="form-group">
       <div class="label-row">下車地點</div>
-      <input type="text" id="dropoff" placeholder="請輸入目的地">
+      <input type="text" id="dropoff" placeholder="請輸入目的地" onblur="window.calculateDistance()">
     </div>
-
     <div id="price-preview">
       <div style="font-size: 13px; color: #8E8E93;">系統預估里程：<span id="dist-val">0</span> km</div>
       <div style="margin-top: 5px;">預估車資：<span class="price-text">$ <span id="price-val">0</span></span></div>
@@ -125,11 +122,9 @@
         <div class="label-row">聯絡姓名</div>
         <input type="text" id="contactName">
       </div>
-      <div class="grid-2">
-        <div class="form-group">
-          <div class="label-row">聯絡電話</div>
-          <input type="tel" id="contactPhone">
-        </div>
+      <div class="form-group">
+        <div class="label-row">聯絡電話</div>
+        <input type="tel" id="contactPhone">
       </div>
     </div>
     <div class="form-group" style="margin-top:10px;">
@@ -148,13 +143,14 @@
     const PRICING_CONFIG = { baseFare: 150, baseKm: 5, perKm: 35 };
     let currentKm = 0;
     let currentEstimatePrice = 0;
+    let directionsService;
 
-    // 🟢 2026 最新版初始化方式：使用 Routes 庫
+    // 🟢 2026 最新推薦：透過動態 importLibrary 載入
     window.initMap = async () => {
+      console.log("2026 Map Framework Initialized");
       const { Autocomplete } = await google.maps.importLibrary("places");
-      const { RoutesService } = await google.maps.importLibrary("routes");
-      
-      const routesService = new RoutesService();
+      directionsService = new google.maps.DirectionsService();
+
       const options = { 
         componentRestrictions: { country: "tw" }, 
         fields: ["formatted_address", "geometry", "name"],
@@ -165,38 +161,42 @@
       const midAuto = new Autocomplete(document.getElementById('midStops'), options);
       const dropoffAuto = new Autocomplete(document.getElementById('dropoff'), options);
 
-      const handleCalc = async () => {
-        const origin = document.getElementById('pickup').value;
-        const dest = document.getElementById('dropoff').value;
-        const mid = document.getElementById('midStops').value;
+      const triggerCalc = () => window.calculateDistance();
+      pickupAuto.addListener('place_changed', triggerCalc);
+      midAuto.addListener('place_changed', triggerCalc);
+      dropoffAuto.addListener('place_changed', triggerCalc);
+    };
 
-        if (!origin || !dest) return;
+    // 🟢 使用 DirectionsService 替代已過時的 DistanceMatrix
+    window.calculateDistance = () => {
+      const origin = document.getElementById('pickup').value;
+      const destination = document.getElementById('dropoff').value;
+      const mid = document.getElementById('midStops').value;
 
-        // 使用 2026 推薦的 computeRouteMatrix 或 Directions 邏輯簡化版
-        const ds = new google.maps.DirectionsService();
-        const waypoints = mid ? [{ location: mid, stopover: true }] : [];
-        
-        ds.route({
-          origin: origin,
-          destination: dest,
-          waypoints: waypoints,
-          travelMode: google.maps.TravelMode.DRIVING
-        }, (result, status) => {
-          if (status === 'OK') {
-            let totalMeters = 0;
-            result.routes[0].legs.forEach(leg => { totalMeters += leg.distance.value; });
-            currentKm = totalMeters / 1000;
-            updatePriceUI(currentKm);
-          }
-        });
+      if (!origin || !destination) {
+        document.getElementById('price-preview').style.display = 'none';
+        return;
+      }
+
+      const request = {
+        origin: origin,
+        destination: destination,
+        waypoints: mid ? [{ location: mid, stopover: true }] : [],
+        travelMode: google.maps.TravelMode.DRIVING
       };
 
-      pickupAuto.addListener('place_changed', handleCalc);
-      midAuto.addListener('place_changed', handleCalc);
-      dropoffAuto.addListener('place_changed', handleCalc);
-      
-      // 曝露給全域以利手動調用
-      window.calculateDistance = handleCalc;
+      directionsService.route(request, (result, status) => {
+        if (status === 'OK') {
+          let totalMeters = 0;
+          result.routes[0].legs.forEach(leg => {
+            totalMeters += leg.distance.value;
+          });
+          currentKm = totalMeters / 1000;
+          updatePriceUI(currentKm);
+        } else {
+          console.error("Route calculation failed:", status);
+        }
+      });
     };
 
     function updatePriceUI(km) {
@@ -208,7 +208,7 @@
       document.getElementById('price-val').innerText = currentEstimatePrice;
     }
 
-    // --- LIFF & Firebase 邏輯 ---
+    // --- LIFF & Firebase ---
     let customerUid = new URLSearchParams(window.location.search).get('uid') || "";
     let selectedType = "接機";
     const counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
@@ -221,7 +221,7 @@
           customerUid = p.userId;
           document.getElementById('contactName').value = p.displayName || "";
         } else { liff.login(); }
-      } catch (e) { console.warn("LIFF Failed"); }
+      } catch (e) { console.warn("LIFF Load Fail"); }
     }
 
     window.setType = (type, btn) => {
@@ -240,7 +240,7 @@
     };
     window.sendRequest = async () => {
       const btn = document.getElementById('submit-btn');
-      btn.disabled = true; btn.innerText = "處理中...";
+      btn.disabled = true; btn.innerText = "正在預約...";
       try {
         const data = {
           tripType: selectedType,
@@ -257,7 +257,7 @@
           customerId: customerUid, status: "pending",
           estimateDistance: currentKm.toFixed(1), estimatePrice: currentEstimatePrice
         };
-        const docRef = await addDoc(collection(db, "orders"), { ...data, createdAt: serverTimestamp() });
+        const docRef = await addDoc(collection(db, "orders"), { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
         await fetch(CONFIG.webhooks.newOrder, { method: 'POST', body: JSON.stringify({ ...data, orderId: docRef.id }) });
         alert("預約成功！");
         window.parent.postMessage('booking_success', '*');
