@@ -21,8 +21,12 @@
     #price-preview { display: none; margin-top: 15px; padding: 15px; background: #F2F9FF; border-radius: 12px; border: 1px dashed var(--primary); text-align: center; }
     .price-text { color: #D70015; font-size: 24px; font-weight: 800; }
     #submit-btn { width: 100%; padding: 18px; background: var(--primary); color: #FFF; border: none; border-radius: 16px; font-size: 18px; font-weight: 700; margin-top: 20px; }
-    .custom-pac { position: absolute; background: white; width: calc(100% - 70px); z-index: 1000; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: none; max-height: 200px; overflow-y: auto; }
-    .pac-item { padding: 15px; border-bottom: 1px solid #F2F2F7; cursor: pointer; font-size: 14px; }
+    
+    /* 自定義地址下拉選單 - 確保在 LIFF 中顯示正常 */
+    .pac-box { position: relative; width: 100%; }
+    .custom-pac { position: absolute; background: white; width: 100%; z-index: 2000; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: none; max-height: 250px; overflow-y: auto; top: 50px; }
+    .pac-item { padding: 15px; border-bottom: 1px solid #F2F2F7; cursor: pointer; font-size: 14px; color: #333; }
+    .pac-item:last-child { border: none; }
   </style>
 </head>
 <body>
@@ -36,19 +40,25 @@
 
   <div class="card">
     <span class="label-row">上車地點</span>
-    <input type="text" id="pickup" placeholder="請輸入起點" autocomplete="off">
-    <div id="pac-pickup" class="custom-pac"></div>
+    <div class="pac-box">
+      <input type="text" id="pickup" placeholder="請輸入起點" autocomplete="off">
+      <div id="pac-pickup" class="custom-pac"></div>
+    </div>
     
     <div id="mid-wrap" style="display:none;">
       <span class="label-row">中途停靠站</span>
-      <input type="text" id="midStops" placeholder="請輸入停靠點" autocomplete="off">
-      <div id="pac-midStops" class="custom-pac"></div>
+      <div class="pac-box">
+        <input type="text" id="midStops" placeholder="請輸入停靠點" autocomplete="off">
+        <div id="pac-midStops" class="custom-pac"></div>
+      </div>
     </div>
     <div style="color:var(--primary); font-size:14px; margin-bottom:12px; cursor:pointer;" onclick="toggleMid(true)" id="add-mid-btn">+ 新增中途停靠站</div>
     
     <span class="label-row">下車地點</span>
-    <input type="text" id="dropoff" placeholder="請輸入目的地" autocomplete="off">
-    <div id="pac-dropoff" class="custom-pac"></div>
+    <div class="pac-box">
+      <input type="text" id="dropoff" placeholder="請輸入目的地" autocomplete="off">
+      <div id="pac-dropoff" class="custom-pac"></div>
+    </div>
 
     <div id="price-preview">
       <div style="font-size: 13px;">預估里程：<span id="dist-val">0</span> km</div>
@@ -77,7 +87,7 @@
       <div><span class="label-row">電話號碼</span><input type="tel" id="contactPhone"></div>
     </div>
     <span class="label-row">備註需求</span>
-    <textarea id="note" rows="2" placeholder="備註需求..."></textarea>
+    <textarea id="note" rows="2" placeholder="是否有特殊行李或座椅需求..."></textarea>
   </div>
 
   <button id="submit-btn" onclick="sendOrder()">立即發送預約</button>
@@ -86,40 +96,54 @@
     let tripType = "接機";
     let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
     let currentKm = 0, currentPrice = 0;
-    let RouteClass;
+    let RouteClass, SuggestionClass, SessionToken;
 
     async function initMap() {
-      const { AutocompleteSessionToken, AutocompleteSuggestion } = await google.maps.importLibrary("places");
-      const { Route } = await google.maps.importLibrary("routes");
-      RouteClass = Route;
+      const places = await google.maps.importLibrary("places");
+      const routes = await google.maps.importLibrary("routes");
       
-      const token = new AutocompleteSessionToken();
-      setupField('pickup', 'pac-pickup', token);
-      setupField('midStops', 'pac-midStops', token);
-      setupField('dropoff', 'pac-dropoff', token);
+      SuggestionClass = places.AutocompleteSuggestion;
+      SessionToken = new places.AutocompleteSessionToken();
+      RouteClass = routes.Route;
+      
+      setupField('pickup', 'pac-pickup');
+      setupField('midStops', 'pac-midStops');
+      setupField('dropoff', 'pac-dropoff');
     }
 
-    function setupField(inputId, pacId, token) {
+    function setupField(inputId, pacId) {
       const input = document.getElementById(inputId);
       const pac = document.getElementById(pacId);
+
       input.addEventListener('input', async () => {
-        if (!input.value) { pac.style.display = 'none'; return; }
-        const { suggestions } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
-          input: input.value, sessionToken: token, region: 'tw'
-        });
-        pac.innerHTML = '';
-        suggestions.forEach(s => {
-          const div = document.createElement('div');
-          div.className = 'pac-item';
-          div.innerText = s.placePrediction.text.text;
-          div.onclick = () => {
-            input.value = s.placePrediction.text.text;
-            pac.style.display = 'none';
-            calculatePrice();
-          };
-          pac.appendChild(div);
-        });
-        pac.style.display = 'block';
+        const query = input.value;
+        if (!query) { pac.style.display = 'none'; return; }
+
+        try {
+          const { suggestions } = await SuggestionClass.fetchAutocompleteSuggestions({
+            input: query, sessionToken: SessionToken, region: 'tw', language: 'zh-TW'
+          });
+
+          if (suggestions && suggestions.length > 0) {
+            pac.innerHTML = '';
+            suggestions.forEach(s => {
+              const div = document.createElement('div');
+              div.className = 'pac-item';
+              div.innerText = s.placePrediction.text.text;
+              div.onclick = () => {
+                input.value = s.placePrediction.text.text;
+                pac.style.display = 'none';
+                calculatePrice();
+              };
+              pac.appendChild(div);
+            });
+            pac.style.display = 'block';
+          } else { pac.style.display = 'none'; }
+        } catch (e) { console.error("Autocomplete Error:", e); }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (e.target !== input) pac.style.display = 'none';
       });
     }
 
@@ -128,11 +152,15 @@
       const p3 = document.getElementById('dropoff').value;
       const p2 = document.getElementById('midStops').value;
       if (!p1 || !p3 || !RouteClass) return;
+
       try {
         const { routes } = await RouteClass.computeRoutes({
-          origin: { address: p1 }, destination: { address: p3 },
-          intermediates: p2 ? [{ address: p2 }] : [], travelMode: 'DRIVE'
+          origin: { address: p1 },
+          destination: { address: p3 },
+          intermediates: p2 ? [{ address: p2 }] : [],
+          travelMode: 'DRIVE'
         });
+
         if (routes && routes.length > 0) {
           currentKm = routes[0].distanceMeters / 1000;
           currentPrice = Math.round(150 + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
@@ -140,11 +168,12 @@
           document.getElementById('dist-val').innerText = currentKm.toFixed(1);
           document.getElementById('price-val').innerText = currentPrice;
         }
-      } catch (e) { console.error(e); }
+      } catch (e) { console.error("Routes Error:", e); }
     }
 
     window.setType = (t) => { 
-      tripType = t; document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      tripType = t;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('btn-'+t).classList.add('active');
     };
     window.toggleMid = (s) => { 
@@ -157,46 +186,60 @@
     };
   </script>
 
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&callback=initMap&loading=async" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&callback=initMap&libraries=places&v=beta&loading=async" async defer></script>
 
   <script type="module">
     import { db, CONFIG } from './firebase-config.js?v=106';
     import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // ✅ 關鍵：初始化 LIFF 並自動填入使用者姓名
     liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER }).then(async () => {
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
-        // 抓到名字後直接填入對應的 input
+        // 核心：預填使用者姓名
         document.getElementById('contactName').value = profile.displayName;
       } else {
         liff.login();
       }
-    }).catch(err => console.error("LIFF Init Error", err));
+    });
 
     window.sendOrder = async function() {
       const btn = document.getElementById('submit-btn');
+      const p1 = document.getElementById('pickup').value;
+      const p3 = document.getElementById('dropoff').value;
+
+      if(!p1 || !p3) return alert("請填寫完整地點");
+
       btn.disabled = true;
+      btn.innerText = "提交預約中...";
+
       try {
         await addDoc(collection(db, "orders"), {
           tripType,
-          pickup: document.getElementById('pickup').value,
+          pickup: p1,
           midStops: document.getElementById('midStops').value,
-          dropoff: document.getElementById('dropoff').value,
+          dropoff: p3,
           appointmentTime: document.getElementById('appointmentTime').value,
           flightNo: document.getElementById('flightNo').value,
           contactName: document.getElementById('contactName').value,
           contactPhone: document.getElementById('contactPhone').value,
-          // 完整 5 項數據
-          adults: counts.adults, children: counts.children,
-          lugLarge: counts.lugL, lugMedium: counts.lugM, lugSmall: counts.lugS,
-          price: currentPrice, km: currentKm.toFixed(1),
+          adults: counts.adults,
+          children: counts.children,
+          lugLarge: counts.lugL,
+          lugMedium: counts.lugM,
+          lugSmall: counts.lugS,
+          price: currentPrice,
+          km: currentKm.toFixed(1),
           note: document.getElementById('note').value,
-          status: "pending", createdAt: serverTimestamp()
+          status: "pending",
+          createdAt: serverTimestamp()
         });
         alert("預約成功！");
         liff.closeWindow();
-      } catch (e) { alert(e.message); btn.disabled = false; }
+      } catch (e) {
+        alert("錯誤: " + e.message);
+        btn.disabled = false;
+        btn.innerText = "立即發送預約";
+      }
     };
   </script>
 </body>
