@@ -137,7 +137,6 @@
       const tripContent = document.getElementById('trip-content');
 
       try {
-        // 更新：使用 appointmentTime 進行 orderBy 以對應新索引
         const q = query(
           collection(db, "orders"),
           where("customerId", "==", userId),
@@ -150,7 +149,6 @@
         if (!snap.empty) {
           const data = snap.docs[0].data();
           
-          // 1. 處理時間轉換 (appointmentTime 可能是 Timestamp 物件或字串)
           let jsDate = null;
           let displayTime = "未設定時間";
           
@@ -166,13 +164,11 @@
             }
           }
 
-          // 2. 狀態顏色
           const isAccepted = data.status === 'accepted';
           tripStatus.innerText = isAccepted ? "司機已接單" : "等待接單中";
           tripStatus.style.background = isAccepted ? "#34C759" : "#FFCC00";
           tripStatus.style.color = isAccepted ? "white" : "black";
 
-          // 3. 組合 HTML (移除 emoji)
           let html = `
             <span id="trip-countdown" class="countdown-timer">計算倒數中...</span>
             <b style="font-size:16px; color:#000; display:block; margin-bottom:8px;">預約時間: ${displayTime}</b>
@@ -198,7 +194,6 @@
 
           tripContent.innerHTML = html;
 
-          // 4. 啟動倒數
           if (jsDate && !isNaN(jsDate.getTime())) {
             startCountdown(jsDate);
           } else {
@@ -215,7 +210,14 @@
       }
     }
 
+    // --- 修正區域 ---
     window.openBooking = () => {
+      // 增加安全性檢查：確保 LIFF 已載入且 globalProfile 存在
+      if (!globalProfile || !globalProfile.userId) {
+          console.warn("LIFF profile not ready");
+          alert("正在初始化資料，請稍候再試...");
+          return;
+      }
       document.getElementById('booking-overlay').classList.add('active');
       document.getElementById('booking-iframe').src = `booking.html?uid=${globalProfile.userId}&v=${new Date().getTime()}`;
     };
@@ -227,7 +229,7 @@
 
     window.addEventListener('message', e => { 
       if (e.data === 'booking_success') {
-        closeBooking();
+        window.closeBooking(); // 使用 window 調用確保路徑正確
         if (globalProfile) loadNextTrip(globalProfile.userId);
       }
     });
