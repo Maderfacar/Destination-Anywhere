@@ -45,7 +45,6 @@
     }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-    /* 🟢 確保預覽區塊有明顯的視覺高度 */
     #price-preview { 
       display: none; margin-top: 15px; padding: 15px; background: #F2F9FF; 
       border-radius: 12px; border: 1.5px dashed var(--primary); 
@@ -172,8 +171,11 @@
     let currentKm = 0;
     let currentEstimatePrice = 0;
 
+    // --- 🟢 Google Maps 初始化 ---
     window.initMap = () => {
+      console.log("Google Maps Callback Triggered");
       distService = new google.maps.DistanceMatrixService();
+      
       const options = { 
         componentRestrictions: { country: "tw" }, 
         fields: ["formatted_address", "geometry", "name"],
@@ -184,28 +186,28 @@
       midAuto = new google.maps.places.Autocomplete(document.getElementById('midStops'), options);
       dropoffAuto = new google.maps.places.Autocomplete(document.getElementById('dropoff'), options);
 
-      // 監聽點選選單事件
-      const calc = () => window.calculateDistance();
-      pickupAuto.addListener('place_changed', calc);
-      midAuto.addListener('place_changed', calc);
-      dropoffAuto.addListener('place_changed', calc);
+      const runCalc = () => { console.log("Place Changed - Calc"); window.calculateDistance(); };
+      pickupAuto.addListener('place_changed', runCalc);
+      midAuto.addListener('place_changed', runCalc);
+      dropoffAuto.addListener('place_changed', runCalc);
     };
 
-    // 🟢 將計算函式掛載到 window 供 HTML 的 onblur 呼叫
+    // --- 🟢 里程計算邏輯 (強制全域曝露) ---
     window.calculateDistance = () => {
       const origin = document.getElementById('pickup').value;
       const destination = document.getElementById('dropoff').value;
       const waypoint = document.getElementById('midStops').value;
 
-      // 只有當起點與終點都有文字時才執行
       if (!origin || !destination) {
         document.getElementById('price-preview').style.display = 'none';
         return;
       }
 
-      const destinations = waypoint ? [waypoint, destination] : [destination];
-      
+      console.log("Calculating distance from:", origin, "to:", destination);
+
       if (!distService) distService = new google.maps.DistanceMatrixService();
+
+      const destinations = waypoint ? [waypoint, destination] : [destination];
 
       distService.getDistanceMatrix({
         origins: [origin],
@@ -213,36 +215,44 @@
         travelMode: google.maps.DrivingMode,
       }, (response, status) => {
         if (status === "OK") {
-          const elements = response.rows[0].elements;
+          const rows = response.rows[0].elements;
           let totalMeters = 0;
-          let allOk = true;
-          for (let el of elements) {
+          let hasError = false;
+
+          for (let el of rows) {
             if (el.status === "OK") {
               totalMeters += el.distance.value;
             } else {
-              allOk = false;
+              hasError = true;
+              console.warn("Element status error:", el.status);
             }
           }
-          if (allOk && totalMeters > 0) {
+
+          if (!hasError && totalMeters > 0) {
             currentKm = totalMeters / 1000;
             updatePriceUI(currentKm);
+          } else {
+            console.error("Distance Matrix returned error status or 0 distance");
           }
+        } else {
+          console.error("Distance Matrix Service Status Error:", status);
         }
       });
     };
 
     function updatePriceUI(km) {
+      console.log("Updating UI with Km:", km);
       let price = PRICING_CONFIG.baseFare;
       if (km > PRICING_CONFIG.baseKm) price += (km - PRICING_CONFIG.baseKm) * PRICING_CONFIG.perKm;
       currentEstimatePrice = Math.round(price);
       
       const previewBox = document.getElementById('price-preview');
-      previewBox.style.display = 'block'; // 🟢 強制顯示
+      previewBox.style.display = 'block'; 
       document.getElementById('dist-val').innerText = km.toFixed(1);
       document.getElementById('price-val').innerText = currentEstimatePrice;
     }
 
-    // --- LIFF & Firebase 邏輯 (保持不變) ---
+    // --- 🟢 LIFF & Firebase 邏輯 ---
     const urlParams = new URLSearchParams(window.location.search);
     const urlUid = urlParams.get('uid'); 
     let customerUid = urlUid || ""; 
