@@ -33,14 +33,13 @@
     <button class="tab-btn" id="btn-市區" onclick="setType('市區')">市區</button>
     <button class="tab-btn" id="btn-包車" onclick="setType('包車')">包車</button>
   </div>
-
   <div class="card">
     <span class="label-row">上車地點</span>
     <div class="pac-box">
       <input type="text" id="pickup" placeholder="輸入起點" autocomplete="off" data-pid="">
       <div id="pac-pickup" class="custom-pac"></div>
     </div>
-
+   
     <div id="mid-wrap" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <span class="label-row">中途停靠站</span>
@@ -52,26 +51,23 @@
       </div>
     </div>
     <div style="color:var(--primary); font-size:14px; margin-bottom:12px; cursor:pointer;" onclick="toggleMid(true)" id="add-mid-btn">+ 新增中途停靠站</div>
-
+   
     <span class="label-row">下車地點</span>
     <div class="pac-box">
       <input type="text" id="dropoff" placeholder="輸入目的地" autocomplete="off" data-pid="">
       <div id="pac-dropoff" class="custom-pac"></div>
     </div>
-
     <div id="price-preview">
       <div style="font-size: 13px; color: #666;">預估里程：<span id="dist-val">0</span> km</div>
       <div class="price-text">$ <span id="price-val">0</span></div>
     </div>
   </div>
-
   <div class="card">
     <div class="grid-2">
       <div><span class="label-row">日期時間</span><input type="datetime-local" id="appointmentTime"></div>
       <div><span class="label-row">航班號碼</span><input type="text" id="flightNo" placeholder="如 CX450"></div>
     </div>
   </div>
-
   <div class="card">
     <div class="counter-group"><span>成人人數</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('adults',-1)">-</div><span id="val-adults">1</span><div class="btn-circle" onclick="change('adults',1)">+</div></div></div>
     <div class="counter-group"><span>兒童人數</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('children',-1)">-</div><span id="val-children">0</span><div class="btn-circle" onclick="change('children',1)">+</div></div></div>
@@ -79,7 +75,6 @@
     <div class="counter-group"><span>中行李 (20-24吋)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugM',-1)">-</div><span id="val-lugM">0</span><div class="btn-circle" onclick="change('lugM',1)">+</div></div></div>
     <div class="counter-group"><span>小行李/手提</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugS',-1)">-</div><span id="val-lugS">0</span><div class="btn-circle" onclick="change('lugS',1)">+</div></div></div>
   </div>
-
   <div class="card">
     <div class="grid-2">
       <div><span class="label-row">聯絡姓名</span><input type="text" id="contactName"></div>
@@ -88,7 +83,6 @@
     <span class="label-row">備註需求</span>
     <textarea id="note" rows="2" placeholder="特殊需求（如安全座椅等）"></textarea>
   </div>
-
   <button id="submit-btn" onclick="sendOrder()">立即發送預約</button>
 
   <script>
@@ -170,20 +164,19 @@
           origin: new PlaceClass({ id: pickupPid }),
           destination: new PlaceClass({ id: dropoffPid }),
           travelMode: 'DRIVE',
-          routingPreference: 'TRAFFIC_AWARE_OPTIMAL'
+          // routingPreference: 'TRAFFIC_AWARE_OPTIMAL'   // 先註解，避免 beta 版衝突；成功後可再開啟測試
         };
 
         if (midVisible && midPid) {
           request.intermediates = [new PlaceClass({ id: midPid })];
         }
 
-        console.log("開始計算路線（使用 place ID）...");
+        console.log("開始計算路線（使用 place ID + fields 陣列）...");
 
         const response = await RouteClass.computeRoutes({
           ...request,
-          // 修正重點：fields 必須是字串形式（非陣列）
-          fields: 'routes.distanceMeters,routes.duration'
-          // 若需要畫路線 polyline，可改成： 'routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline'
+          fields: ['routes.distanceMeters', 'routes.duration']
+          // 若之後要畫路線，可加 'routes.polyline.encodedPolyline' 到陣列
         });
 
         if (response.routes && response.routes.length > 0) {
@@ -204,7 +197,6 @@
         console.error("路線計算失敗：", e);
         console.error("錯誤細節：", e.message, e.stack);
         document.getElementById('price-preview').style.display = 'none';
-        // 可視需求加 alert("無法計算路線，請確認地點是否正確");
       }
     }
 
@@ -238,9 +230,7 @@
   <script type="module">
     import { db, CONFIG } from './firebase-config.js?v=106';
     import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
     let currentUid = new URLSearchParams(window.location.search).get('uid');
-
     liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER }).then(async () => {
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
@@ -248,7 +238,6 @@
         if (!currentUid) currentUid = profile.userId;
       }
     });
-
     window.sendOrder = async function() {
       if (!currentUid) { alert("UID 缺失"); return; }
       const btn = document.getElementById('submit-btn');
