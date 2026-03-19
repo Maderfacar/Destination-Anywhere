@@ -108,21 +108,58 @@
 
     // 初始化 2026 最新模組
     async function initMap() {
-      try {
-        const { AutocompleteSessionToken, AutocompleteSuggestion } = await google.maps.importLibrary("places");
-        const { Route } = await google.maps.importLibrary("routes");
-        
-        RouteClass = Route;
-        SuggestionClass = AutocompleteSuggestion;
-        sessionToken = new AutocompleteSessionToken();
-        
-        setupField('pickup', 'pac-pickup');
-        setupField('midStops', 'pac-midStops');
-        setupField('dropoff', 'pac-dropoff');
-        console.log("🚀 2026 核心路由引擎已就緒");
-      } catch (err) {
-        console.error("地圖庫加載失敗，請檢查 API Key 是否開啟 Routes API (New)", err);
-      }
+      // 強制使用 2026 新版庫
+      const [{ AutocompleteSessionToken, AutocompleteSuggestion }, { Route }] = await Promise.all([
+        google.maps.importLibrary("places"),
+        google.maps.importLibrary("routes")
+      ]);
+      
+      RouteClass = Route;
+      SuggestionClass = AutocompleteSuggestion;
+      sessionToken = new AutocompleteSessionToken();
+      
+      setupField('pickup', 'pac-pickup');
+      setupField('midStops', 'pac-midStops');
+      setupField('dropoff', 'pac-dropoff');
+    }
+
+    function setupField(inputId, pacId) {
+      const input = document.getElementById(inputId);
+      const pac = document.getElementById(pacId);
+
+      input.addEventListener('input', async () => {
+        const val = input.value;
+        if (val.length < 2) { pac.style.display = 'none'; return; }
+
+        try {
+          // 修正 403：確保 sessionToken 與 region 正確傳遞
+          const { suggestions } = await SuggestionClass.fetchAutocompleteSuggestions({
+            input: val,
+            sessionToken: sessionToken,
+            region: 'TW',
+            language: 'zh-TW'
+          });
+
+          if (suggestions) {
+            pac.innerHTML = '';
+            suggestions.forEach(s => {
+              const div = document.createElement('div');
+              div.className = 'pac-item';
+              // 拿取 Place ID 是為了穩定計算里程
+              const placeId = s.placePrediction.placeId; 
+              div.innerText = s.placePrediction.text.text;
+              div.onclick = () => {
+                input.value = s.placePrediction.text.text;
+                input.dataset.placeId = placeId; // 暫存 PlaceID
+                pac.style.display = 'none';
+                calculateNewRoute();
+              };
+              pac.appendChild(div);
+            });
+            pac.style.display = 'block';
+          }
+        } catch (e) { console.error("選單抓取失敗", e); }
+      });
     }
 
     function setupField(inputId, pacId) {
