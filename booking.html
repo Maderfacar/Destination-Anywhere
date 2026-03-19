@@ -44,6 +44,13 @@
       border-radius: 16px; font-size: 18px; font-weight: 700; box-shadow: 0 10px 20px rgba(0,122,255,0.3);
     }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* 🆕 價格顯示樣式 */
+    #price-preview { 
+      display: none; margin-top: 15px; padding: 15px; background: #F2F9FF; 
+      border-radius: 12px; border: 1px dashed var(--primary); 
+    }
+    .price-text { color: #D70015; font-size: 20px; font-weight: 800; }
   </style>
 </head>
 <body>
@@ -71,6 +78,11 @@
     <div class="form-group">
       <div class="label-row">下車地點</div>
       <input type="text" id="dropoff" placeholder="請輸入目的地">
+    </div>
+
+    <div id="price-preview">
+      <div style="font-size: 13px; color: #8E8E93;">系統預估里程：<span id="dist-val">0</span> km</div>
+      <div style="margin-top: 5px;">預估車資：<span class="price-text">$ <span id="price-val">0</span></span></div>
     </div>
   </div>
 
@@ -153,11 +165,74 @@
     <button id="submit-btn" onclick="sendRequest()">立即發送預約行程</button>
   </div>
 
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&libraries=places&callback=initMap" async defer></script>
+
   <script type="module">
     import { db, CONFIG } from './firebase-config.js?v=106';
     import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // --- 🟢 從 URL 網址抓取 index.html 傳過來的 uid ---
+    // --- 🟢 Google Maps Logic ---
+    const PRICING_CONFIG = {
+      baseFare: 150,  // 起步價
+      baseKm: 5,      // 起步里程
+      perKm: 35       // 每公里加價
+    };
+
+    let pickupAuto, midAuto, dropoffAuto, distService;
+    let currentKm = 0;
+    let currentEstimatePrice = 0;
+
+    window.initMap = () => {
+      distService = new google.maps.DistanceMatrixService();
+      const options = { componentRestrictions: { country: "tw" }, fields: ["formatted_address", "geometry"] };
+      
+      pickupAuto = new google.maps.places.Autocomplete(document.getElementById('pickup'), options);
+      midAuto = new google.maps.places.Autocomplete(document.getElementById('midStops'), options);
+      dropoffAuto = new google.maps.places.Autocomplete(document.getElementById('dropoff'), options);
+
+      pickupAuto.addListener('place_changed', calculateDistance);
+      midAuto.addListener('place_changed', calculateDistance);
+      dropoffAuto.addListener('place_changed', calculateDistance);
+    };
+
+    function calculateDistance() {
+      const origin = document.getElementById('pickup').value;
+      const destination = document.getElementById('dropoff').value;
+      const waypoint = document.getElementById('midStops').value;
+
+      if (!origin || !destination) return;
+
+      const destinations = waypoint ? [waypoint, destination] : [destination];
+
+      distService.getDistanceMatrix({
+        origins: [origin],
+        destinations: destinations,
+        travelMode: google.maps.DrivingMode,
+      }, (response, status) => {
+        if (status === "OK") {
+          const elements = response.rows[0].elements;
+          let totalMeters = 0;
+          for (let el of elements) {
+            if (el.status === "OK") totalMeters += el.distance.value;
+          }
+          currentKm = totalMeters / 1000;
+          updatePriceUI(currentKm);
+        }
+      });
+    }
+
+    function updatePriceUI(km) {
+      let price = PRICING_CONFIG.baseFare;
+      if (km > PRICING_CONFIG.baseKm) {
+        price += (km - PRICING_CONFIG.baseKm) * PRICING_CONFIG.perKm;
+      }
+      currentEstimatePrice = Math.round(price);
+      document.getElementById('price-preview').style.display = 'block';
+      document.getElementById('dist-val').innerText = km.toFixed(1);
+      document.getElementById('price-val').innerText = currentEstimatePrice;
+    }
+
+    // --- 🟢 Firebase & LIFF Logic ---
     const urlParams = new URLSearchParams(window.location.search);
     const urlUid = urlParams.get('uid'); 
 
@@ -200,7 +275,10 @@
     window.toggleMidStop = (show) => {
       document.getElementById('midStops-container').style.display = show ? 'block' : 'none';
       document.getElementById('add-btn').style.display = show ? 'none' : 'inline-block';
-      if (!show) document.getElementById('midStops').value = ""; 
+      if (!show) {
+        document.getElementById('midStops').value = "";
+        calculateDistance();
+      }
     };
 
     window.change = (key, delta) => {
@@ -210,7 +288,6 @@
     };
 
     window.sendRequest = async () => {
-      // 🟢 最終防線：按下按鈕時再次即時檢查 URL 參數，確保 customerId 不會因非同步而遺失
       const currentParams = new URLSearchParams(window.location.search);
       const finalUid = currentParams.get('uid') || customerUid;
 
@@ -238,10 +315,13 @@
           lugM: String(counts.lugM),
           lugS: String(counts.lugS),
           note: document.getElementById('note').value,
-          customerId: finalUid, // 👈 使用經確認的 finalUid
+          customerId: finalUid,
           status: "pending",
           driverId: "",
-          driverName: ""
+          driverName: "",
+          // 🆕 將計算結果也存入資料庫
+          estimateDistance: currentKm.toFixed(1),
+          estimatePrice: currentEstimatePrice
         };
 
         const docRef = await addDoc(collection(db, "orders"), {
