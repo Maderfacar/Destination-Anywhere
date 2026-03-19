@@ -17,20 +17,21 @@
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .counter-group { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .counter-ctrl { display: flex; align-items: center; gap: 12px; }
-    .btn-circle { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--primary); color: var(--primary); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; }
+    .btn-circle { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--primary); color: var(--primary); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; font-weight: bold; }
     #price-preview { display: none; margin-top: 15px; padding: 15px; background: #F2F9FF; border-radius: 12px; border: 1px dashed var(--primary); text-align: center; }
     .price-text { color: #D70015; font-size: 24px; font-weight: 800; }
     #submit-btn { width: 100%; padding: 18px; background: var(--primary); color: #FFF; border: none; border-radius: 16px; font-size: 18px; font-weight: 700; margin-top: 20px; }
-    .pac-container { border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: none; margin-top: 5px; }
+    /* 修正 Google 下拉選單在 LIFF 的層級 */
+    .pac-container { border-radius: 12px; z-index: 9999 !important; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
 
   <div class="type-tabs">
-    <button class="tab-btn active" onclick="setType('接機', this)">接機</button>
-    <button class="tab-btn" onclick="setType('送機', this)">送機</button>
-    <button class="tab-btn" onclick="setType('市區', this)">市區</button>
-    <button class="tab-btn" onclick="setType('包車', this)">包車</button>
+    <button class="tab-btn active" id="btn-接機" onclick="setType('接機')">接機</button>
+    <button class="tab-btn" id="btn-送機" onclick="setType('送機')">送機</button>
+    <button class="tab-btn" id="btn-市區" onclick="setType('市區')">市區</button>
+    <button class="tab-btn" id="btn-包車" onclick="setType('包車')">包車</button>
   </div>
 
   <div class="card">
@@ -41,7 +42,7 @@
       <span class="label-row">中途停靠站</span>
       <input type="text" id="midStops" placeholder="請輸入停靠點">
     </div>
-    <div style="color:var(--primary); font-size:14px; margin-bottom:10px; cursor:pointer;" onclick="toggleMid(true)" id="add-btn">+ 新增停靠站</div>
+    <div style="color:var(--primary); font-size:14px; margin-bottom:12px; cursor:pointer;" onclick="toggleMid(true)" id="add-mid-btn">+ 新增中途停靠站</div>
     
     <span class="label-row">下車地點</span>
     <input type="text" id="dropoff" placeholder="請輸入目的地">
@@ -54,100 +55,104 @@
 
   <div class="card">
     <div class="grid-2">
-      <div><span class="label-row">預約時間</span><input type="datetime-local" id="appointmentTime"></div>
+      <div><span class="label-row">預約日期時間</span><input type="datetime-local" id="appointmentTime"></div>
       <div><span class="label-row">航班號碼</span><input type="text" id="flightNo" placeholder="如 CX450"></div>
     </div>
   </div>
 
   <div class="card">
-    <div class="counter-group"><span>成人</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('adults',-1)">-</div><span id="val-adults">1</span><div class="btn-circle" onclick="change('adults',1)">+</div></div></div>
-    <div class="counter-group"><span>行李 (大 28吋+)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugL',-1)">-</div><span id="val-lugL">0</span><div class="btn-circle" onclick="change('lugL',1)">+</div></div></div>
-    <div class="counter-group"><span>行李 (中 20-24吋)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugM',-1)">-</div><span id="val-lugM">0</span><div class="btn-circle" onclick="change('lugM',1)">+</div></div></div>
+    <div class="counter-group"><span>成人人數</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('adults',-1)">-</div><span id="val-adults">1</span><div class="btn-circle" onclick="change('adults',1)">+</div></div></div>
+    <div class="counter-group"><span>兒童人數</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('children',-1)">-</div><span id="val-children">0</span><div class="btn-circle" onclick="change('children',1)">+</div></div></div>
+    <div class="counter-group"><span>大行李 (28吋以上)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugL',-1)">-</div><span id="val-lugL">0</span><div class="btn-circle" onclick="change('lugL',1)">+</div></div></div>
+    <div class="counter-group"><span>中行李 (20-24吋)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugM',-1)">-</div><span id="val-lugM">0</span><div class="btn-circle" onclick="change('lugM',1)">+</div></div></div>
   </div>
 
   <div class="card">
     <div class="grid-2">
       <div><span class="label-row">聯絡姓名</span><input type="text" id="contactName"></div>
-      <div><span class="label-row">電話</span><input type="tel" id="contactPhone"></div>
+      <div><span class="label-row">電話號碼</span><input type="tel" id="contactPhone"></div>
     </div>
-    <textarea id="note" rows="2" placeholder="備註需求 (如: 需要安全座椅、攜帶寵物...)"></textarea>
+    <span class="label-row">備註需求</span>
+    <textarea id="note" rows="2" placeholder="是否有寵物、特殊行李或需要安全座椅..."></textarea>
   </div>
 
   <button id="submit-btn" onclick="sendOrder()">立即發送預約</button>
 
   <script>
     let tripType = "接機";
-    let counts = { adults: 1, lugL: 0, lugM: 0 };
+    let counts = { adults: 1, children: 0, lugL: 0, lugM: 0 };
     let currentKm = 0, currentPrice = 0;
-    let RouteClass;
+    let directionsService;
 
-    // ✅ 100% 除錯：不再使用 unknown solutions 庫，直接呼叫 Places 與 Routes
-    async function initMap() {
-      try {
-        const { Autocomplete } = await google.maps.importLibrary("places");
-        const { Route } = await google.maps.importLibrary("routes");
-        RouteClass = Route; // 存供後續計算使用
+    // ✅ 100% 除錯：使用傳統穩定初始化，避免 solutions_solutions 錯誤
+    function initMap() {
+      const opts = { componentRestrictions: { country: "tw" } };
+      
+      const ac1 = new google.maps.places.Autocomplete(document.getElementById('pickup'), opts);
+      const ac2 = new google.maps.places.Autocomplete(document.getElementById('midStops'), opts);
+      const ac3 = new google.maps.places.Autocomplete(document.getElementById('dropoff'), opts);
 
-        const opts = { componentRestrictions: { country: "tw" }, fields: ["formatted_address", "geometry"] };
-        
-        const ac1 = new Autocomplete(document.getElementById('pickup'), opts);
-        const ac2 = new Autocomplete(document.getElementById('midStops'), opts);
-        const ac3 = new Autocomplete(document.getElementById('dropoff'), opts);
+      directionsService = new google.maps.DirectionsService();
 
-        const update = () => calculatePrice();
-        ac1.addListener('place_changed', update);
-        ac2.addListener('place_changed', update);
-        ac3.addListener('place_changed', update);
-
-        console.log("✅ Google Maps 2026 穩定版初始化成功");
-      } catch (err) {
-        console.error("初始化失敗:", err);
-      }
+      const update = () => calculateRoute();
+      ac1.addListener('place_changed', update);
+      ac2.addListener('place_changed', update);
+      ac3.addListener('place_changed', update);
+      
+      console.log("💎 穩定版地圖載入成功：無 Library 衝突");
     }
 
-    // ✅ 2026 新版路徑計算
-    async function calculatePrice() {
-      const p1 = document.getElementById('pickup').value;
-      const p3 = document.getElementById('dropoff').value;
-      const p2 = document.getElementById('midStops').value;
+    function calculateRoute() {
+      const start = document.getElementById('pickup').value;
+      const end = document.getElementById('dropoff').value;
+      const mid = document.getElementById('midStops').value;
 
-      if (!p1 || !p3 || !RouteClass) return;
+      if (!start || !end || !directionsService) return;
 
-      try {
-        const { routes } = await RouteClass.computeRoutes({
-          origin: { address: p1 },
-          destination: { address: p3 },
-          intermediates: p2 ? [{ address: p2 }] : [],
-          travelMode: 'DRIVE',
-          routingPreference: 'TRAFFIC_AWARE'
-        });
+      const request = {
+        origin: start,
+        destination: end,
+        travelMode: google.maps.TravelMode.DRIVING,
+        waypoints: mid ? [{ location: mid, stopover: true }] : []
+      };
 
-        if (routes && routes.length > 0) {
-          currentKm = routes[0].distanceMeters / 1000;
+      directionsService.route(request, (res, status) => {
+        if (status === 'OK') {
+          let totalMeters = 0;
+          res.routes[0].legs.forEach(leg => totalMeters += leg.distance.value);
+          currentKm = totalMeters / 1000;
+          
+          // 計算邏輯：起步 150 + (超過 5 公里後，每公里 35)
           currentPrice = Math.round(150 + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
 
           document.getElementById('price-preview').style.display = 'block';
           document.getElementById('dist-val').innerText = currentKm.toFixed(1);
           document.getElementById('price-val').innerText = currentPrice;
         }
-      } catch (e) {
-        console.error("路徑計算錯誤:", e);
-      }
+      });
     }
 
-    // UI 控制
-    window.setType = (t, b) => { tripType = t; document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); };
-    window.toggleMid = (s) => { 
-      document.getElementById('mid-wrap').style.display = s ? 'block' : 'none'; 
-      document.getElementById('add-btn').style.display = s ? 'none' : 'block'; 
+    // UI 控制邏輯
+    window.setType = (t) => {
+      tripType = t;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById('btn-' + t).classList.add('active');
     };
-    window.change = (k, d) => { 
-      counts[k] = Math.max((k==='adults'?1:0), counts[k]+d); 
-      document.getElementById(`val-${k}`).innerText = counts[k]; 
+
+    window.toggleMid = (show) => {
+      document.getElementById('mid-wrap').style.display = show ? 'block' : 'none';
+      document.getElementById('add-mid-btn').style.display = show ? 'none' : 'block';
+      if(!show) { document.getElementById('midStops').value = ""; calculateRoute(); }
+    };
+
+    window.change = (key, delta) => {
+      const min = (key === 'adults') ? 1 : 0;
+      counts[key] = Math.max(min, counts[key] + delta);
+      document.getElementById('val-' + key).innerText = counts[key];
     };
   </script>
 
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&callback=initMap&libraries=places&loading=async" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&callback=initMap&libraries=places&v=weekly" async defer></script>
 
   <script type="module">
     import { db, CONFIG } from './firebase-config.js?v=106';
@@ -158,7 +163,7 @@
       const pickup = document.getElementById('pickup').value;
       const dropoff = document.getElementById('dropoff').value;
 
-      if(!pickup || !dropoff) return alert("請填寫起點與終點");
+      if(!pickup || !dropoff) { alert("請填寫起點與終點"); return; }
 
       btn.disabled = true;
       btn.innerText = "提交中...";
@@ -174,6 +179,7 @@
           contactName: document.getElementById('contactName').value,
           contactPhone: document.getElementById('contactPhone').value,
           adults: counts.adults,
+          children: counts.children,
           lugL: counts.lugL,
           lugM: counts.lugM,
           note: document.getElementById('note').value,
@@ -190,7 +196,5 @@
         btn.innerText = "立即發送預約";
       }
     };
-    liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER });
-  </script>
-</body>
-</html>
+
+    l
