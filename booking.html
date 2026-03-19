@@ -8,47 +8,24 @@
   <style>
     :root { --primary: #007AFF; --bg: #F2F2F7; }
     body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1C1C1E; }
-    
     .type-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
-    .tab-btn { 
-      background: #FFF; border: none; padding: 12px 5px; border-radius: 12px; font-size: 13px; font-weight: 600;
-      color: #8E8E93; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.2s;
-    }
+    .tab-btn { background: #FFF; border: none; padding: 12px 5px; border-radius: 12px; font-size: 13px; font-weight: 600; color: #8E8E93; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.2s; }
     .tab-btn.active { background: var(--primary); color: #FFF; }
-
     .card { background: #FFF; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .label-row { display: flex; align-items: center; margin-bottom: 12px; font-weight: 600; font-size: 15px; }
-
-    input, textarea { 
-      width: 100%; padding: 14px; border: 1px solid #E5E5EA; border-radius: 12px; 
-      font-size: 16px; box-sizing: border-box; background: #F9F9F9; -webkit-appearance: none;
-    }
-
+    input, textarea { width: 100%; padding: 14px; border: 1px solid #E5E5EA; border-radius: 12px; font-size: 16px; box-sizing: border-box; background: #F9F9F9; -webkit-appearance: none; }
     #midStops-container { display: none; margin-bottom: 15px; position: relative; }
     .add-stop-btn { color: var(--primary); font-size: 14px; font-weight: 600; cursor: pointer; display: inline-block; margin-bottom: 15px; }
     .del-stop-btn { position: absolute; right: 10px; top: 38px; color: #FF3B30; font-weight: bold; padding: 10px; z-index: 5; }
-
     .counter-group { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
     .counter-label { font-size: 15px; color: #3A3A3C; }
     .counter-ctrl { display: flex; align-items: center; gap: 15px; }
-    .btn-circle { 
-      width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--primary);
-      background: #FFF; color: var(--primary); font-size: 20px; font-weight: bold;
-      display: flex; align-items: center; justify-content: center; cursor: pointer;
-    }
+    .btn-circle { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--primary); background: #FFF; color: var(--primary); font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .count-num { font-size: 18px; font-weight: 600; min-width: 20px; text-align: center; }
-
     .submit-area { margin-top: 30px; }
-    #submit-btn { 
-      width: 100%; padding: 18px; background: var(--primary); color: #FFF; border: none; 
-      border-radius: 16px; font-size: 18px; font-weight: 700; box-shadow: 0 10px 20px rgba(0,122,255,0.3);
-    }
+    #submit-btn { width: 100%; padding: 18px; background: var(--primary); color: #FFF; border: none; border-radius: 16px; font-size: 18px; font-weight: 700; box-shadow: 0 10px 20px rgba(0,122,255,0.3); }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-    #price-preview { 
-      display: none; margin-top: 15px; padding: 15px; background: #F2F9FF; 
-      border-radius: 12px; border: 1.5px dashed var(--primary); 
-    }
+    #price-preview { display: none; margin-top: 15px; padding: 15px; background: #F2F9FF; border-radius: 12px; border: 1.5px dashed var(--primary); }
     .price-text { color: #D70015; font-size: 20px; font-weight: 800; }
   </style>
 </head>
@@ -64,19 +41,19 @@
   <div class="card">
     <div class="form-group" style="margin-bottom:15px;">
       <div class="label-row">上車地點</div>
-      <input type="text" id="pickup" placeholder="請輸入起點或航廈" onblur="calculateDistance()">
+      <input type="text" id="pickup" placeholder="請輸入起點或航廈">
     </div>
 
     <div id="midStops-container">
       <div class="label-row">中途停靠站</div>
-      <input type="text" id="midStops" placeholder="請輸入停靠地點" onblur="calculateDistance()">
+      <input type="text" id="midStops" placeholder="請輸入停靠地點">
       <span class="del-stop-btn" onclick="toggleMidStop(false)">✕</span>
     </div>
     <div class="add-stop-btn" id="add-btn" onclick="toggleMidStop(true)">+ 新增停靠站</div>
 
     <div class="form-group">
       <div class="label-row">下車地點</div>
-      <input type="text" id="dropoff" placeholder="請輸入目的地" onblur="calculateDistance()">
+      <input type="text" id="dropoff" placeholder="請輸入目的地">
     </div>
 
     <div id="price-preview">
@@ -148,9 +125,11 @@
         <div class="label-row">聯絡姓名</div>
         <input type="text" id="contactName">
       </div>
-      <div class="form-group">
-        <div class="label-row">聯絡電話</div>
-        <input type="tel" id="contactPhone">
+      <div class="grid-2">
+        <div class="form-group">
+          <div class="label-row">聯絡電話</div>
+          <input type="tel" id="contactPhone">
+        </div>
       </div>
     </div>
     <div class="form-group" style="margin-top:10px;">
@@ -167,95 +146,70 @@
     import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const PRICING_CONFIG = { baseFare: 150, baseKm: 5, perKm: 35 };
-    let pickupAuto, midAuto, dropoffAuto, distService;
     let currentKm = 0;
     let currentEstimatePrice = 0;
 
-    // --- 🟢 Google Maps 初始化 ---
-    window.initMap = () => {
-      console.log("Google Maps Callback Triggered");
-      distService = new google.maps.DistanceMatrixService();
+    // 🟢 2026 最新版初始化方式：使用 Routes 庫
+    window.initMap = async () => {
+      const { Autocomplete } = await google.maps.importLibrary("places");
+      const { RoutesService } = await google.maps.importLibrary("routes");
       
+      const routesService = new RoutesService();
       const options = { 
         componentRestrictions: { country: "tw" }, 
         fields: ["formatted_address", "geometry", "name"],
         types: ["establishment", "geocode"] 
       };
-      
-      pickupAuto = new google.maps.places.Autocomplete(document.getElementById('pickup'), options);
-      midAuto = new google.maps.places.Autocomplete(document.getElementById('midStops'), options);
-      dropoffAuto = new google.maps.places.Autocomplete(document.getElementById('dropoff'), options);
 
-      const runCalc = () => { console.log("Place Changed - Calc"); window.calculateDistance(); };
-      pickupAuto.addListener('place_changed', runCalc);
-      midAuto.addListener('place_changed', runCalc);
-      dropoffAuto.addListener('place_changed', runCalc);
-    };
+      const pickupAuto = new Autocomplete(document.getElementById('pickup'), options);
+      const midAuto = new Autocomplete(document.getElementById('midStops'), options);
+      const dropoffAuto = new Autocomplete(document.getElementById('dropoff'), options);
 
-    // --- 🟢 里程計算邏輯 (強制全域曝露) ---
-    window.calculateDistance = () => {
-      const origin = document.getElementById('pickup').value;
-      const destination = document.getElementById('dropoff').value;
-      const waypoint = document.getElementById('midStops').value;
+      const handleCalc = async () => {
+        const origin = document.getElementById('pickup').value;
+        const dest = document.getElementById('dropoff').value;
+        const mid = document.getElementById('midStops').value;
 
-      if (!origin || !destination) {
-        document.getElementById('price-preview').style.display = 'none';
-        return;
-      }
+        if (!origin || !dest) return;
 
-      console.log("Calculating distance from:", origin, "to:", destination);
-
-      if (!distService) distService = new google.maps.DistanceMatrixService();
-
-      const destinations = waypoint ? [waypoint, destination] : [destination];
-
-      distService.getDistanceMatrix({
-        origins: [origin],
-        destinations: destinations,
-        travelMode: google.maps.DrivingMode,
-      }, (response, status) => {
-        if (status === "OK") {
-          const rows = response.rows[0].elements;
-          let totalMeters = 0;
-          let hasError = false;
-
-          for (let el of rows) {
-            if (el.status === "OK") {
-              totalMeters += el.distance.value;
-            } else {
-              hasError = true;
-              console.warn("Element status error:", el.status);
-            }
-          }
-
-          if (!hasError && totalMeters > 0) {
+        // 使用 2026 推薦的 computeRouteMatrix 或 Directions 邏輯簡化版
+        const ds = new google.maps.DirectionsService();
+        const waypoints = mid ? [{ location: mid, stopover: true }] : [];
+        
+        ds.route({
+          origin: origin,
+          destination: dest,
+          waypoints: waypoints,
+          travelMode: google.maps.TravelMode.DRIVING
+        }, (result, status) => {
+          if (status === 'OK') {
+            let totalMeters = 0;
+            result.routes[0].legs.forEach(leg => { totalMeters += leg.distance.value; });
             currentKm = totalMeters / 1000;
             updatePriceUI(currentKm);
-          } else {
-            console.error("Distance Matrix returned error status or 0 distance");
           }
-        } else {
-          console.error("Distance Matrix Service Status Error:", status);
-        }
-      });
+        });
+      };
+
+      pickupAuto.addListener('place_changed', handleCalc);
+      midAuto.addListener('place_changed', handleCalc);
+      dropoffAuto.addListener('place_changed', handleCalc);
+      
+      // 曝露給全域以利手動調用
+      window.calculateDistance = handleCalc;
     };
 
     function updatePriceUI(km) {
-      console.log("Updating UI with Km:", km);
       let price = PRICING_CONFIG.baseFare;
       if (km > PRICING_CONFIG.baseKm) price += (km - PRICING_CONFIG.baseKm) * PRICING_CONFIG.perKm;
       currentEstimatePrice = Math.round(price);
-      
-      const previewBox = document.getElementById('price-preview');
-      previewBox.style.display = 'block'; 
+      document.getElementById('price-preview').style.display = 'block';
       document.getElementById('dist-val').innerText = km.toFixed(1);
       document.getElementById('price-val').innerText = currentEstimatePrice;
     }
 
-    // --- 🟢 LIFF & Firebase 邏輯 ---
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlUid = urlParams.get('uid'); 
-    let customerUid = urlUid || ""; 
+    // --- LIFF & Firebase 邏輯 ---
+    let customerUid = new URLSearchParams(window.location.search).get('uid') || "";
     let selectedType = "接機";
     const counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
 
@@ -265,13 +219,9 @@
         if (liff.isLoggedIn()) {
           const p = await liff.getProfile();
           customerUid = p.userId;
-          if (p.displayName && !document.getElementById('contactName').value) {
-            document.getElementById('contactName').value = p.displayName;
-          }
-        } else {
-          liff.login();
-        }
-      } catch (e) { console.warn("LIFF 載入失敗"); }
+          document.getElementById('contactName').value = p.displayName || "";
+        } else { liff.login(); }
+      } catch (e) { console.warn("LIFF Failed"); }
     }
 
     window.setType = (type, btn) => {
@@ -279,27 +229,18 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     };
-
     window.toggleMidStop = (show) => {
       document.getElementById('midStops-container').style.display = show ? 'block' : 'none';
       document.getElementById('add-btn').style.display = show ? 'none' : 'inline-block';
-      if (!show) {
-        document.getElementById('midStops').value = "";
-        window.calculateDistance();
-      }
+      if (!show) { document.getElementById('midStops').value = ""; window.calculateDistance(); }
     };
-
     window.change = (key, delta) => {
-      const min = (key === 'adults') ? 1 : 0;
-      counts[key] = Math.max(min, counts[key] + delta);
+      counts[key] = Math.max((key === 'adults' ? 1 : 0), counts[key] + delta);
       document.getElementById(`val-${key}`).innerText = counts[key];
     };
-
     window.sendRequest = async () => {
-      const finalUid = new URLSearchParams(window.location.search).get('uid') || customerUid;
-      if (!finalUid) { alert("身分驗證失效"); return; }
       const btn = document.getElementById('submit-btn');
-      btn.disabled = true; btn.innerText = "正在處理訂單...";
+      btn.disabled = true; btn.innerText = "處理中...";
       try {
         const data = {
           tripType: selectedType,
@@ -310,37 +251,22 @@
           pickup: document.getElementById('pickup').value,
           midStops: document.getElementById('midStops').value,
           dropoff: document.getElementById('dropoff').value,
-          adults: String(counts.adults),
-          children: String(counts.children),
-          lugL: String(counts.lugL),
-          lugM: String(counts.lugM),
-          lugS: String(counts.lugS),
+          adults: String(counts.adults), children: String(counts.children),
+          lugL: String(counts.lugL), lugM: String(counts.lugM), lugS: String(counts.lugS),
           note: document.getElementById('note').value,
-          customerId: finalUid,
-          status: "pending",
-          driverId: "", driverName: "",
-          estimateDistance: currentKm.toFixed(1),
-          estimatePrice: currentEstimatePrice
+          customerId: customerUid, status: "pending",
+          estimateDistance: currentKm.toFixed(1), estimatePrice: currentEstimatePrice
         };
-        const docRef = await addDoc(collection(db, "orders"), {
-          ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
-        });
-        await fetch(CONFIG.webhooks.newOrder, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...data, orderId: docRef.id })
-        });
-        alert("預約已發送！");
+        const docRef = await addDoc(collection(db, "orders"), { ...data, createdAt: serverTimestamp() });
+        await fetch(CONFIG.webhooks.newOrder, { method: 'POST', body: JSON.stringify({ ...data, orderId: docRef.id }) });
+        alert("預約成功！");
         window.parent.postMessage('booking_success', '*');
-      } catch (e) {
-        alert("提交失敗: " + e.message);
-        btn.disabled = false; btn.innerText = "重新提交";
-      }
+      } catch (e) { alert("失敗: " + e.message); btn.disabled = false; }
     };
 
     init();
   </script>
 
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&libraries=places&callback=initMap&loading=async" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY&libraries=places&callback=initMap&v=beta" async defer></script>
 </body>
 </html>
