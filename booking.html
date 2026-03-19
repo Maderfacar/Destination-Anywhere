@@ -38,7 +38,7 @@
   <div class="card">
     <span class="label-row">上車地點</span>
     <div class="pac-box">
-      <input type="text" id="pickup" placeholder="輸入起點" autocomplete="off" data-place-id="">
+      <input type="text" id="pickup" placeholder="輸入起點" autocomplete="off" data-pid="">
       <div id="pac-pickup" class="custom-pac"></div>
     </div>
     
@@ -48,7 +48,7 @@
         <span style="color:#FF3B30; font-size:14px; cursor:pointer; margin-bottom:8px;" onclick="toggleMid(false)">✕ 移除</span>
       </div>
       <div class="pac-box">
-        <input type="text" id="midStops" placeholder="輸入停靠點" autocomplete="off" data-place-id="">
+        <input type="text" id="midStops" placeholder="輸入停靠點" autocomplete="off" data-pid="">
         <div id="pac-midStops" class="custom-pac"></div>
       </div>
     </div>
@@ -56,7 +56,7 @@
     
     <span class="label-row">下車地點</span>
     <div class="pac-box">
-      <input type="text" id="dropoff" placeholder="輸入目的地" autocomplete="off" data-place-id="">
+      <input type="text" id="dropoff" placeholder="輸入目的地" autocomplete="off" data-pid="">
       <div id="pac-dropoff" class="custom-pac"></div>
     </div>
 
@@ -137,7 +137,8 @@
               div.innerText = s.placePrediction.text.text;
               div.onclick = () => {
                 input.value = s.placePrediction.text.text;
-                input.dataset.placeId = s.placePrediction.placeId;
+                // 注意：這裡改用 data-pid 存儲
+                input.dataset.pid = s.placePrediction.placeId;
                 pac.style.display = 'none';
                 calculateNewRoute();
               };
@@ -150,15 +151,15 @@
     }
 
     async function calculateNewRoute() {
-      const p1Id = document.getElementById('pickup').dataset.placeId;
-      const p3Id = document.getElementById('dropoff').dataset.placeId;
-      const p2Id = document.getElementById('midStops').dataset.placeId;
+      const p1Id = document.getElementById('pickup').dataset.pid;
+      const p3Id = document.getElementById('dropoff').dataset.pid;
+      const p2Id = document.getElementById('midStops').dataset.pid;
       const isMidVisible = document.getElementById('mid-wrap').style.display !== 'none';
 
       if (!p1Id || !p3Id || !RouteClass || !PlaceClass) return;
 
       try {
-        // 修正：Place 實例化時使用 { id: ... }，且在 request 中直接傳入實例
+        // 修正：在 Place 類別實例化時，參數物件的 key 必須是 'id'
         const request = {
           origin: new PlaceClass({ id: p1Id }),
           destination: new PlaceClass({ id: p3Id }),
@@ -170,7 +171,7 @@
           request.intermediates = [new PlaceClass({ id: p2Id })];
         }
 
-        console.log("💎 正在執行里程計算 (Place Instance Mode)...");
+        console.log("💎 正在使用正確的 Place 實例計算里程...");
         const { routes } = await RouteClass.computeRoutes(request);
 
         if (routes && routes.length > 0) {
@@ -181,7 +182,7 @@
           document.getElementById('price-val').innerText = currentPrice;
         }
       } catch (e) {
-        console.error("❌ 里程引擎報錯：", e);
+        console.error("❌ 里程計算報錯：", e);
       }
     }
 
@@ -198,7 +199,7 @@
       wrap.style.display = show ? 'block' : 'none';
       btn.style.display = show ? 'none' : 'block';
       if (!show) {
-        input.value = ''; input.dataset.placeId = '';
+        input.value = ''; input.dataset.pid = '';
         calculateNewRoute();
       }
     };
