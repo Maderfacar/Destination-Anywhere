@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>預約行程 - 穩定版</title>
+  <title>預約行程</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     :root { --primary: #007AFF; --bg: #F2F2F7; }
@@ -13,18 +13,17 @@
     .tab-btn { background: #FFF; border: none; padding: 12px 5px; border-radius: 12px; font-size: 13px; font-weight: 600; color: #8E8E93; cursor: pointer; }
     .tab-btn.active { background: var(--primary); color: #FFF; }
     .label-row { font-weight: 600; margin-bottom: 8px; display: block; font-size: 15px; }
-    input, textarea { width: 100%; padding: 14px; border: 1px solid #E5E5EA; border-radius: 12px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; background: #F9F9F9; }
+    input, textarea { width: 100%; padding: 14px; border: 1px solid #E5E5EA; border-radius: 12px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; background: #F9F9F9; outline: none; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .counter-group { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .counter-ctrl { display: flex; align-items: center; gap: 15px; }
     .btn-circle { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--primary); color: var(--primary); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; font-weight: bold; }
     #price-preview { display: none; margin-top: 15px; padding: 15px; background: #F2F9FF; border-radius: 12px; border: 1px dashed var(--primary); text-align: center; }
     .price-text { color: #D70015; font-size: 26px; font-weight: 800; }
-    #submit-btn { width: 100%; padding: 18px; background: var(--primary); color: #FFF; border: none; border-radius: 16px; font-size: 18px; font-weight: 700; margin-top: 20px; }
-    
+    #submit-btn { width: 100%; padding: 18px; background: var(--primary); color: #FFF; border: none; border-radius: 16px; font-size: 18px; font-weight: 700; margin-top: 20px; cursor: pointer; }
     .pac-box { position: relative; width: 100%; }
     .custom-pac { position: absolute; background: white; width: 100%; z-index: 2000; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: none; max-height: 250px; overflow-y: auto; top: 52px; border: 1px solid #EEE; }
-    .pac-item { padding: 15px; border-bottom: 1px solid #F2F2F7; cursor: pointer; font-size: 14px; color: #333; text-align: left; }
+    .pac-item { padding: 15px; border-bottom: 1px solid #F2F2F7; cursor: pointer; font-size: 14px; color: #333; }
   </style>
 </head>
 <body>
@@ -44,7 +43,10 @@
     </div>
     
     <div id="mid-wrap" style="display:none;">
-      <span class="label-row">中途停靠站</span>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="label-row">中途停靠站</span>
+        <span style="color:#FF3B30; font-size:14px; cursor:pointer; margin-bottom:8px;" onclick="toggleMid(false)">✕ 移除</span>
+      </div>
       <div class="pac-box">
         <input type="text" id="midStops" placeholder="輸入停靠點" autocomplete="off" data-place-id="">
         <div id="pac-midStops" class="custom-pac"></div>
@@ -72,11 +74,11 @@
   </div>
 
   <div class="card">
-    <div class="counter-group"><span>成人</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('adults',-1)">-</div><span id="val-adults">1</span><div class="btn-circle" onclick="change('adults',1)">+</div></div></div>
-    <div class="counter-group"><span>兒童</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('children',-1)">-</div><span id="val-children">0</span><div class="btn-circle" onclick="change('children',1)">+</div></div></div>
-    <div class="counter-group"><span>大行李</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugL',-1)">-</div><span id="val-lugL">0</span><div class="btn-circle" onclick="change('lugL',1)">+</div></div></div>
-    <div class="counter-group"><span>中行李</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugM',-1)">-</div><span id="val-lugM">0</span><div class="btn-circle" onclick="change('lugM',1)">+</div></div></div>
-    <div class="counter-group"><span>小行李</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugS',-1)">-</div><span id="val-lugS">0</span><div class="btn-circle" onclick="change('lugS',1)">+</div></div></div>
+    <div class="counter-group"><span>成人人數</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('adults',-1)">-</div><span id="val-adults">1</span><div class="btn-circle" onclick="change('adults',1)">+</div></div></div>
+    <div class="counter-group"><span>兒童人數</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('children',-1)">-</div><span id="val-children">0</span><div class="btn-circle" onclick="change('children',1)">+</div></div></div>
+    <div class="counter-group"><span>大行李 (28吋+)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugL',-1)">-</div><span id="val-lugL">0</span><div class="btn-circle" onclick="change('lugL',1)">+</div></div></div>
+    <div class="counter-group"><span>中行李 (20-24吋)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugM',-1)">-</div><span id="val-lugM">0</span><div class="btn-circle" onclick="change('lugM',1)">+</div></div></div>
+    <div class="counter-group"><span>小行李/手提</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugS',-1)">-</div><span id="val-lugS">0</span><div class="btn-circle" onclick="change('lugS',1)">+</div></div></div>
   </div>
 
   <div class="card">
@@ -84,7 +86,8 @@
       <div><span class="label-row">聯絡姓名</span><input type="text" id="contactName"></div>
       <div><span class="label-row">電話號碼</span><input type="tel" id="contactPhone"></div>
     </div>
-    <textarea id="note" rows="2" placeholder="備註需求..."></textarea>
+    <span class="label-row">備註需求</span>
+    <textarea id="note" rows="2" placeholder="特殊需求（如安全座椅等）"></textarea>
   </div>
 
   <button id="submit-btn" onclick="sendOrder()">立即發送預約</button>
@@ -103,38 +106,28 @@
     let RouteClass, SuggestionClass, sessionToken;
 
     async function initMap() {
-      // 一次性導入所有需要的 2026 庫
       const [places, routes] = await Promise.all([
         google.maps.importLibrary("places"),
         google.maps.importLibrary("routes")
       ]);
-      
       RouteClass = routes.Route;
       SuggestionClass = places.AutocompleteSuggestion;
       sessionToken = new places.AutocompleteSessionToken();
-      
       setupField('pickup', 'pac-pickup');
       setupField('midStops', 'pac-midStops');
       setupField('dropoff', 'pac-dropoff');
-      console.log("💎 2026 PlaceID 引擎就緒");
     }
 
     function setupField(inputId, pacId) {
       const input = document.getElementById(inputId);
       const pac = document.getElementById(pacId);
-
       input.addEventListener('input', async () => {
         const val = input.value;
         if (val.length < 2) { pac.style.display = 'none'; return; }
-
         try {
           const { suggestions } = await SuggestionClass.fetchAutocompleteSuggestions({
-            input: val,
-            sessionToken: sessionToken,
-            region: 'TW',
-            language: 'zh-TW'
+            input: val, sessionToken: sessionToken, region: 'TW', language: 'zh-TW'
           });
-
           if (suggestions) {
             pac.innerHTML = '';
             suggestions.forEach(s => {
@@ -143,8 +136,7 @@
               div.innerText = s.placePrediction.text.text;
               div.onclick = () => {
                 input.value = s.placePrediction.text.text;
-                // 關鍵修正：存下 Place ID
-                input.dataset.placeId = s.placePrediction.placeId; 
+                input.dataset.placeId = s.placePrediction.placeId;
                 pac.style.display = 'none';
                 calculateNewRoute();
               };
@@ -152,32 +144,31 @@
             });
             pac.style.display = 'block';
           }
-        } catch (e) { console.error("地址選單報錯", e); }
+        } catch (e) { console.error(e); }
       });
     }
 
     async function calculateNewRoute() {
-      // 關鍵修正：從 dataset 讀取 Place ID
       const p1Id = document.getElementById('pickup').dataset.placeId;
       const p3Id = document.getElementById('dropoff').dataset.placeId;
       const p2Id = document.getElementById('midStops').dataset.placeId;
+      const isMidVisible = document.getElementById('mid-wrap').style.display !== 'none';
 
       if (!p1Id || !p3Id || !RouteClass) return;
 
       try {
-        // 使用 Place ID 是 2026 最穩定的結構，絕對不會報 InvalidValueError
         const request = {
           origin: { placeId: p1Id },
           destination: { placeId: p3Id },
           travelMode: 'DRIVE',
           routingPreference: 'TRAFFIC_AWARE'
         };
+        // 只有在中途站顯示時才加入計算
+        if (isMidVisible && p2Id) {
+          request.intermediates = [{ placeId: p2Id }];
+        }
 
-        if (p2Id) request.intermediates = [{ placeId: p2Id }];
-
-        console.log("💎 執行 PlaceID 里程計算...");
         const { routes } = await RouteClass.computeRoutes(request);
-
         if (routes && routes.length > 0) {
           currentKm = routes[0].distanceMeters / 1000;
           currentPrice = Math.round(150 + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
@@ -185,9 +176,7 @@
           document.getElementById('dist-val').innerText = currentKm.toFixed(1);
           document.getElementById('price-val').innerText = currentPrice;
         }
-      } catch (e) {
-        console.error("里程引擎報錯", e);
-      }
+      } catch (e) { console.error(e); }
     }
 
     window.setType = (t) => {
@@ -195,10 +184,20 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('btn-'+t).classList.add('active');
     };
-    window.toggleMid = (s) => {
-      document.getElementById('mid-wrap').style.display = s ? 'block' : 'none';
-      document.getElementById('add-mid-btn').style.display = s ? 'none' : 'block';
+
+    window.toggleMid = (show) => {
+      const wrap = document.getElementById('mid-wrap');
+      const btn = document.getElementById('add-mid-btn');
+      const input = document.getElementById('midStops');
+      wrap.style.display = show ? 'block' : 'none';
+      btn.style.display = show ? 'none' : 'block';
+      if (!show) {
+        input.value = '';
+        input.dataset.placeId = '';
+        calculateNewRoute(); // 移除後重新計算里程
+      }
     };
+
     window.change = (k, d) => {
       counts[k] = Math.max((k==='adults'?1:0), counts[k]+d);
       document.getElementById(`val-${k}`).innerText = counts[k];
@@ -225,26 +224,36 @@
       if (!currentUid) { alert("UID 缺失"); return; }
       const btn = document.getElementById('submit-btn');
       btn.disabled = true;
+      btn.innerText = "傳送中...";
       try {
         await addDoc(collection(db, "orders"), {
           customerId: currentUid,
           tripType,
           pickup: document.getElementById('pickup').value,
-          midStops: document.getElementById('midStops').value,
+          midStops: document.getElementById('mid-wrap').style.display !== 'none' ? document.getElementById('midStops').value : "",
           dropoff: document.getElementById('dropoff').value,
           appointmentTime: document.getElementById('appointmentTime').value,
           flightNo: document.getElementById('flightNo').value,
           contactName: document.getElementById('contactName').value,
           contactPhone: document.getElementById('contactPhone').value,
-          adults: counts.adults, children: counts.children,
-          lugLarge: counts.lugL, lugMedium: counts.lugM, lugSmall: counts.lugS,
-          price: currentPrice, km: currentKm.toFixed(1),
+          adults: counts.adults,
+          children: counts.children,
+          lugLarge: counts.lugL,
+          lugMedium: counts.lugM,
+          lugSmall: counts.lugS,
+          price: currentPrice,
+          km: currentKm.toFixed(1),
           note: document.getElementById('note').value,
-          status: "pending", createdAt: serverTimestamp()
+          status: "pending",
+          createdAt: serverTimestamp()
         });
         alert("預約成功！");
         window.parent.postMessage('booking_success', '*');
-      } catch (e) { alert(e.message); btn.disabled = false; }
+      } catch (e) { 
+        alert("錯誤：" + e.message); 
+        btn.disabled = false;
+        btn.innerText = "立即發送預約";
+      }
     };
   </script>
 </body>
