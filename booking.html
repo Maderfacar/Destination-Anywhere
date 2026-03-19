@@ -27,7 +27,6 @@
   </style>
 </head>
 <body>
-
   <div class="type-tabs">
     <button class="tab-btn active" id="btn-接機" onclick="setType('接機')">接機</button>
     <button class="tab-btn" id="btn-送機" onclick="setType('送機')">送機</button>
@@ -41,7 +40,7 @@
       <input type="text" id="pickup" placeholder="輸入起點" autocomplete="off" data-pid="">
       <div id="pac-pickup" class="custom-pac"></div>
     </div>
-    
+
     <div id="mid-wrap" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <span class="label-row">中途停靠站</span>
@@ -53,7 +52,7 @@
       </div>
     </div>
     <div style="color:var(--primary); font-size:14px; margin-bottom:12px; cursor:pointer;" onclick="toggleMid(true)" id="add-mid-btn">+ 新增中途停靠站</div>
-    
+
     <span class="label-row">下車地點</span>
     <div class="pac-box">
       <input type="text" id="dropoff" placeholder="輸入目的地" autocomplete="off" data-pid="">
@@ -127,7 +126,10 @@
         if (val.length < 2) { pac.style.display = 'none'; return; }
         try {
           const { suggestions } = await SuggestionClass.fetchAutocompleteSuggestions({
-            input: val, sessionToken: sessionToken, region: 'TW', language: 'zh-TW'
+            input: val,
+            sessionToken: sessionToken,
+            region: 'TW',
+            language: 'zh-TW'
           });
           if (suggestions) {
             pac.innerHTML = '';
@@ -137,7 +139,6 @@
               div.innerText = s.placePrediction.text.text;
               div.onclick = () => {
                 input.value = s.placePrediction.text.text;
-                // 注意：這裡改用 data-pid 存儲
                 input.dataset.pid = s.placePrediction.placeId;
                 pac.style.display = 'none';
                 calculateNewRoute();
@@ -146,43 +147,59 @@
             });
             pac.style.display = 'block';
           }
-        } catch (e) { console.error(e); }
+        } catch (e) {
+          console.error("地點建議錯誤：", e);
+        }
       });
     }
 
     async function calculateNewRoute() {
-      const p1Id = document.getElementById('pickup').dataset.pid;
-      const p3Id = document.getElementById('dropoff').dataset.pid;
-      const p2Id = document.getElementById('midStops').dataset.pid;
-      const isMidVisible = document.getElementById('mid-wrap').style.display !== 'none';
+      const pickupPid = document.getElementById('pickup').dataset.pid;
+      const dropoffPid = document.getElementById('dropoff').dataset.pid;
+      const midPid = document.getElementById('midStops').dataset.pid;
+      const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
 
-      if (!p1Id || !p3Id || !RouteClass || !PlaceClass) return;
+      if (!pickupPid || !dropoffPid) {
+        console.log("起點或終點尚未選擇");
+        return;
+      }
 
       try {
-        // 修正：在 Place 類別實例化時，參數物件的 key 必須是 'id'
         const request = {
-          origin: new PlaceClass({ id: p1Id }),
-          destination: new PlaceClass({ id: p3Id }),
+          origin: new PlaceClass({ id: pickupPid }),
+          destination: new PlaceClass({ id: dropoffPid }),
           travelMode: 'DRIVE',
-          routingPreference: 'TRAFFIC_AWARE'
+          routingPreference: 'TRAFFIC_AWARE_OPTIMAL'
         };
 
-        if (isMidVisible && p2Id) {
-          request.intermediates = [new PlaceClass({ id: p2Id })];
+        if (midVisible && midPid) {
+          request.intermediates = [new PlaceClass({ id: midPid })];
         }
 
-        console.log("💎 正在使用正確的 Place 實例計算里程...");
-        const { routes } = await RouteClass.computeRoutes(request);
+        console.log("開始計算路線，使用 place ID 模式...");
 
-        if (routes && routes.length > 0) {
-          currentKm = routes[0].distanceMeters / 1000;
+        const response = await RouteClass.computeRoutes({
+          ...request,
+          // 關鍵修正：加上 field mask（Routes API beta 版必填）
+          fields: 'routes.distanceMeters,routes.duration'
+          // 如果之後要顯示路線，可再加 'routes.polyline.encodedPolyline'
+        });
+
+        if (response.routes && response.routes.length > 0) {
+          const route = response.routes[0];
+          currentKm = route.distanceMeters / 1000;
           currentPrice = Math.round(150 + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
+
           document.getElementById('price-preview').style.display = 'block';
           document.getElementById('dist-val').innerText = currentKm.toFixed(1);
           document.getElementById('price-val').innerText = currentPrice;
+
+          console.log(`路線距離：${currentKm.toFixed(1)} km，預估費用：$${currentPrice}`);
+        } else {
+          console.warn("未找到有效路線");
         }
       } catch (e) {
-        console.error("❌ 里程計算報錯：", e);
+        console.error("路線計算失敗：", e);
       }
     }
 
@@ -199,7 +216,8 @@
       wrap.style.display = show ? 'block' : 'none';
       btn.style.display = show ? 'none' : 'block';
       if (!show) {
-        input.value = ''; input.dataset.pid = '';
+        input.value = '';
+        input.dataset.pid = '';
         calculateNewRoute();
       }
     };
@@ -249,7 +267,10 @@
         });
         alert("預約成功！");
         window.parent.postMessage('booking_success', '*');
-      } catch (e) { alert(e.message); btn.disabled = false; }
+      } catch (e) {
+        alert("送出失敗：" + e.message);
+        btn.disabled = false;
+      }
     };
   </script>
 </body>
