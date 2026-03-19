@@ -22,7 +22,7 @@
     .price-text { color: #D70015; font-size: 24px; font-weight: 800; }
     #submit-btn { width: 100%; padding: 18px; background: var(--primary); color: #FFF; border: none; border-radius: 16px; font-size: 18px; font-weight: 700; margin-top: 20px; }
     
-    /* 下拉選單樣式 */
+    /* 下拉選單自定義樣式 */
     .pac-box { position: relative; width: 100%; }
     .custom-pac { position: absolute; background: white; width: 100%; z-index: 2000; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: none; max-height: 250px; overflow-y: auto; top: 50px; }
     .pac-item { padding: 15px; border-bottom: 1px solid #F2F2F7; cursor: pointer; font-size: 14px; color: #333; text-align: left; }
@@ -98,7 +98,7 @@
     let currentKm = 0, currentPrice = 0;
     let directionsService, autocompleteService;
 
-    // ✅ 改用穩定度最高的 Service 模式
+    // ✅ 核心修正：回歸最穩定的 AutocompleteService，跳過 403 報錯的新版 Rpc
     function initMap() {
       directionsService = new google.maps.DirectionsService();
       autocompleteService = new google.maps.places.AutocompleteService();
@@ -106,7 +106,7 @@
       setupField('pickup', 'pac-pickup');
       setupField('midStops', 'pac-midStops');
       setupField('dropoff', 'pac-dropoff');
-      console.log("💎 穩定版地址引擎已就緒");
+      console.log("💎 地址引擎已切換為穩定模式");
     }
 
     function setupField(inputId, pacId) {
@@ -136,11 +136,15 @@
               pac.appendChild(div);
             });
             pac.style.display = 'block';
-          } else { pac.style.display = 'none'; }
+          } else {
+            pac.style.display = 'none';
+          }
         });
       });
 
-      document.addEventListener('click', (e) => { if (e.target !== input) pac.style.display = 'none'; });
+      document.addEventListener('click', (e) => {
+        if (e.target !== input) pac.style.display = 'none';
+      });
     }
 
     function calculateRoute() {
@@ -191,7 +195,10 @@
     liff.init({ liffId: CONFIG.LIFF_IDS.PASSENGER }).then(async () => {
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
+        // 姓名預填
         document.getElementById('contactName').value = profile.displayName;
+      } else {
+        liff.login();
       }
     });
 
