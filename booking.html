@@ -10,7 +10,7 @@
     body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1C1C1E; -webkit-tap-highlight-color: transparent; }
     .card { background: #FFF; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .type-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
-    .tab-btn { background: #FFF; border: none; padding: 12px 5px; border-radius: 12px; font-size: 13px; font-weight: 600; color: #8E8E93; cursor: pointer; }
+    .tab-btn { background: #FFF; border: none; padding: 12px 5px; border-radius: 12px; font-size: 13px; font-weight: 600; color: #8E8E93; cursor: pointer; transition: all 0.2s; }
     .tab-btn.active { background: var(--primary); color: #FFF; }
     .label-row { font-weight: 600; margin-bottom: 8px; display: block; font-size: 15px; }
     input, textarea { width: 100%; padding: 14px; border: 1px solid #E5E5EA; border-radius: 12px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; background: #F9F9F9; outline: none; }
@@ -22,11 +22,14 @@
     .price-text { color: #D70015; font-size: 26px; font-weight: 800; }
     #submit-btn { width: 100%; padding: 18px; background: var(--primary); color: #FFF; border: none; border-radius: 16px; font-size: 18px; font-weight: 700; margin-top: 20px; cursor: pointer; }
     .pac-box { position: relative; width: 100%; }
-    .custom-pac { position: absolute; background: white; width: 100%; z-index: 2000; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: none; max-height: 250px; overflow-y: auto; top: 52px; border: 1px solid #EEE; }
+    .custom-pac { position: absolute; background: white; width: 100%; z-index: 2000; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: none; max-height: 250px; overflow-y: auto; top: 52px; border: 1px solid #膽EE; }
     .pac-item { padding: 15px; border-bottom: 1px solid #F2F2F7; cursor: pointer; font-size: 14px; color: #333; text-align: left; }
+    /* 新增：車種停用樣式 */
+    .tab-btn.disabled-car { background: #E5E5EA !important; color: #AEAEB2 !important; cursor: not-allowed !important; opacity: 0.3; pointer-events: none; }
   </style>
 </head>
 <body>
+
 <span class="label-row">服務類型</span>
 <div class="type-tabs" style="grid-template-columns: repeat(4, 1fr); scale: 0.9;">
     <button class="tab-btn active" id="btn-接機" onclick="setTripType('接機')">接機</button>
@@ -37,7 +40,7 @@
 
 <span class="label-row">選擇車種 <small id="su-hint" style="color:var(--primary); font-weight:normal;"></small></span>
 <div class="type-tabs" id="vehicle-selector" style="grid-template-columns: repeat(3, 1fr);">
-    <button class="tab-btn" id="btn-eco_5" onclick="selectVehicle('eco_5')">經濟五座</button>
+    <button class="tab-btn active" id="btn-eco_5" onclick="selectVehicle('eco_5')">經濟五座</button>
     <button class="tab-btn" id="btn-pro_5" onclick="selectVehicle('pro_5')">舒適五座</button>
     <button class="tab-btn" id="btn-family_7" onclick="selectVehicle('family_7')">家庭七座</button>
     <button class="tab-btn" id="btn-std_9" onclick="selectVehicle('std_9')">標準九座</button>
@@ -79,7 +82,7 @@
   <div class="card">
     <div class="grid-2">
       <div><span class="label-row">日期時間</span><input type="datetime-local" id="appointmentTime"></div>
-      <div><span class="label-row">航班號碼</span><input type="text" id="flightNo" placeholder="如 CX450"></div>
+      <div id="flight-field"><span class="label-row">航班號碼</span><input type="text" id="flightNo" placeholder="如 CX450"></div>
     </div>
   </div>
 
@@ -109,42 +112,26 @@
     });
   </script>
 
- <script>
-// --- [第一步：物理容量與車種能力矩陣初始化] ---
-
-/**
- * 行李單位化定義 (SU: Space Unit)
- * 嚴格遵循計畫書：大箱(2.0), 中箱(1.2), 小箱(0.7)
- */
-const SU_WEIGHTS = {
-    lugL: 2.0, // 大行李 (28吋+)
-    lugM: 1.2, // 中行李 (20-24吋)
-    lugS: 0.7  // 小行李/登機箱
-};
-
-/**
- * 車種標定標：對齊 Firebase vehicle_config 欄位
- * @property {number} maxSU - 該車種在滿載人數下的剩餘行李空間
- */
+<script>
+// --- [初始化與全域變數] ---
+const SU_WEIGHTS = { lugL: 2.0, lugM: 1.2, lugS: 0.7 };
 const VEHICLE_MASTER = [
-    { id: 'eco_5',    name: '經濟五座',   maxPax: 4, maxSU: 4.2,  isDynamic: false },
-    { id: 'pro_5',    name: '舒適五座',   maxPax: 4, maxSU: 6.5,  isDynamic: false },
-    { id: 'family_7', name: '家庭七座',   maxPax: 6, maxSU: 9.0,  isDynamic: true  }, // 5+2 d-change logic
-    { id: 'vip_7',    name: '旗艦獨立席', maxPax: 6, maxSU: 5.5,  isDynamic: false },
-    { id: 'std_9',    name: '標準九座',   maxPax: 8, maxSU: 18.0, isDynamic: false },
-    { id: 'premium_9',name: '尊榮九座',   maxPax: 8, maxSU: 22.0, isDynamic: false }
+    { id: 'eco_5',    name: '經濟五座',   base: 150, maxPax: 4, maxSU: 4.2,  isDynamic: false },
+    { id: 'pro_5',    name: '舒適五座',   base: 250, maxPax: 4, maxSU: 6.5,  isDynamic: false },
+    { id: 'family_7', name: '家庭七座',   base: 450, maxPax: 6, maxSU: 9.0,  isDynamic: true  },
+    { id: 'vip_7',    name: '旗艦獨立席', base: 800, maxPax: 6, maxSU: 5.5,  isDynamic: false },
+    { id: 'std_9',    name: '標準九座',   base: 450, maxPax: 8, maxSU: 18.0, isDynamic: false },
+    { id: 'premium_9',name: '尊榮九座',   base: 650, maxPax: 8, maxSU: 22.0, isDynamic: false }
 ];
 
-// 用於存儲當前計算出的總 SU 需求
-let currentRequiredSU = 0;
-// ------------------------------------------------
-   
-  let tripType = "接機";
-  let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
-  let currentKm = 0, currentPrice = 0;
-  let RouteClass, SuggestionClass, sessionToken, PlaceClass;
+let tripType = "接機";
+let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
+let currentKm = 0, currentPrice = 0, currentRequiredSU = 0;
+let selectedVehicleId = 'eco_5';
+let RouteClass, SuggestionClass, sessionToken, PlaceClass;
 
-  async function initMap() {
+// --- [地圖功能] ---
+async function initMap() {
     const [places, routes] = await Promise.all([
       google.maps.importLibrary("places"),
       google.maps.importLibrary("routes")
@@ -156,9 +143,9 @@ let currentRequiredSU = 0;
     setupField('pickup', 'pac-pickup');
     setupField('midStops', 'pac-midStops');
     setupField('dropoff', 'pac-dropoff');
-  }
+}
 
-  function setupField(inputId, pacId) {
+function setupField(inputId, pacId) {
     const input = document.getElementById(inputId);
     const pac = document.getElementById(pacId);
     input.addEventListener('input', async () => {
@@ -166,10 +153,7 @@ let currentRequiredSU = 0;
       if (val.length < 2) { pac.style.display = 'none'; return; }
       try {
         const { suggestions } = await SuggestionClass.fetchAutocompleteSuggestions({
-          input: val,
-          sessionToken: sessionToken,
-          region: 'TW',
-          language: 'zh-TW'
+          input: val, sessionToken: sessionToken, region: 'TW', language: 'zh-TW'
         });
         if (suggestions && suggestions.length > 0) {
           pac.innerHTML = '';
@@ -187,259 +171,103 @@ let currentRequiredSU = 0;
           });
           pac.style.display = 'block';
         }
-      } catch (e) {
-        console.error("自動完成建議錯誤：", e);
-      }
+      } catch (e) { console.error("自動完成錯誤：", e); }
     });
-  }
-
-  // ────────────────────────────────────────────────
-  // 這裡是關鍵：保證有 async
-  async function calculateNewRoute() {
-  const pickupPid = document.getElementById('pickup').dataset.pid;
-  const dropoffPid = document.getElementById('dropoff').dataset.pid;
-  const midPid = document.getElementById('midStops').dataset.pid;
-  const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
-
-  if (!pickupPid || !dropoffPid) {
-    console.log("尚未選擇完整的起點與終點，無法計算路線");
-    document.getElementById('price-preview').style.display = 'none';
-    return;
-  }
-
-  try {
-    const request = {
-      origin: new PlaceClass({ id: pickupPid }),
-      destination: new PlaceClass({ id: dropoffPid }),
-      travelMode: 'DRIVING',  // 修正為 'DRIVING'
-      // routingPreference: 'TRAFFIC_AWARE_OPTIMAL'  // 可以試著開啟，看是否支援
-    };
-
-    if (midVisible && midPid) {
-      request.intermediates = [new PlaceClass({ id: midPid })];
-    }
-
-    console.log("開始計算路線...");
-
-    const response = await RouteClass.computeRoutes({
-      ...request,
-      fields: ['distanceMeters']  // 先保持簡單，成功後可加 'durationMillis'
-    });
-
-    if (response.routes && response.routes.length > 0) {
-      const route = response.routes[0];
-      currentKm = route.distanceMeters / 1000;
-      //currentPrice = Math.round(150 + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
-      //
-      // --- [動態計價核心] ---
-      // 1. 根據目前選中的車種 ID (selectedVehicleId)，從矩陣中抓取該車資料
-      const selectedCar = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
-      
-      // 2. 取得該車種的起步價 (若找不到則用 150 保底)
-      const basePrice = selectedCar ? selectedCar.base : 50;
-      
-      // 3. 使用動態起步價計算總金額
-      currentPrice = Math.round(basePrice + (currentKm > 0 ? (currentKm - 0) * 35 : 0));
-      
-      // 4. 更新畫面顯示
-      document.getElementById('price-display').innerText = `預估金額：$${currentPrice}`;
-      //
-      document.getElementById('price-preview').style.display = 'block';
-      document.getElementById('dist-val').innerText = currentKm.toFixed(1);
-      document.getElementById('price-val').innerText = currentPrice;
-
-      console.log(`成功！距離：${currentKm.toFixed(1)} km，費用：$${currentPrice}`);
-    } else {
-      console.warn("API 沒有回傳有效路線");
-      document.getElementById('price-preview').style.display = 'none';
-    }
-  } catch (e) {
-    console.error("路線計算失敗：", e.message);
-    document.getElementById('price-preview').style.display = 'none';
-  }
 }
-  // ────────────────────────────────────────────────
 
-  window.setType = (t) => {
+async function calculateNewRoute() {
+    const pickupPid = document.getElementById('pickup').dataset.pid;
+    const dropoffPid = document.getElementById('dropoff').dataset.pid;
+    const midPid = document.getElementById('midStops').dataset.pid;
+    const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
+
+    if (!pickupPid || !dropoffPid) return;
+
+    try {
+        const request = {
+            origin: new PlaceClass({ id: pickupPid }),
+            destination: new PlaceClass({ id: dropoffPid }),
+            travelMode: 'DRIVING'
+        };
+        if (midVisible && midPid) request.intermediates = [new PlaceClass({ id: midPid })];
+
+        const response = await RouteClass.computeRoutes({ ...request, fields: ['distanceMeters'] });
+
+        if (response.routes && response.routes.length > 0) {
+            currentKm = response.routes[0].distanceMeters / 1000;
+            const vehicle = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
+            const basePrice = vehicle ? vehicle.base : 150;
+            
+            currentPrice = Math.round(basePrice + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
+
+            document.getElementById('price-preview').style.display = 'block';
+            document.getElementById('dist-val').innerText = currentKm.toFixed(1);
+            document.getElementById('price-val').innerText = currentPrice;
+        }
+    } catch (e) { console.error("計算失敗", e); }
+}
+
+// --- [UI 控制函數] ---
+window.setTripType = (t) => {
     tripType = t;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('btn-'+t).classList.add('active');
-  };
-
-  window.toggleMid = (show) => {
-    const wrap = document.getElementById('mid-wrap');
-    const btn = document.getElementById('add-mid-btn');
-    const input = document.getElementById('midStops');
-    wrap.style.display = show ? 'block' : 'none';
-    btn.style.display = show ? 'none' : 'block';
-    if (!show) {
-      input.value = '';
-      input.dataset.pid = '';
-      calculateNewRoute();
-    }
-  };
-
-  // --- [第二步：重構計數器與過濾引擎] ---
-
-/**
- * 更新即時過濾引擎
- * 核心邏輯：計算需求 -> 判斷動態縮減 -> 比對物理極限
- */
-function updateVehicleFilter() {
-    // 1. 計算當前行李總需求 SU
-    currentRequiredSU = (counts.lugL * SU_WEIGHTS.lugL) + 
-                        (counts.lugM * SU_WEIGHTS.lugM) + 
-                        (counts.lugS * SU_WEIGHTS.lugS);
-    
-    const totalPax = counts.adults + counts.children;
-
-    console.log(`[DA 系統監測] 當前人數: ${totalPax}, 總行李 SU: ${currentRequiredSU.toFixed(1)}`);
-
-    // 2. 遍歷所有車型進行物理校驗
-    VEHICLE_MASTER.forEach(car => {
-        let maxSU = car.maxSU;
-        let isDisabled = false;
-        let reason = "";
-
-        // --- 核心防禦：家庭七座 (5+2) 動態空間縮減邏輯 ---
-        if (car.isDynamic && car.id === 'family_7') {
-            if (totalPax > 4) {
-                maxSU = 1.5; // 第三排立起，行李空間極速縮減
-            } else {
-                maxSU = 9.0; // 第三排收摺，行李空間極大化
-            }
-        }
-
-        // 3. 執行 Gate 判斷
-        if (totalPax > car.maxPax) {
-            isDisabled = true;
-            reason = "人數超出";
-        } else if (currentRequiredSU > maxSU) {
-            isDisabled = true;
-            reason = "行李過多";
-        }
-
-        // 4. 更新 UI 狀態 (將原本的 tab-btn 進行灰階化)
-        const btn = document.getElementById(`btn-${car.id}`); // 註：需確保按鈕 ID 對齊
-        if (btn) {
-            if (isDisabled) {
-                btn.classList.add('disabled-car');
-                btn.style.opacity = "0.3";
-                btn.style.pointerEvents = "none";
-                btn.title = reason; // 滑鼠懸停顯示原因
-            } else {
-                btn.classList.remove('disabled-car');
-                btn.style.opacity = "1";
-                btn.style.pointerEvents = "auto";
-                btn.title = "";
-            }
-        }
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        if(['接機','送機','市區','包車'].includes(b.innerText)) b.classList.toggle('active', b.id === 'btn-'+t);
     });
-}
+    const flightField = document.getElementById('flight-field');
+    if (flightField) flightField.style.display = (t === '接機') ? 'block' : 'none';
+};
 
-// --- [第三步：車種選擇與計價邏輯] ---
-
-let selectedVehicleId = 'eco_5'; // 初始預設車種
-
-/**
- * 車種切換函數
- * 作用：高亮 UI、更新全域變數、重新計算里程價格
- */
 window.selectVehicle = (vId) => {
-    // 1. 更新選中的 ID
     selectedVehicleId = vId;
-
-    // 2. 切換 UI 高亮狀態
     VEHICLE_MASTER.forEach(car => {
         const btn = document.getElementById(`btn-${car.id}`);
-        if (btn) {
-            btn.classList.toggle('active', car.id === vId);
-        }
+        if (btn) btn.classList.toggle('active', car.id === vId);
     });
-
-    console.log(`[DA 系統] 用戶選擇車種: ${vId}`);
-
-    // 3. 觸發重新計價 (核心！)
-    if (typeof calculateNewRoute === "function") {
-        calculateNewRoute(); 
-    }
+    calculateNewRoute();
 };
 
-/**
- * 服務類型切換函數 (原 setType 改名，避免混淆)
- */
-window.setTripType = (t) => {
-    tripType = t;
-    const types = ['接機', '送機', '市區', '包車'];
-    types.forEach(type => {
-        const el = document.getElementById(`btn-${type}`);
-        if (el) el.classList.toggle('active', type === t);
-    });
-
-    // 接機顯示航班號，其餘隱藏
-    const flightField = document.getElementById('flightNo')?.parentElement;
-    if (flightField) {
-        flightField.style.display = (t === '接機') ? 'block' : 'none';
-    }
-};
-   
-/**
- * 重構後的 change 函數
- * 每次點擊加減號都會觸發過濾引擎
- */
 window.change = (k, d) => {
-    // 執行原有邏輯
     counts[k] = Math.max((k === 'adults' ? 1 : 0), counts[k] + d);
-    const displayEl = document.getElementById(`val-${k}`);
-    if (displayEl) displayEl.innerText = counts[k];
-
-    // 觸發物理容量校驗
+    const el = document.getElementById(`val-${k}`);
+    if (el) el.innerText = counts[k];
     updateVehicleFilter();
 };
-let selectedVehicleId = 'eco_5'; // 預設車種
 
-/**
- * 訂單類型切換 (保持你原本的功能)
- */
-window.setTripType = (t) => {
-    tripType = t;
-    // 切換 UI 高亮
-    const types = ['接機', '送機', '市區', '包車'];
-    types.forEach(type => {
-        const el = document.getElementById(`btn-${type}`);
-        if (el) el.classList.toggle('active', type === t);
-    });
-    
-    // 特殊邏輯：接機才顯示航班號輸入框
-    document.getElementById('flightNo').parentElement.style.display = (t === '接機') ? 'block' : 'none';
+window.toggleMid = (show) => {
+    document.getElementById('mid-wrap').style.display = show ? 'block' : 'none';
+    document.getElementById('add-mid-btn').style.display = show ? 'none' : 'block';
+    if (!show) {
+        document.getElementById('midStops').value = '';
+        document.getElementById('midStops').dataset.pid = '';
+        calculateNewRoute();
+    }
 };
 
-/**
- * 車種切換 (新功能：決定起步價)
- */
-window.selectVehicle = (vId) => {
-    selectedVehicleId = vId;
-    
-    // 1. 切換 UI 高亮
+function updateVehicleFilter() {
+    currentRequiredSU = (counts.lugL * SU_WEIGHTS.lugL) + (counts.lugM * SU_WEIGHTS.lugM) + (counts.lugS * SU_WEIGHTS.lugS);
+    const totalPax = counts.adults + counts.children;
+    document.getElementById('su-hint').innerText = `(行李係數: ${currentRequiredSU.toFixed(1)})`;
+
     VEHICLE_MASTER.forEach(car => {
-        const el = document.getElementById(`btn-${car.id}`);
-        if (el) el.classList.toggle('active', car.id === vId);
+        let maxSU = car.maxSU;
+        if (car.id === 'family_7' && totalPax > 4) maxSU = 1.5;
+
+        const btn = document.getElementById(`btn-${car.id}`);
+        const isOver = (totalPax > car.maxPax || currentRequiredSU > maxSU);
+        
+        if (btn) {
+            btn.classList.toggle('disabled-car', isOver);
+            // 如果當前選中的車被禁用了，自動跳轉到下一階(簡易邏輯)
+            if (isOver && selectedVehicleId === car.id) {
+                btn.classList.remove('active');
+            }
+        }
     });
+}
 
-    // 2. 重新計算價格 (因為起步價變了)
-    calculateNewRoute(); 
-};
+window.sendOrder = () => { alert("訂單發送功能對接中..."); };
 
-/**
- * 修改你原本的價格計算公式 (對齊計畫書)
- */
-// 在 calculateNewRoute() 內找到價格計算處，修改為：
-const vehicle = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
-const basePrice = vehicle ? vehicle.base : 150;
-currentPrice = Math.round(basePrice + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
-  initMap();
-
-   
+initMap();
 </script>
 </body>
 </html>
