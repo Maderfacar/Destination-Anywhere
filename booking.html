@@ -31,6 +31,10 @@
     .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #444; margin-bottom: 10px; }
     .checkbox-row input { width: 18px; height: 18px; margin: 0; }
     .mid-stop-item { margin-bottom: 15px; border-left: 3px solid var(--primary); padding-left: 10px; }
+    
+    /* 新增行李狀態條樣式 */
+    .su-container { display: inline-flex; align-items: center; vertical-align: middle; margin-left: 8px; width: 80px; height: 8px; background: #E5E5EA; border-radius: 10px; overflow: hidden; }
+    .su-bar { height: 100%; width: 0%; transition: width 0.3s ease, background-color 0.3s ease; border-radius: 10px; }
   </style>
 </head>
 <body>
@@ -42,7 +46,7 @@
     <button class="tab-btn" id="btn-包車" onclick="setTripType('包車')">包車</button>
 </div>
 
-<span class="label-row">選擇車種 <small id="su-hint" style="color:var(--primary); font-weight:normal;"></small></span>
+<span class="label-row">選擇車種 <small id="su-hint"></small></span>
 <div class="type-tabs" id="vehicle-selector" style="grid-template-columns: repeat(3, 1fr);">
     <button class="tab-btn active" id="btn-eco_5" onclick="selectVehicle('eco_5')">經濟五座</button>
     <button class="tab-btn" id="btn-pro_5" onclick="selectVehicle('pro_5')">舒適五座</button>
@@ -199,6 +203,7 @@
         setupField('pickup', 'pac-pickup');
         setupField('dropoff', 'pac-dropoff');
         setTripType('接送機');
+        updateVehicleFilter(); // 初始化行李條
     }
 
     function setupField(inputId, pacId) {
@@ -222,7 +227,6 @@
         el.dataset.pid = pid;
         document.getElementById('pac-' + id).style.display = 'none';
 
-        // 如果是中途點，更新清單數據
         if (id.startsWith('midStop_')) {
             const index = midStopsList.findIndex(item => item.id === id);
             if (index > -1) midStopsList[index].pid = pid;
@@ -242,7 +246,6 @@
         window.calculateNewRoute();
     };
 
-    // 新增中途停靠點邏輯
     window.addNewMidStop = () => {
         const midId = `midStop_${Date.now()}`;
         const pacId = `pac-${midId}`;
@@ -292,9 +295,6 @@
 
             if (res.routes && res.routes[0]) {
                 currentKm = res.routes[0].distanceMeters / 1000;
-                
-                // 計算各停靠點累計費用 (此處簡化計算：每個停靠點固定基礎加成，或依據第一個點距離計算)
-                // 這裡採用原始邏輯：若有中途點，計算起點到第一個中途點的距離作為 midKm 判斷
                 if (midPids.length > 0) {
                     const midRes = await RouteClass.computeRoutes({
                         origin: new PlaceClass({ id: p1 }),
@@ -330,17 +330,13 @@
             document.getElementById('discount-notice').style.display = 'none';
         }
 
-        // 停靠點費用邏輯：(第一個點基礎 200 + 距離加成) + (後續每個點 200)
         let stopFee = 0;
         if (midStopsList.length > 0) {
-            // 第一個點的費用
             stopFee = 200;
             if (totalMidKm > 5) stopFee += Math.ceil((totalMidKm - 5) / 5) * 150;
-            // 第二個點以後，每個點加收 200 基礎費
             if (midStopsList.length > 1) {
                 stopFee += (midStopsList.length - 1) * 200;
             }
-
             if (tripType === '交通趟' && isRound) stopFee *= 2;
             document.getElementById('mid-fee-notice').innerText = `📍 停靠點費用 (${midStopsList.length}站) +$${stopFee}`;
             document.getElementById('mid-fee-notice').style.display = 'block';
@@ -439,6 +435,7 @@
     window.selectVehicle = (id) => {
         selectedVehicleId = id;
         VEHICLE_MASTER.forEach(v => document.getElementById(`btn-${v.id}`).classList.toggle('active', v.id === id));
+        updateVehicleFilter(); // 切換車種時同步更新行李條
         window.calculateNewRoute();
     };
 
@@ -458,7 +455,21 @@
     function updateVehicleFilter() {
         const totalPax = counts.adults + counts.children;
         const currentSU = (counts.lugL * 2) + (counts.lugM * 1.2) + (counts.lugS * 0.7);
-        document.getElementById('su-hint').innerText = `(行李係數: ${currentSU.toFixed(1)})`;
+        
+        // 視覺化行李條邏輯
+        const activeCar = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
+        const ratio = Math.min((currentSU / activeCar.maxSU) * 100, 100);
+        
+        let barColor = '#34C759'; // 安全綠
+        if (ratio > 95) barColor = '#FF3B30'; // 超載紅
+        else if (ratio > 75) barColor = '#FF9500'; // 警告橘
+        
+        document.getElementById('su-hint').innerHTML = `
+            <div class="su-container">
+                <div class="su-bar" style="width: ${ratio}%; background-color: ${barColor};"></div>
+            </div>
+        `;
+
         VEHICLE_MASTER.forEach(car => {
             const btn = document.getElementById(`btn-${car.id}`);
             const isOver = (totalPax > car.maxPax || currentSU > car.maxSU);
@@ -481,7 +492,6 @@
 
         btn.disabled = true; btn.innerText = "預約傳送中...";
         try {
-            // 合併所有停靠站文字
             const allMidTexts = midStopsList.map(m => document.getElementById(m.id).value).filter(v => v !== "").join(' > ');
 
             const orderData = {
