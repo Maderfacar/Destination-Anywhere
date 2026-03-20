@@ -30,6 +30,7 @@
     .swap-btn { font-size: 12px; color: var(--primary); cursor: pointer; float: right; font-weight: normal; }
     .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #444; margin-bottom: 10px; }
     .checkbox-row input { width: 18px; height: 18px; margin: 0; }
+    .mid-stop-item { margin-bottom: 15px; border-left: 3px solid var(--primary); padding-left: 10px; }
   </style>
 </head>
 <body>
@@ -94,17 +95,8 @@
       <div id="pac-pickup" class="custom-pac"></div>
     </div>
 
-    <div id="mid-wrap" style="display:none;">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <span class="label-row">中途停靠站</span>
-        <span style="color:#FF3B30; font-size:14px; cursor:pointer; margin-bottom:8px;" onclick="toggleMid(false)">✕ 移除</span>
-      </div>
-      <div class="pac-box">
-        <input type="text" id="midStops" placeholder="輸入停靠點" autocomplete="off" data-pid="">
-        <div id="pac-midStops" class="custom-pac"></div>
-      </div>
-    </div>
-    <div style="color:var(--primary); font-size:14px; margin-bottom:12px; cursor:pointer;" onclick="toggleMid(true)" id="add-mid-btn">+ 新增中途停靠站</div>
+    <div id="mid-stops-container"></div>
+    <div style="color:var(--primary); font-size:14px; margin-bottom:12px; cursor:pointer;" onclick="addNewMidStop()" id="add-mid-btn">+ 新增中途停靠站</div>
 
     <span class="label-row">下車地點</span>
     <div class="pac-box">
@@ -168,8 +160,9 @@
     let tripType = "接送機";
     let airType = "接機";
     let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0, carSeat: 0, duration: 4 };
-    let currentKm = 0, midKm = 0, currentPrice = 0;
+    let currentKm = 0, totalMidKm = 0, currentPrice = 0;
     let RouteClass, SuggestionClass, sessionToken, PlaceClass;
+    let midStopsList = []; // 儲存中途點資料 [{id: 'mid_1', value: '', pid: ''}]
 
     async function fetchRemoteConfig() {
         try {
@@ -204,7 +197,6 @@
         SuggestionClass = places.AutocompleteSuggestion;
         sessionToken = new places.AutocompleteSessionToken();
         setupField('pickup', 'pac-pickup');
-        setupField('midStops', 'pac-midStops');
         setupField('dropoff', 'pac-dropoff');
         setTripType('接送機');
     }
@@ -229,6 +221,12 @@
         el.value = text;
         el.dataset.pid = pid;
         document.getElementById('pac-' + id).style.display = 'none';
+
+        // 如果是中途點，更新清單數據
+        if (id.startsWith('midStop_')) {
+            const index = midStopsList.findIndex(item => item.id === id);
+            if (index > -1) midStopsList[index].pid = pid;
+        }
         window.calculateNewRoute();
     };
 
@@ -244,11 +242,42 @@
         window.calculateNewRoute();
     };
 
+    // 新增中途停靠點邏輯
+    window.addNewMidStop = () => {
+        const midId = `midStop_${Date.now()}`;
+        const pacId = `pac-${midId}`;
+        midStopsList.push({ id: midId, pid: '' });
+
+        const container = document.getElementById('mid-stops-container');
+        const div = document.createElement('div');
+        div.className = 'mid-stop-item';
+        div.id = `wrap-${midId}`;
+        div.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="label-row">中途停靠站</span>
+                <span style="color:#FF3B30; font-size:14px; cursor:pointer; margin-bottom:8px;" onclick="removeMidStop('${midId}')">✕ 移除</span>
+            </div>
+            <div class="pac-box">
+                <input type="text" id="${midId}" placeholder="輸入停靠點" autocomplete="off" data-pid="">
+                <div id="${pacId}" class="custom-pac"></div>
+            </div>
+        `;
+        container.appendChild(div);
+        setupField(midId, pacId);
+    };
+
+    window.removeMidStop = (midId) => {
+        const index = midStopsList.findIndex(item => item.id === midId);
+        if (index > -1) midStopsList.splice(index, 1);
+        const el = document.getElementById(`wrap-${midId}`);
+        if (el) el.remove();
+        window.calculateNewRoute();
+    };
+
     window.calculateNewRoute = async () => {
         const p1 = document.getElementById('pickup').dataset.pid;
         const p2 = document.getElementById('dropoff').dataset.pid;
-        const mid = document.getElementById('midStops').dataset.pid;
-        const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
+        const midPids = midStopsList.map(m => m.pid).filter(pid => pid !== '');
 
         if (!p1 || !p2) return;
 
@@ -256,7 +285,7 @@
             const res = await RouteClass.computeRoutes({
                 origin: new PlaceClass({ id: p1 }),
                 destination: new PlaceClass({ id: p2 }),
-                intermediates: (midVisible && mid) ? [new PlaceClass({ id: mid })] : [],
+                intermediates: midPids.map(pid => new PlaceClass({ id: pid })),
                 travelMode: 'DRIVING',
                 fields: ['distanceMeters']
             });
@@ -264,15 +293,17 @@
             if (res.routes && res.routes[0]) {
                 currentKm = res.routes[0].distanceMeters / 1000;
                 
-                if (midVisible && mid) {
+                // 計算各停靠點累計費用 (此處簡化計算：每個停靠點固定基礎加成，或依據第一個點距離計算)
+                // 這裡採用原始邏輯：若有中途點，計算起點到第一個中途點的距離作為 midKm 判斷
+                if (midPids.length > 0) {
                     const midRes = await RouteClass.computeRoutes({
                         origin: new PlaceClass({ id: p1 }),
-                        destination: new PlaceClass({ id: mid }),
+                        destination: new PlaceClass({ id: midPids[0] }),
                         travelMode: 'DRIVING', fields: ['distanceMeters']
                     });
-                    midKm = midRes.routes[0].distanceMeters / 1000;
+                    totalMidKm = midRes.routes[0].distanceMeters / 1000;
                 } else {
-                    midKm = 0;
+                    totalMidKm = 0;
                 }
                 renderPrice();
             }
@@ -284,11 +315,8 @@
         if (!vehicle) return;
 
         let finalPrice = 0;
-        const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
         const isRound = document.getElementById('isRoundTrip').checked;
         const discountRate = REMOTE_CONFIG?.roundTripDiscount || 0.95;
-
-        // 核心邏輯：里程 * 單位價 與 起步價 進行比對
         const calcOneWay = (km) => Math.max(km * vehicle.kmPrice, vehicle.base);
 
         if (tripType === '包車') {
@@ -302,24 +330,28 @@
             document.getElementById('discount-notice').style.display = 'none';
         }
 
-        // 1. 停靠點費用 (5km內200, 超過每5km+150)
+        // 停靠點費用邏輯：(第一個點基礎 200 + 距離加成) + (後續每個點 200)
         let stopFee = 0;
-        if (midVisible) {
+        if (midStopsList.length > 0) {
+            // 第一個點的費用
             stopFee = 200;
-            if (midKm > 5) stopFee += Math.ceil((midKm - 5) / 5) * 150;
+            if (totalMidKm > 5) stopFee += Math.ceil((totalMidKm - 5) / 5) * 150;
+            // 第二個點以後，每個點加收 200 基礎費
+            if (midStopsList.length > 1) {
+                stopFee += (midStopsList.length - 1) * 200;
+            }
+
             if (tripType === '交通趟' && isRound) stopFee *= 2;
-            document.getElementById('mid-fee-notice').innerText = `📍 停靠點費用 +$${stopFee}`;
+            document.getElementById('mid-fee-notice').innerText = `📍 停靠點費用 (${midStopsList.length}站) +$${stopFee}`;
             document.getElementById('mid-fee-notice').style.display = 'block';
         } else {
             document.getElementById('mid-fee-notice').style.display = 'none';
         }
 
-        // 2. 安全座椅
         const seatFee = counts.carSeat * (REMOTE_CONFIG?.carSeatFee || 200);
         document.getElementById('seat-fee-notice').innerText = `👶 安全座椅 +$${seatFee}`;
         document.getElementById('seat-fee-notice').style.display = seatFee > 0 ? 'block' : 'none';
 
-        // 3. 夜間加乘
         const isNight1 = checkNightTime(document.getElementById('appointmentTime').value);
         const isNight2 = (tripType === '交通趟' && isRound) ? checkNightTime(document.getElementById('returnTime').value) : false;
         let nightAdd = isNight1 ? (REMOTE_CONFIG?.nightFee || 200) : 0;
@@ -423,16 +455,6 @@
         window.calculateNewRoute();
     };
 
-    window.toggleMid = (show) => {
-        document.getElementById('mid-wrap').style.display = show ? 'block' : 'none';
-        document.getElementById('add-mid-btn').style.display = show ? 'none' : 'block';
-        if(!show) { 
-            document.getElementById('midStops').value = ''; 
-            document.getElementById('midStops').dataset.pid = ''; 
-        }
-        window.calculateNewRoute();
-    };
-
     function updateVehicleFilter() {
         const totalPax = counts.adults + counts.children;
         const currentSU = (counts.lugL * 2) + (counts.lugM * 1.2) + (counts.lugS * 0.7);
@@ -459,13 +481,16 @@
 
         btn.disabled = true; btn.innerText = "預約傳送中...";
         try {
+            // 合併所有停靠站文字
+            const allMidTexts = midStopsList.map(m => document.getElementById(m.id).value).filter(v => v !== "").join(' > ');
+
             const orderData = {
                 tripType: tripType === '接送機' ? airType : (isRound ? "交通趟(來回)" : "交通趟(單程)"),
                 vehicleName: VEHICLE_MASTER.find(v=>v.id===selectedVehicleId).name,
                 pickup: document.getElementById('pickup').value,
                 dropoff: document.getElementById('dropoff').value,
                 returnTime: (tripType === '交通趟' && isRound) ? t2 : null,
-                midStops: document.getElementById('midStops').value,
+                midStops: allMidTexts,
                 appointmentTime: t1,
                 flightNo: tripType === '接送機' ? document.getElementById('flightNo').value : "",
                 adults: counts.adults,
