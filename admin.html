@@ -268,6 +268,14 @@
     });
   };
 
+  window.loadApprovedDrivers = () => {
+    const q = query(collection(db, "drivers"), where("status", "==", "approved"));
+    onSnapshot(q, (snap) => {
+      approvedDrivers = [];
+      snap.forEach(d => approvedDrivers.push({ ...d.data(), id: d.id }));
+    });
+  };
+
   window.loadPendingDrivers = () => {
     const q = query(collection(db, "drivers"), where("status", "==", "pending"));
     onSnapshot(q, (snap) => {
@@ -319,8 +327,162 @@
     }
   };
 
-  // 其他函式（assignDriver, sendNotify, openEditModal, closeEditModal, submitOrderUpdate, savePriceSettings, saveDesignSettings 等）保持原樣
-  // ... 你的原有其他程式碼 ...
+  window.assignDriver = async (orderId, driverName) => {
+    if(!driverName) return;
+    try {
+      const drv = approvedDrivers.find(d => d.name === driverName);
+      if (!drv || !drv.userId) { alert("此司機無有效 ID"); return; }
+      await updateDoc(doc(db, "orders", orderId), {
+        driverName: drv.name,
+        driverId: drv.userId,
+        driverPhone: drv.phone || "",
+        driverPlate: drv.plate || "",
+        driverModel: drv.model || "",
+        driverColor: drv.color || "",
+        status: 'dispatched',
+        dispatchedAt: serverTimestamp()
+      });
+      alert("✅ 指派成功");
+    } catch (e) { alert("指派失敗"); }
+  };
+
+  window.sendNotify = async (orderId, target) => {
+    try {
+      const snap = await getDoc(doc(db, "orders", orderId));
+      if (!snap.exists()) return;
+      const ord = snap.data();
+      const payload = {
+        target: target, orderId: orderId, customerId: ord.customerId || "", tripType: ord.tripType || "",
+        contactName: ord.contactName || "", contactPhone: ord.contactPhone || "", appointmentTime: ord.appointmentTime || "",
+        pickup: ord.pickup || "", midStops: ord.midStops || "無", dropoff: ord.dropoff || "",
+        adults: ord.adults || "0", children: ord.children || "0", lugL: ord.lugL || "0", lugM: ord.lugM || "0", lugS: ord.lugS || "0",
+        flightNo: ord.flightNo || "", note: ord.note || "無", driverName: ord.driverName || "", driverPhone: ord.driverPhone || "",
+        driverPlate: ord.driverPlate || "", driverModel: ord.driverModel || "", driverColor: ord.driverColor || "", driverId: ord.driverId || ""
+      };
+      await fetch(MAKE_WEBHOOK_URL, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      alert("✅ 完整資料已發送至 Make");
+    } catch (e) { alert("發送失敗"); }
+  };
+
+  window.openEditModal = (id, data) => {
+    document.getElementById('edit-order-id').value = id;
+    document.getElementById('edit-order-name').value = data.contactName || '';
+    document.getElementById('edit-order-phone').value = data.contactPhone || '';
+    document.getElementById('edit-order-time').value = data.appointmentTime || '';
+    document.getElementById('edit-order-flight').value = data.flightNo || '';
+    document.getElementById('edit-order-pickup').value = data.pickup || '';
+    document.getElementById('edit-order-dropoff').value = data.dropoff || '';
+    document.getElementById('edit-modal').style.display = 'block';
+  };
+
+  window.closeEditModal = () => document.getElementById('edit-modal').style.display = 'none';
+
+  window.submitOrderUpdate = async () => {
+    const id = document.getElementById('edit-order-id').value;
+    try {
+      await updateDoc(doc(db, "orders", id), {
+        contactName: document.getElementById('edit-order-name').value,
+        contactPhone: document.getElementById('edit-order-phone').value,
+        appointmentTime: document.getElementById('edit-order-time').value,
+        flightNo: document.getElementById('edit-order-flight').value,
+        pickup: document.getElementById('edit-order-pickup').value,
+        dropoff: document.getElementById('edit-order-dropoff').value,
+        updatedAt: serverTimestamp()
+      });
+      alert("✅ 訂單內容已更新");
+      closeEditModal();
+    } catch (e) { alert("更新失敗"); }
+  };
+
+  window.savePriceSettings = async () => {
+    if (!confirm("確定要儲存所有價格設定？這會立即影響所有客戶看到的價格！")) return;
+    try {
+      const basePrices = {};
+      const kmPrices = {};
+      const charterConfig = {};
+      CAR_TYPES.forEach(car => {
+        basePrices[car.id] = Number(document.getElementById(`cfg-base-${car.id}`).value || 0);
+        kmPrices[car.id] = Number(document.getElementById(`cfg-kmPrice-${car.id}`).value || 0);
+        charterConfig[car.id] = {
+          overHour: Number(document.getElementById(`cfg-${car.id}-otPrice`).value || 0),
+          overKm: Number(document.getElementById(`cfg-${car.id}-okPrice`).value || 0),
+          city4hPrice: Number(document.getElementById(`cfg-${car.id}-c4p`).value || 0),
+          city4hKm: Number(document.getElementById(`cfg-${car.id}-c4k`).value || 0),
+          city8hPrice: Number(document.getElementById(`cfg-${car.id}-c8p`).value || 0),
+          city8hKm: Number(document.getElementById(`cfg-${car.id}-c8k`).value || 0),
+          longOneWayPrice: Number(document.getElementById(`cfg-${car.id}-lOp`).value || 0),
+          longOneWayKm: Number(document.getElementById(`cfg-${car.id}-lOk`).value || 0),
+          longRoundPrice: Number(document.getElementById(`cfg-${car.id}-lRp`).value || 0),
+          longRoundKm: Number(document.getElementById(`cfg-${car.id}-lRk`).value || 0)
+        };
+      });
+      await setDoc(doc(db, "settings", "priceConfig"), {
+        nightFee: Number(document.getElementById('cfg-nightFee').value || 0),
+        midFee: Number(document.getElementById('cfg-midFee').value || 0),
+        carSeatFee: Number(document.getElementById('cfg-carSeatFee').value || 0),
+        roundTripDiscount: Number(document.getElementById('cfg-rtDiscount').value || 0.95),
+        basePrices,
+        kmPrices,
+        charterConfig,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      alert("✅ 價格設定已儲存並即時生效");
+    } catch (e) { alert("儲存失敗: " + e.message); }
+  };
+
+  async function loadPriceData() {
+    const res = await getDoc(doc(db, "settings", "priceConfig"));
+    if (res.exists()) {
+      const data = res.data();
+      document.getElementById('cfg-nightFee').value = data.nightFee || 0;
+      document.getElementById('cfg-midFee').value = data.midFee || 0;
+      document.getElementById('cfg-carSeatFee').value = data.carSeatFee || 0;
+      document.getElementById('cfg-rtDiscount').value = data.roundTripDiscount || 0.95;
+      CAR_TYPES.forEach(car => {
+        if(data.basePrices) {
+          document.getElementById(`cfg-base-${car.id}`).value = data.basePrices[car.id] || 0;
+        }
+        if(data.kmPrices) {
+          document.getElementById(`cfg-kmPrice-${car.id}`).value = data.kmPrices[car.id] || 0;
+        }
+        if(data.charterConfig && data.charterConfig[car.id]) {
+          const c = data.charterConfig[car.id];
+          document.getElementById(`cfg-${car.id}-otPrice`).value = c.overHour || 0;
+          document.getElementById(`cfg-${car.id}-okPrice`).value = c.overKm || 0;
+          document.getElementById(`cfg-${car.id}-c4p`).value = c.city4hPrice || 0;
+          document.getElementById(`cfg-${car.id}-c4k`).value = c.city4hKm || 0;
+          document.getElementById(`cfg-${car.id}-c8p`).value = c.city8hPrice || 0;
+          document.getElementById(`cfg-${car.id}-c8k`).value = c.city8hKm || 0;
+          document.getElementById(`cfg-${car.id}-lOp`).value = c.longOneWayPrice || 0;
+          document.getElementById(`cfg-${car.id}-lOk`).value = c.longOneWayKm || 0;
+          document.getElementById(`cfg-${car.id}-lRp`).value = c.longRoundPrice || 0;
+          document.getElementById(`cfg-${car.id}-lRk`).value = c.longRoundKm || 0;
+        }
+      });
+    }
+  }
+
+  async function loadDesignData() {
+    const res = await getDoc(doc(db, "settings", "homepage"));
+    if (res.exists()) {
+      document.getElementById('edit-hero-title').value = res.data().heroTitle || '';
+      document.getElementById('edit-hero-sub').value = res.data().heroSub || '';
+    }
+  }
+
+  window.saveDesignSettings = async () => {
+    try {
+      await setDoc(doc(db, "settings", "homepage"), {
+        heroTitle: document.getElementById('edit-hero-title').value,
+        heroSub: document.getElementById('edit-hero-sub').value,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      alert("✅ 裝修內容已同步至首頁");
+    } catch (e) { alert("儲存失敗"); }
+  };
 
   init();
 </script>
