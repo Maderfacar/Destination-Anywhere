@@ -272,8 +272,51 @@ function updateVehicleFilter() {
     });
 }
 
-window.sendOrder = () => { 
-    alert("訂單已準備封裝，SU 係數: " + currentRequiredSU.toFixed(1)); 
+window.sendOrder = async () => {
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerText = "處理中...";
+
+    try {
+        // 取得當前選中的車型完整資料
+        const vehicleInfo = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
+
+        const orderData = {
+            // --- 新增的物理容量數據 ---
+            selectedVehicleId: selectedVehicleId, // 車型 ID (如 eco_5)
+            vehicleName: vehicleInfo ? vehicleInfo.name : "未指定", // 車型名稱
+            requiredSU: currentRequiredSU.toFixed(1), // 總行李係數
+            
+            // --- 原有的訂單數據 ---
+            tripType: tripType,
+            contactName: document.getElementById('contactName').value,
+            contactPhone: document.getElementById('contactPhone').value,
+            appointmentTime: document.getElementById('appointmentTime').value.replace('T', ' '),
+            flightNo: document.getElementById('flightNo').value,
+            pickup: document.getElementById('pickup').value,
+            midStops: document.getElementById('midStops').value,
+            dropoff: document.getElementById('dropoff').value,
+            adults: String(counts.adults),
+            children: String(counts.children),
+            lugL: String(counts.lugL),
+            lugM: String(counts.lugM),
+            lugS: String(counts.lugS),
+            estimatedPrice: currentPrice, // 存入最終計價
+            status: "pending",
+            createdAt: new Date().toISOString()
+        };
+
+        console.log("準備送出的訂單資料：", orderData);
+        
+        // 這裡接您原本的 Firebase addDoc 邏輯
+        // ... (省略部分 Firebase 程式碼) ...
+
+        alert("預約成功！");
+    } catch (e) {
+        alert("提交失敗: " + e.message);
+        btn.disabled = false;
+        btn.innerText = "立即發送預約";
+    }
 };
 
 // 執行初始化
