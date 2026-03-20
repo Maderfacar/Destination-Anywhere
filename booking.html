@@ -229,8 +229,21 @@ let currentRequiredSU = 0;
     if (response.routes && response.routes.length > 0) {
       const route = response.routes[0];
       currentKm = route.distanceMeters / 1000;
-      currentPrice = Math.round(150 + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
-
+      //currentPrice = Math.round(150 + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
+      //
+      // --- [動態計價核心] ---
+      // 1. 根據目前選中的車種 ID (selectedVehicleId)，從矩陣中抓取該車資料
+      const selectedCar = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
+      
+      // 2. 取得該車種的起步價 (若找不到則用 150 保底)
+      const basePrice = selectedCar ? selectedCar.base : 50;
+      
+      // 3. 使用動態起步價計算總金額
+      currentPrice = Math.round(basePrice + (currentKm > 0 ? (currentKm - 0) * 35 : 0));
+      
+      // 4. 更新畫面顯示
+      document.getElementById('price-display').innerText = `預估金額：$${currentPrice}`;
+      //
       document.getElementById('price-preview').style.display = 'block';
       document.getElementById('dist-val').innerText = currentKm.toFixed(1);
       document.getElementById('price-val').innerText = currentPrice;
