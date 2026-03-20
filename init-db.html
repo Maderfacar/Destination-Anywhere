@@ -2,11 +2,26 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>DA 系統初始化 - 權限設定</title>
+    <title>DA 系統初始化 - 權限與價格設定</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        .section { margin-bottom: 20px; padding: 15px; border-radius: 10px; background: #f9f9f9; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; }
+    </style>
 </head>
 <body>
-    <h2>正在初始化管理員權限...</h2>
-    <div id="log"></div>
+    <h2>DA 系統進階初始化</h2>
+    
+    <div class="section">
+        <h3>1. 管理員權限設定</h3>
+        <div id="admin-log">正在處理...</div>
+    </div>
+
+    <div class="section">
+        <h3>2. 價格參數系統建立 (settings/priceConfig)</h3>
+        <div id="price-log">正在處理...</div>
+    </div>
 
     <script type="module">
         import { CONFIG } from './config.js';
@@ -15,27 +30,71 @@
 
         const app = initializeApp(CONFIG.firebaseConfig);
         const db = getFirestore(app);
-        const logDiv = document.getElementById('log');
+        
+        const adminLog = document.getElementById('admin-log');
+        const priceLog = document.getElementById('price-log');
 
-        async function initAdmins() {
+        async function initializeSystem() {
+            // --- 第一部分：初始化管理員 ---
             try {
                 const adminList = CONFIG.ADMIN_UIDS;
-                
+                adminLog.innerHTML = "";
                 for (const uid of adminList) {
-                    // 使用 UID 作為 Document ID
                     await setDoc(doc(db, "admins", uid), {
                         role: "admin",
-                        createdAt: serverTimestamp()
+                        updatedAt: serverTimestamp()
                     });
-                    logDiv.innerHTML += `<p style="color:green;">✅ UID: ${uid} 已成功加入管理員清單</p>`;
+                    adminLog.innerHTML += `<p class="success">✅ 管理員 UID: ${uid} 已設定</p>`;
                 }
-                logDiv.innerHTML += "<h3>🎉 所有管理員權限已設定完成，現在可以關閉此頁面。</h3>";
             } catch (e) {
-                logDiv.innerHTML += `<p style="color:red;">❌ 錯誤: ${e.message}</p>`;
+                adminLog.innerHTML = `<p class="error">❌ 管理員設定失敗: ${e.message}</p>`;
             }
+
+            // --- 第二部分：建立價格設定資料夾與初始值 ---
+            try {
+                // 這裡就是您要求的「建立資料夾與參數」
+                const priceRef = doc(db, "settings", "priceConfig");
+                
+                const initialPriceSettings = {
+                    // 全域加項費用
+                    kmPrice: 35,          // 每公里加收
+                    freeKm: 5,            // 優惠里程 (前 X 公里不加價)
+                    nightFee: 200,        // 夜間加乘費
+                    midFee: 100,          // 中途停靠費
+                    carSeatFee: 200,      // 安全座椅費
+                    
+                    // 車種基礎價格 (對應 VEHICLE_MASTER)
+                    basePrices: {
+                        eco_5: 150,
+                        pro_5: 250,
+                        family_7: 450,
+                        vip_7: 800,
+                        std_9: 450,
+                        premium_9: 650
+                    },
+                    
+                    lastUpdated: serverTimestamp(),
+                    updatedBy: "System Initializer"
+                };
+
+                // 執行寫入，Firestore 會自動建立 settings 集合與 priceConfig 文件
+                await setDoc(priceRef, initialPriceSettings);
+                
+                priceLog.innerHTML = `<p class="success">✅ 價格設定資料夾 (settings/priceConfig) 已建立完成！</p>`;
+                priceLog.innerHTML += `<ul style="font-size:13px; color:#666;">
+                    <li>超里程計費：$${initialPriceSettings.kmPrice}/KM</li>
+                    <li>夜間加乘：$${initialPriceSettings.nightFee}</li>
+                    <li>安全座椅：$${initialPriceSettings.carSeatFee}</li>
+                </ul>`;
+
+            } catch (e) {
+                priceLog.innerHTML = `<p class="error">❌ 價格設定建立失敗: ${e.message}</p>`;
+            }
+
+            document.body.innerHTML += "<h3 style='text-align:center; color:#007AFF;'>🎉 系統所有底層結構已初始化完畢！</h3>";
         }
 
-        initAdmins();
+        initializeSystem();
     </script>
 </body>
 </html>
