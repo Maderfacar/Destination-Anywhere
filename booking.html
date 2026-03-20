@@ -31,7 +31,7 @@
     .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #444; margin-bottom: 10px; }
     .checkbox-row input { width: 18px; height: 18px; margin: 0; }
     .mid-stop-item { margin-bottom: 15px; border-left: 3px solid var(--primary); padding-left: 10px; }
-   
+  
     .su-container { display: inline-flex; align-items: center; vertical-align: middle; margin-left: 8px; width: 80px; height: 8px; background: #E5E5EA; border-radius: 10px; overflow: hidden; }
     .su-bar { height: 100%; width: 0%; transition: width 0.3s ease, background-color 0.3s ease; border-radius: 10px; }
   </style>
@@ -43,7 +43,6 @@
     <button class="tab-btn" id="btn-交通趟" onclick="setTripType('交通趟')">交通趟</button>
     <button class="tab-btn" id="btn-包車" onclick="setTripType('包車')">包車</button>
   </div>
-
   <span class="label-row">選擇車種 <small id="su-hint"></small></span>
   <div class="type-tabs" id="vehicle-selector" style="grid-template-columns: repeat(3, 1fr);">
     <button class="tab-btn active" id="btn-eco_5" onclick="selectVehicle('eco_5')">經濟五座</button>
@@ -53,7 +52,6 @@
     <button class="tab-btn" id="btn-luxury_9" onclick="selectVehicle('luxury_9')">豪華9座</button>
     <button class="tab-btn" id="btn-premium_9" onclick="selectVehicle('premium_9')">旗艦獨立椅</button>
   </div>
-
   <div class="card">
     <div id="trip-direction-box" style="margin-bottom: 10px;">
       <span class="label-row">航程類型</span>
@@ -62,21 +60,17 @@
         <label><input type="radio" name="air-type" value="送機" onclick="setAirType('送機')"> 送機</label>
       </div>
     </div>
-
     <div id="round-trip-toggle" style="display:none; margin-bottom: 10px;">
       <label class="checkbox-row">
         <input type="checkbox" id="isRoundTrip" onchange="toggleRoundTrip()"> 包含回程預約 (來回折扣)
       </label>
     </div>
-
     <span class="label-row" id="time-label-1">服務時間</span>
     <input type="datetime-local" id="appointmentTime" onchange="calculateNewRoute()">
-
     <div id="return-time-box" style="display:none; margin-top:10px;">
       <span class="label-row">回程預約時間</span>
       <input type="datetime-local" id="returnTime" onchange="calculateNewRoute()">
     </div>
-
     <div id="charter-duration-box" style="display:none; margin-top:10px;">
       <span class="label-row">包車時數 (小時)</span>
       <div class="counter-group" style="background:#F9F9F9; padding:10px; border-radius:12px;">
@@ -88,24 +82,19 @@
         </div>
       </div>
     </div>
-
     <hr style="border:0; border-top:1px solid #EEE; margin:20px 0;">
-
     <span class="label-row">上車地點 <span class="swap-btn" onclick="swapLocations()">🔄 交換起迄點</span></span>
     <div class="pac-box">
       <input type="text" id="pickup" placeholder="輸入起點" autocomplete="off" data-pid="">
       <div id="pac-pickup" class="custom-pac"></div>
     </div>
-
     <div id="mid-stops-container"></div>
     <div style="color:var(--primary); font-size:14px; margin-bottom:12px; cursor:pointer;" onclick="addNewMidStop()" id="add-mid-btn">+ 新增中途停靠站</div>
-
     <span class="label-row">下車地點</span>
     <div class="pac-box">
       <input type="text" id="dropoff" placeholder="輸入目的地" autocomplete="off" data-pid="">
       <div id="pac-dropoff" class="custom-pac"></div>
     </div>
-
     <div id="price-preview">
       <div id="charter-mode-label" class="charter-info"></div>
       <div style="font-size: 13px; color: #666;">預估總里程：<span id="dist-val">0</span> km</div>
@@ -116,12 +105,10 @@
       <div class="price-text">NT$ <span id="price-val">0</span></div>
     </div>
   </div>
-
   <div class="card" id="flight-card" style="display:block;">
     <span class="label-row">航班號碼</span>
     <input type="text" id="flightNo" placeholder="如 CX450">
   </div>
-
   <div class="card">
     <div class="counter-group"><span>成人人數</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('adults',-1)">-</div><span id="val-adults">1</span><div class="btn-circle" onclick="change('adults',1)">+</div></div></div>
     <div class="counter-group"><span>兒童人數</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('children',-1)">-</div><span id="val-children">0</span><div class="btn-circle" onclick="change('children',1)">+</div></div></div>
@@ -131,7 +118,6 @@
     <div class="counter-group"><span>中行李 (20-24吋)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugM',-1)">-</div><span id="val-lugM">0</span><div class="btn-circle" onclick="change('lugM',1)">+</div></div></div>
     <div class="counter-group"><span>小行李/手提</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugS',-1)">-</div><span id="val-lugS">0</span><div class="btn-circle" onclick="change('lugS',1)">+</div></div></div>
   </div>
-
   <div class="card">
     <div class="grid-2">
       <div><span class="label-row">聯絡姓名</span><input type="text" id="contactName"></div>
@@ -140,32 +126,66 @@
     <span class="label-row">備註需求</span>
     <textarea id="note" rows="2" placeholder="特殊需求或細節說明"></textarea>
   </div>
-
   <button id="submit-btn" onclick="sendOrder()">立即發送預約</button>
+
+  <script>
+    // Google Maps loader（保持原樣）
+    (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once."):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
+      key: "AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY",
+      v: "beta"
+    });
+  </script>
 
   <script type="module">
     import { db } from './firebase-config.js?v=105';
     import { doc, onSnapshot, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // ==================== 車種定義（靜態屬性，價格從後端讀） ====================
     let VEHICLE_MASTER = [
-      { id: 'eco_5',     name: '經濟五座',     maxPax: 4, maxSU: 4.2 },
-      { id: 'pro_5',     name: '舒適五座',     maxPax: 4, maxSU: 6.5 },
-      { id: 'family_7',  name: '家庭7座',      maxPax: 6, maxSU: 9.0 },
-      { id: 'std_9',     name: '標準9座',      maxPax: 8, maxSU: 18.0 },
-      { id: 'luxury_9',  name: '豪華9座',      maxPax: 8, maxSU: 18.0 },
-      { id: 'premium_9', name: '旗艦獨立椅',   maxPax: 8, maxSU: 22.0 }
+      { id: 'eco_5', name: '經濟五座', maxPax: 4, maxSU: 4.2 },
+      { id: 'pro_5', name: '舒適五座', maxPax: 4, maxSU: 6.5 },
+      { id: 'family_7', name: '家庭7座', maxPax: 6, maxSU: 9.0 },
+      { id: 'std_9', name: '標準9座', maxPax: 8, maxSU: 18.0 },
+      { id: 'luxury_9', name: '豪華9座', maxPax: 8, maxSU: 18.0 },
+      { id: 'premium_9', name: '旗艦獨立椅', maxPax: 8, maxSU: 22.0 }
     ];
 
-    let REMOTE_CONFIG = {};  // 從 Firestore 即時讀取
+    let REMOTE_CONFIG = {};
     let selectedVehicleId = 'eco_5';
     let tripType = "接送機";
     let airType = "接機";
     let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0, carSeat: 0, duration: 4 };
     let currentKm = 0, totalMidKm = 0, currentPrice = 0;
     let midStopsList = [];
+    let RouteClass, SuggestionClass, sessionToken, PlaceClass;
 
-    // ==================== 即時同步後端價格設定 ====================
+    // 等待 Google Maps 載入完成再執行初始化
+    async function init() {
+      try {
+        // 等待 Maps API 載入
+        const [places, routes] = await Promise.all([
+          google.maps.importLibrary("places"),
+          google.maps.importLibrary("routes")
+        ]);
+
+        RouteClass = routes.Route;
+        PlaceClass = places.Place;
+        SuggestionClass = places.AutocompleteSuggestion;
+        sessionToken = new places.AutocompleteSessionToken();
+
+        setupField('pickup', 'pac-pickup');
+        setupField('dropoff', 'pac-dropoff');
+
+        setTripType('接送機');
+        updateVehicleFilter();
+
+        // 啟動價格同步
+        syncPriceConfig();
+      } catch (e) {
+        console.error("Google Maps 載入失敗：", e);
+        alert("無法載入 Google Maps，請檢查網路或聯絡管理員");
+      }
+    }
+
     function syncPriceConfig() {
       onSnapshot(doc(db, "settings", "priceConfig"), (snap) => {
         if (snap.exists()) {
@@ -174,29 +194,23 @@
             car.base = Number(REMOTE_CONFIG.basePrices?.[car.id] || 0);
             car.kmPrice = Number(REMOTE_CONFIG.kmPrices?.[car.id] || 0);
           });
-          // 更新 UI 顯示（例如安全座椅費）
           if (document.getElementById('carSeatFeeDisplay')) {
             document.getElementById('carSeatFeeDisplay').innerText = REMOTE_CONFIG.carSeatFee || 200;
           }
           console.log("✅ 價格設定已即時同步");
-          calculateNewRoute(); // 重新計算
+          calculateNewRoute();
         }
       });
     }
 
-    // ==================== 路線計算（修正中途站完整距離） ====================
     async function calculateNewRoute() {
       const p1 = document.getElementById('pickup').dataset.pid;
       const p2 = document.getElementById('dropoff').dataset.pid;
       const midPids = midStopsList.map(m => m.pid).filter(pid => pid);
-
       if (!p1 || !p2) return;
-
       try {
         let totalDistance = 0;
         let currentOrigin = { id: p1 };
-
-        // 計算完整路徑：起點 → 中途1 → 中途2 → ... → 終點
         for (const midPid of midPids) {
           const res = await RouteClass.computeRoutes({
             origin: new PlaceClass(currentOrigin),
@@ -209,15 +223,12 @@
           }
           currentOrigin = { id: midPid };
         }
-
-        // 最後一段
         const finalRes = await RouteClass.computeRoutes({
           origin: new PlaceClass(currentOrigin),
           destination: new PlaceClass({ id: p2 }),
           travelMode: 'DRIVING',
           fields: ['distanceMeters']
         });
-
         if (finalRes.routes && finalRes.routes[0]) {
           totalDistance += finalRes.routes[0].distanceMeters;
           currentKm = totalDistance / 1000;
@@ -228,44 +239,21 @@
       }
     }
 
-    // ==================== 價格渲染（完全依賴後端設定） ====================
     function renderPrice() {
       const vehicle = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
       if (!vehicle || !vehicle.base || !vehicle.kmPrice) return;
-
       let finalPrice = currentKm * vehicle.kmPrice;
       if (finalPrice < vehicle.base) finalPrice = vehicle.base;
-
       const isRound = document.getElementById('isRoundTrip')?.checked || false;
       if (isRound) {
         finalPrice *= 2 * (REMOTE_CONFIG.roundTripDiscount || 0.95);
       }
-
       const stopFee = midStopsList.length > 0 ? (REMOTE_CONFIG.midFee || 200) : 0;
       const seatFee = counts.carSeat * (REMOTE_CONFIG.carSeatFee || 200);
       const nightFee = checkNightTime(document.getElementById('appointmentTime').value) ? (REMOTE_CONFIG.nightFee || 200) : 0;
-
       currentPrice = Math.round(finalPrice + stopFee + seatFee + nightFee);
-
       document.getElementById('price-val').innerText = currentPrice.toLocaleString();
       document.getElementById('price-preview').style.display = 'block';
-    }
-
-    // ==================== 其他原有函式（保持原樣） ====================
-    async function init() {
-      syncPriceConfig();  // 啟動即時同步
-      const [places, routes] = await Promise.all([
-        google.maps.importLibrary("places"),
-        google.maps.importLibrary("routes")
-      ]);
-      RouteClass = routes.Route;
-      PlaceClass = places.Place;
-      SuggestionClass = places.AutocompleteSuggestion;
-      sessionToken = new places.AutocompleteSessionToken();
-      setupField('pickup', 'pac-pickup');
-      setupField('dropoff', 'pac-dropoff');
-      setTripType('接送機');
-      updateVehicleFilter();
     }
 
     function setupField(inputId, pacId) {
@@ -459,6 +447,7 @@
       } catch (e) { alert("系統錯誤: " + e.message); btn.disabled = false; }
     };
 
+    // 啟動
     init();
   </script>
 </body>
