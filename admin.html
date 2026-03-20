@@ -9,13 +9,12 @@
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #F2F2F7; margin: 0; color: #1C1C1E; }
     .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #E5E5EA; background: #FFF; position: sticky; top: 0; z-index: 100; }
-    .tabs { display: flex; gap: 8px; padding: 10px 15px; background: #FFF; border-bottom: 1px solid #E5E5EA; overflow-x: auto; } /* 允許橫向滾動以容納新標籤 */
+    .tabs { display: flex; gap: 8px; padding: 10px 15px; background: #FFF; border-bottom: 1px solid #E5E5EA; overflow-x: auto; }
     .tab-btn { flex: none; min-width: 90px; padding: 10px; border: none; border-radius: 10px; background: #F2F2F7; font-weight: 600; font-size: 13px; color: #8E8E93; transition: 0.3s; }
     .tab-btn.active { background: #007AFF; color: white; }
     .panel { display: none; padding: 15px; }
     .panel.active { display: block; }
 
-    /* 訂單卡片樣式 */
     .order-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #EEE; }
     .order-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 16px; align-items: center; }
     .label-gray { color: #8E8E93; font-size: 13px; font-weight: 500; }
@@ -28,7 +27,6 @@
     .btn-customer { background: #E5F9E5; color: #28A745; }
     .btn-driver { background: #E5F1FF; color: #007AFF; }
 
-    /* 司機區塊樣式 */
     .drv-v-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; border: 2px solid #007AFF; }
     .drv-v-title { font-size: 18px; font-weight: 800; color: #1C1C1E; }
     .drv-v-phone { font-size: 16px; color: #007AFF; font-weight: bold; margin-bottom: 10px; }
@@ -37,15 +35,17 @@
     .drv-img-box img { width: 100%; height: 100%; object-fit: cover; }
     .drv-btn-reject { background: #FFF2F2; color: #FF3B30; }
 
-    /* Modal */
     #edit-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; overflow-y: auto; padding-top: 50px; }
     .modal-content { background: white; width: 90%; max-width: 450px; margin: auto; border-radius: 20px; padding: 25px; box-sizing: border-box; }
     .input-field { width: 100%; box-sizing: border-box; border: 1px solid #E5E5EA; border-radius: 10px; padding: 12px; font-size: 15px; margin-top: 5px; background: #F9F9FB; }
     
     #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:white; display:flex; justify-content:center; align-items:center; z-index:9999; flex-direction:column; }
 
-    /* 價格設定專用樣式 */
     .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    
+    /* 包車設定專用 */
+    .charter-card { background: #F9F9FB; border-radius: 12px; padding: 15px; margin-top: 15px; border: 1px solid #E5E5EA; }
+    .charter-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
   </style>
 </head>
 <body>
@@ -89,7 +89,8 @@
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('dispatch', this)">🚕 調度派車</button>
     <button class="tab-btn" onclick="switchTab('verify', this)">🆔 司機審核</button>
-    <button class="tab-btn" onclick="switchTab('price', this)">💰 價格設定</button> <button class="tab-btn" onclick="switchTab('design', this)">🎨 首頁裝修</button>
+    <button class="tab-btn" onclick="switchTab('price', this)">💰 價格設定</button> 
+    <button class="tab-btn" onclick="switchTab('design', this)">🎨 首頁裝修</button>
   </div>
 
   <div id="panel-dispatch" class="panel active">
@@ -102,24 +103,96 @@
 
   <div id="panel-price" class="panel">
     <div class="order-card">
-        <h3 style="margin-top:0;">核心計費參數</h3>
+        <h3 style="margin-top:0;">1. 基礎與交通趟設定</h3>
         <div class="price-grid">
             <div><label class="label-gray">里程單價 (元/KM)</label><input type="number" id="cfg-kmPrice" class="input-field"></div>
             <div><label class="label-gray">起步內含里程 (KM)</label><input type="number" id="cfg-freeKm" class="input-field"></div>
             <div><label class="label-gray">夜間加乘費</label><input type="number" id="cfg-nightFee" class="input-field"></div>
             <div><label class="label-gray">中途停靠費</label><input type="number" id="cfg-midFee" class="input-field"></div>
             <div><label class="label-gray">安全座椅費</label><input type="number" id="cfg-carSeatFee" class="input-field"></div>
+            <div><label class="label-gray">交通趟折扣 (例: 0.9)</label><input type="number" id="cfg-rtDiscount" step="0.01" class="input-field"></div>
         </div>
         
-        <h3 style="margin-top:25px; border-top:1px solid #EEE; padding-top:15px;">車種起步價 (Base Price)</h3>
+        <h3 style="margin-top:25px; border-top:1px solid #EEE; padding-top:15px;">2. 智慧門檻判定</h3>
         <div class="price-grid">
-            <div><label class="label-gray">經濟5人</label><input type="number" id="cfg-base-eco_5" class="input-field"></div>
-            <div><label class="label-gray">高級5人</label><input type="number" id="cfg-base-pro_5" class="input-field"></div>
-            <div><label class="label-gray">家庭7人</label><input type="number" id="cfg-base-family_7" class="input-field"></div>
-            <div><label class="label-gray">豪華7人</label><input type="number" id="cfg-base-vip_7" class="input-field"></div>
-            <div><label class="label-gray">標準9人</label><input type="number" id="cfg-base-std_9" class="input-field"></div>
-            <div><label class="label-gray">高級9人</label><input type="number" id="cfg-base-premium_9" class="input-field"></div>
+            <div><label class="label-gray">長途判定門檻 (KM)</label><input type="number" id="cfg-longThreshold" class="input-field"></div>
+            <div><label class="label-gray">同城回程判定 (KM)</label><input type="number" id="cfg-returnThreshold" class="input-field"></div>
         </div>
+
+        <h3 style="margin-top:25px; border-top:1px solid #EEE; padding-top:15px;">3. 各車種起步與包車矩陣</h3>
+        
+        <div id="charter-matrix-container">
+            <div class="charter-card">
+                <div style="font-weight:bold; margin-bottom:10px; color:#007AFF;">經濟 5 人座</div>
+                <div class="price-grid">
+                    <div><label class="label-gray">基礎起步價</label><input type="number" id="cfg-base-eco_5" class="input-field"></div>
+                    <div><label class="label-gray">超時費 (/hr)</label><input type="number" id="cfg-eco_5-otPrice" class="input-field"></div>
+                    <div><label class="label-gray">超里程費 (/km)</label><input type="number" id="cfg-eco_5-okPrice" class="input-field"></div>
+                </div>
+                <div class="charter-row" style="margin-top:10px;">
+                    <div><span class="label-gray">類型</span></div>
+                    <div><span class="label-gray">保底價</span></div>
+                    <div><span class="label-gray">含里程</span></div>
+                </div>
+                <div class="charter-row">
+                    <div style="font-size:13px; padding-top:15px;">市區 4H</div>
+                    <input type="number" id="cfg-eco_5-c4p" class="input-field" placeholder="價">
+                    <input type="number" id="cfg-eco_5-c4k" class="input-field" placeholder="Km">
+                </div>
+                <div class="charter-row">
+                    <div style="font-size:13px; padding-top:15px;">市區 8H</div>
+                    <input type="number" id="cfg-eco_5-c8p" class="input-field" placeholder="價">
+                    <input type="number" id="cfg-eco_5-c8k" class="input-field" placeholder="Km">
+                </div>
+                <div class="charter-row">
+                    <div style="font-size:13px; padding-top:15px;">長途單程(AB)</div>
+                    <input type="number" id="cfg-eco_5-lOp" class="input-field" placeholder="價">
+                    <input type="number" id="cfg-eco_5-lOk" class="input-field" placeholder="Km">
+                </div>
+                <div class="charter-row">
+                    <div style="font-size:13px; padding-top:15px;">長途回程(AA)</div>
+                    <input type="number" id="cfg-eco_5-lRp" class="input-field" placeholder="價">
+                    <input type="number" id="cfg-eco_5-lRk" class="input-field" placeholder="Km">
+                </div>
+            </div>
+
+            <div class="charter-card">
+                <div style="font-weight:bold; margin-bottom:10px; color:#007AFF;">標準 9 人座</div>
+                <div class="price-grid">
+                    <div><label class="label-gray">基礎起步價</label><input type="number" id="cfg-base-std_9" class="input-field"></div>
+                    <div><label class="label-gray">超時費 (/hr)</label><input type="number" id="cfg-std_9-otPrice" class="input-field"></div>
+                    <div><label class="label-gray">超里程費 (/km)</label><input type="number" id="cfg-std_9-okPrice" class="input-field"></div>
+                </div>
+                <div class="charter-row" style="margin-top:10px;">
+                    <div><span class="label-gray">類型</span></div>
+                    <div><span class="label-gray">保底價</span></div>
+                    <div><span class="label-gray">含里程</span></div>
+                </div>
+                <div class="charter-row">
+                    <div style="font-size:13px; padding-top:15px;">市區 8H</div>
+                    <input type="number" id="cfg-std_9-c8p" class="input-field" placeholder="價">
+                    <input type="number" id="cfg-std_9-c8k" class="input-field" placeholder="Km">
+                </div>
+                <div class="charter-row">
+                    <div style="font-size:13px; padding-top:15px;">長途單程(AB)</div>
+                    <input type="number" id="cfg-std_9-lOp" class="input-field" placeholder="價">
+                    <input type="number" id="cfg-std_9-lOk" class="input-field" placeholder="Km">
+                </div>
+                <div class="charter-row">
+                    <div style="font-size:13px; padding-top:15px;">長途回程(AA)</div>
+                    <input type="number" id="cfg-std_9-lRp" class="input-field" placeholder="價">
+                    <input type="number" id="cfg-std_9-lRk" class="input-field" placeholder="Km">
+                </div>
+            </div>
+
+            <div class="price-grid" style="margin-top:15px;">
+                <div><label class="label-gray">高級5人起步</label><input type="number" id="cfg-base-pro_5" class="input-field"></div>
+                <div><label class="label-gray">家庭7人起步</label><input type="number" id="cfg-base-family_7" class="input-field"></div>
+                <div><label class="label-gray">豪華7人起步</label><input type="number" id="cfg-base-vip_7" class="input-field"></div>
+                <div><label class="label-gray">高級9人起步</label><input type="number" id="cfg-base-premium_9" class="input-field"></div>
+            </div>
+        </div>
+
         <button class="btn-sm btn-driver" style="width:100%; margin-top:25px; background:#34C759;" onclick="savePriceSettings()">💾 儲存價格設定</button>
     </div>
   </div>
@@ -156,7 +229,7 @@
       loadApprovedDrivers();
       loadOrders();
       loadDesignData();
-      loadPriceData(); // 初始化載入價格設定
+      loadPriceData(); 
     } catch (err) { 
       console.error(err);
       document.getElementById('loading-screen').innerText = "載入失敗，請檢查網路連接";
@@ -272,7 +345,7 @@
       const payload = {
         target: target,
         orderId: orderId,
-        customerId: ord.customerId || "", // 必帶項目
+        customerId: ord.customerId || "",
         tripType: ord.tripType || "",
         contactName: ord.contactName || "",
         contactPhone: ord.contactPhone || "",
@@ -287,7 +360,6 @@
         lugS: ord.lugS || "0",
         flightNo: ord.flightNo || "",
         note: ord.note || "無",
-        // 司機資訊
         driverName: ord.driverName || "",
         driverPhone: ord.driverPhone || "",
         driverPlate: ord.driverPlate || "",
@@ -351,17 +423,24 @@
     }
   };
 
-  // --- 價格設定邏輯 ---
+  // --- 價格設定邏輯 (含包車/交通趟) ---
   async function loadPriceData() {
     const res = await getDoc(doc(db, "settings", "priceConfig"));
     if (res.exists()) {
       const data = res.data();
+      // 1. 基礎
       document.getElementById('cfg-kmPrice').value = data.kmPrice || 0;
       document.getElementById('cfg-freeKm').value = data.freeKm || 0;
       document.getElementById('cfg-nightFee').value = data.nightFee || 0;
       document.getElementById('cfg-midFee').value = data.midFee || 0;
       document.getElementById('cfg-carSeatFee').value = data.carSeatFee || 0;
+      document.getElementById('cfg-rtDiscount').value = data.roundTripDiscount || 0.9;
       
+      // 2. 門檻
+      document.getElementById('cfg-longThreshold').value = data.longDistanceThreshold || 150;
+      document.getElementById('cfg-returnThreshold').value = data.returnDistanceThreshold || 20;
+
+      // 3. 車種與包車矩陣
       if(data.basePrices) {
         document.getElementById('cfg-base-eco_5').value = data.basePrices.eco_5 || 0;
         document.getElementById('cfg-base-pro_5').value = data.basePrices.pro_5 || 0;
@@ -369,6 +448,34 @@
         document.getElementById('cfg-base-vip_7').value = data.basePrices.vip_7 || 0;
         document.getElementById('cfg-base-std_9').value = data.basePrices.std_9 || 0;
         document.getElementById('cfg-base-premium_9').value = data.basePrices.premium_9 || 0;
+      }
+
+      // 包車細項 (範例：經濟5人)
+      if(data.charterConfig && data.charterConfig.eco_5) {
+        const c = data.charterConfig.eco_5;
+        document.getElementById('cfg-eco_5-otPrice').value = c.overHour || 0;
+        document.getElementById('cfg-eco_5-okPrice').value = c.overKm || 0;
+        document.getElementById('cfg-eco_5-c4p').value = c.city4hPrice || 0;
+        document.getElementById('cfg-eco_5-c4k').value = c.city4hKm || 0;
+        document.getElementById('cfg-eco_5-c8p').value = c.city8hPrice || 0;
+        document.getElementById('cfg-eco_5-c8k').value = c.city8hKm || 0;
+        document.getElementById('cfg-eco_5-lOp').value = c.longOneWayPrice || 0;
+        document.getElementById('cfg-eco_5-lOk').value = c.longOneWayKm || 0;
+        document.getElementById('cfg-eco_5-lRp').value = c.longRoundPrice || 0;
+        document.getElementById('cfg-eco_5-lRk').value = c.longRoundKm || 0;
+      }
+      
+      // 包車細項 (範例：標準9人)
+      if(data.charterConfig && data.charterConfig.std_9) {
+        const c = data.charterConfig.std_9;
+        document.getElementById('cfg-std_9-otPrice').value = c.overHour || 0;
+        document.getElementById('cfg-std_9-okPrice').value = c.overKm || 0;
+        document.getElementById('cfg-std_9-c8p').value = c.city8hPrice || 0;
+        document.getElementById('cfg-std_9-c8k').value = c.city8hKm || 0;
+        document.getElementById('cfg-std_9-lOp').value = c.longOneWayPrice || 0;
+        document.getElementById('cfg-std_9-lOk').value = c.longOneWayKm || 0;
+        document.getElementById('cfg-std_9-lRp').value = c.longRoundPrice || 0;
+        document.getElementById('cfg-std_9-lRk').value = c.longRoundKm || 0;
       }
     }
   }
@@ -381,6 +488,9 @@
         nightFee: Number(document.getElementById('cfg-nightFee').value),
         midFee: Number(document.getElementById('cfg-midFee').value),
         carSeatFee: Number(document.getElementById('cfg-carSeatFee').value),
+        roundTripDiscount: Number(document.getElementById('cfg-rtDiscount').value),
+        longDistanceThreshold: Number(document.getElementById('cfg-longThreshold').value),
+        returnDistanceThreshold: Number(document.getElementById('cfg-returnThreshold').value),
         basePrices: {
             eco_5: Number(document.getElementById('cfg-base-eco_5').value),
             pro_5: Number(document.getElementById('cfg-base-pro_5').value),
@@ -388,6 +498,30 @@
             vip_7: Number(document.getElementById('cfg-base-vip_7').value),
             std_9: Number(document.getElementById('cfg-base-std_9').value),
             premium_9: Number(document.getElementById('cfg-base-premium_9').value)
+        },
+        charterConfig: {
+          eco_5: {
+            overHour: Number(document.getElementById('cfg-eco_5-otPrice').value),
+            overKm: Number(document.getElementById('cfg-eco_5-okPrice').value),
+            city4hPrice: Number(document.getElementById('cfg-eco_5-c4p').value),
+            city4hKm: Number(document.getElementById('cfg-eco_5-c4k').value),
+            city8hPrice: Number(document.getElementById('cfg-eco_5-c8p').value),
+            city8hKm: Number(document.getElementById('cfg-eco_5-c8k').value),
+            longOneWayPrice: Number(document.getElementById('cfg-eco_5-lOp').value),
+            longOneWayKm: Number(document.getElementById('cfg-eco_5-lOk').value),
+            longRoundPrice: Number(document.getElementById('cfg-eco_5-lRp').value),
+            longRoundKm: Number(document.getElementById('cfg-eco_5-lRk').value)
+          },
+          std_9: {
+            overHour: Number(document.getElementById('cfg-std_9-otPrice').value),
+            overKm: Number(document.getElementById('cfg-std_9-okPrice').value),
+            city8hPrice: Number(document.getElementById('cfg-std_9-c8p').value),
+            city8hKm: Number(document.getElementById('cfg-std_9-c8k').value),
+            longOneWayPrice: Number(document.getElementById('cfg-std_9-lOp').value),
+            longOneWayKm: Number(document.getElementById('cfg-std_9-lOk').value),
+            longRoundPrice: Number(document.getElementById('cfg-std_9-lRp').value),
+            longRoundKm: Number(document.getElementById('cfg-std_9-lRk').value)
+          }
         },
         updatedAt: serverTimestamp()
       }, { merge: true });
