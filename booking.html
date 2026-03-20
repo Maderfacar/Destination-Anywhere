@@ -22,10 +22,11 @@
     .price-text { color: #D70015; font-size: 26px; font-weight: 800; }
     #submit-btn { width: 100%; padding: 18px; background: var(--primary); color: #FFF; border: none; border-radius: 16px; font-size: 18px; font-weight: 700; margin-top: 20px; cursor: pointer; }
     .pac-box { position: relative; width: 100%; }
-    .custom-pac { position: absolute; background: white; width: 100%; z-index: 2000; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: none; max-height: 250px; overflow-y: auto; top: 52px; border: 1px solid #膽EE; }
+    .custom-pac { position: absolute; background: white; width: 100%; z-index: 2000; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: none; max-height: 250px; overflow-y: auto; top: 52px; border: 1px solid #EEE; }
     .pac-item { padding: 15px; border-bottom: 1px solid #F2F2F7; cursor: pointer; font-size: 14px; color: #333; text-align: left; }
-    /* 新增：車種停用樣式 */
     .tab-btn.disabled-car { background: #E5E5EA !important; color: #AEAEB2 !important; cursor: not-allowed !important; opacity: 0.3; pointer-events: none; }
+    /* 新增：夜間加乘提示樣式 */
+    #night-fee-notice { display: none; color: #FF9500; font-size: 13px; font-weight: 600; margin-top: 8px; }
   </style>
 </head>
 <body>
@@ -75,13 +76,14 @@
 
     <div id="price-preview">
       <div style="font-size: 13px; color: #666;">預估里程：<span id="dist-val">0</span> km</div>
+      <div id="night-fee-notice">🌙 已觸發夜間加乘 (23:00 - 06:00) +$200</div>
       <div class="price-text">$ <span id="price-val">0</span></div>
     </div>
   </div>
 
   <div class="card">
     <div class="grid-2">
-      <div><span class="label-row">日期時間</span><input type="datetime-local" id="appointmentTime"></div>
+      <div><span class="label-row">日期時間</span><input type="datetime-local" id="appointmentTime" onchange="calculateNewRoute()"></div>
       <div id="flight-field"><span class="label-row">航班號碼</span><input type="text" id="flightNo" placeholder="如 CX450"></div>
     </div>
   </div>
@@ -92,6 +94,8 @@
     <div class="counter-group"><span>大行李 (28吋+)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugL',-1)">-</div><span id="val-lugL">0</span><div class="btn-circle" onclick="change('lugL',1)">+</div></div></div>
     <div class="counter-group"><span>中行李 (20-24吋)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugM',-1)">-</div><span id="val-lugM">0</span><div class="btn-circle" onclick="change('lugM',1)">+</div></div></div>
     <div class="counter-group"><span>小行李/手提</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugS',-1)">-</div><span id="val-lugS">0</span><div class="btn-circle" onclick="change('lugS',1)">+</div></div></div>
+    <hr style="border:0; border-top:1px solid #EEE; margin:15px 0;">
+    <div class="counter-group"><span>安全座椅 (+$200)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('carSeat',-1)">-</div><span id="val-carSeat">0</span><div class="btn-circle" onclick="change('carSeat',1)">+</div></div></div>
   </div>
 
   <div class="card">
@@ -100,7 +104,7 @@
       <div><span class="label-row">電話號碼</span><input type="tel" id="contactPhone"></div>
     </div>
     <span class="label-row">備註需求</span>
-    <textarea id="note" rows="2" placeholder="特殊需求（如安全座椅等）"></textarea>
+    <textarea id="note" rows="2" placeholder="特殊需求（如：需要舉牌、攜帶寵物等）"></textarea>
   </div>
 
   <button id="submit-btn" onclick="sendOrder()">立即發送預約</button>
@@ -124,10 +128,10 @@ const VEHICLE_MASTER = [
     { id: 'premium_9',name: '尊榮九座',   base: 650, maxPax: 8, maxSU: 22.0, isDynamic: false }
 ];
 
-// 核心狀態變數 (確保不重複宣告)
+// 核心狀態變數
 let selectedVehicleId = 'eco_5';
 let tripType = "接機";
-let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
+let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0, carSeat: 0 };
 let currentKm = 0, currentPrice = 0, currentRequiredSU = 0;
 let RouteClass, SuggestionClass, sessionToken, PlaceClass;
 
@@ -176,7 +180,7 @@ function setupField(inputId, pacId) {
     });
 }
 
-async function calculateNewRoute() {
+window.calculateNewRoute = async () => {
     const pickupPid = document.getElementById('pickup').dataset.pid;
     const dropoffPid = document.getElementById('dropoff').dataset.pid;
     const midPid = document.getElementById('midStops').dataset.pid;
@@ -197,11 +201,28 @@ async function calculateNewRoute() {
         if (response.routes && response.routes.length > 0) {
             currentKm = response.routes[0].distanceMeters / 1000;
             const vehicle = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
-            const basePrice = vehicle ? vehicle.base : 150;
             
-            // 基礎計價公式：起步價 + (超過5公里後的里程 * 35)
-            currentPrice = Math.round(basePrice + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
+            // 1. 基礎計費 (起步價 + 超過5公里加乘)
+            const basePrice = vehicle ? vehicle.base : 150;
+            let totalPrice = Math.round(basePrice + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
 
+            // 2. 中途停靠費 (+$100)
+            if (midVisible) totalPrice += 100;
+
+            // 3. 安全座椅費 (每張 +$200)
+            totalPrice += (counts.carSeat * 200);
+
+            // 4. 夜間加乘判定 (23:00 - 06:00, +$200)
+            const timeVal = document.getElementById('appointmentTime').value;
+            const isNight = checkNightTime(timeVal);
+            if (isNight) {
+                totalPrice += 200;
+                document.getElementById('night-fee-notice').style.display = 'block';
+            } else {
+                document.getElementById('night-fee-notice').style.display = 'none';
+            }
+
+            currentPrice = totalPrice;
             document.getElementById('price-preview').style.display = 'block';
             document.getElementById('dist-val').innerText = currentKm.toFixed(1);
             document.getElementById('price-val').innerText = currentPrice;
@@ -209,24 +230,27 @@ async function calculateNewRoute() {
     } catch (e) { console.error("計算失敗", e); }
 }
 
-// --- [3. 關鍵修正：將函數掛載到 window 供 HTML onclick 使用] ---
+function checkNightTime(dtStr) {
+    if (!dtStr) return false;
+    const hour = new Date(dtStr).getHours();
+    return (hour >= 23 || hour < 6);
+}
+
+// --- [3. UI 互動函數] ---
 
 window.setTripType = (t) => {
     tripType = t;
-    // 更新 UI 狀態
     const serviceTypes = ['接機', '送機', '市區', '包車'];
     serviceTypes.forEach(type => {
         const btn = document.getElementById(`btn-${type}`);
         if (btn) btn.classList.toggle('active', type === t);
     });
-    // 切換航班號碼欄位顯示
-    const flightField = document.getElementById('flightNo').parentElement;
+    const flightField = document.getElementById('flight-field');
     if (flightField) flightField.style.display = (t === '接機') ? 'block' : 'none';
 };
 
 window.selectVehicle = (vId) => {
     selectedVehicleId = vId;
-    // 更新 UI 狀態
     VEHICLE_MASTER.forEach(car => {
         const btn = document.getElementById(`btn-${car.id}`);
         if (btn) btn.classList.toggle('active', car.id === vId);
@@ -235,10 +259,13 @@ window.selectVehicle = (vId) => {
 };
 
 window.change = (k, d) => {
-    counts[k] = Math.max((k === 'adults' ? 1 : 0), counts[k] + d);
+    const minVal = (k === 'adults' ? 1 : 0);
+    counts[k] = Math.max(minVal, counts[k] + d);
     const el = document.getElementById(`val-${k}`);
     if (el) el.innerText = counts[k];
+    
     updateVehicleFilter();
+    calculateNewRoute(); // 數量變更（特別是座椅）需重新計算價格
 };
 
 window.toggleMid = (show) => {
@@ -247,8 +274,8 @@ window.toggleMid = (show) => {
     if (!show) {
         document.getElementById('midStops').value = '';
         document.getElementById('midStops').dataset.pid = '';
-        calculateNewRoute();
     }
+    calculateNewRoute();
 };
 
 function updateVehicleFilter() {
@@ -274,54 +301,54 @@ function updateVehicleFilter() {
 
 window.sendOrder = async () => {
     const btn = document.getElementById('submit-btn');
+    if(!document.getElementById('pickup').value || !document.getElementById('dropoff').value) {
+        alert("請輸入完整的起點與終點");
+        return;
+    }
+    
     btn.disabled = true;
     btn.innerText = "處理中...";
 
     try {
-        // 取得當前選中的車型完整資料
         const vehicleInfo = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
-
         const orderData = {
-            // --- 新增的物理容量數據 ---
-            selectedVehicleId: selectedVehicleId, // 車型 ID (如 eco_5)
-            vehicleName: vehicleInfo ? vehicleInfo.name : "未指定", // 車型名稱
-            requiredSU: currentRequiredSU.toFixed(1), // 總行李係數
-            
-            // --- 原有的訂單數據 ---
             tripType: tripType,
-            contactName: document.getElementById('contactName').value,
-            contactPhone: document.getElementById('contactPhone').value,
+            vehicleId: selectedVehicleId,
+            vehicleName: vehicleInfo ? vehicleInfo.name : "",
+            pickup: document.getElementById('pickup').value,
+            dropoff: document.getElementById('dropoff').value,
+            midStops: document.getElementById('midStops').value,
             appointmentTime: document.getElementById('appointmentTime').value.replace('T', ' '),
             flightNo: document.getElementById('flightNo').value,
-            pickup: document.getElementById('pickup').value,
-            midStops: document.getElementById('midStops').value,
-            dropoff: document.getElementById('dropoff').value,
-            adults: String(counts.adults),
-            children: String(counts.children),
-            lugL: String(counts.lugL),
-            lugM: String(counts.lugM),
-            lugS: String(counts.lugS),
-            estimatedPrice: currentPrice, // 存入最終計價
+            adults: counts.adults,
+            children: counts.children,
+            lugL: counts.lugL,
+            lugM: counts.lugM,
+            lugS: counts.lugS,
+            carSeat: counts.carSeat,
+            contactName: document.getElementById('contactName').value,
+            contactPhone: document.getElementById('contactPhone').value,
+            note: document.getElementById('note').value,
+            estimatedPrice: currentPrice,
+            distanceKm: currentKm.toFixed(1),
+            requiredSU: currentRequiredSU.toFixed(1),
             status: "pending",
             createdAt: new Date().toISOString()
         };
 
-        console.log("準備送出的訂單資料：", orderData);
+        console.log("送出訂單：", orderData);
+        // 此處對接您的 Firebase 或 Webhook 邏輯
+        alert("預約已準備送出！金額：$" + currentPrice);
         
-        // 這裡接您原本的 Firebase addDoc 邏輯
-        // ... (省略部分 Firebase 程式碼) ...
-
-        alert("預約成功！");
     } catch (e) {
         alert("提交失敗: " + e.message);
+    } finally {
         btn.disabled = false;
         btn.innerText = "立即發送預約";
     }
 };
 
-// 執行初始化
 initMap();
-</script>
 </script>
 </body>
 </html>
