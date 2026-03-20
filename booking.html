@@ -49,7 +49,7 @@
     <button class="tab-btn" id="btn-pro_5" onclick="selectVehicle('pro_5')">舒適五座</button>
     <button class="tab-btn" id="btn-family_7" onclick="selectVehicle('family_7')">家庭7座</button>
     <button class="tab-btn" id="btn-std_9" onclick="selectVehicle('std_9')">標準9座</button>
-    <button class="tab-btn" id="btn-luxury_9" onclick="selectVehicle('luxury_9')">豪華9座</button>
+    <button class="tab-btn" id="btn-luxe_9" onclick="selectVehicle('luxe_9')">豪華9座</button>
     <button class="tab-btn" id="btn-premium_9" onclick="selectVehicle('premium_9')">旗艦獨立椅</button>
   </div>
   <div class="card">
@@ -128,9 +128,9 @@
   </div>
   <button id="submit-btn" onclick="sendOrder()">立即發送預約</button>
 
-  <!-- Google Maps loader -->
   <script>
-    (function(g){var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once."):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
+    // Google Maps loader
+    (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once."):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
       key: "AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY",
       v: "beta"
     });
@@ -145,7 +145,7 @@
       { id: 'pro_5', name: '舒適五座', maxPax: 4, maxSU: 6.5 },
       { id: 'family_7', name: '家庭7座', maxPax: 6, maxSU: 9.0 },
       { id: 'std_9', name: '標準9座', maxPax: 8, maxSU: 18.0 },
-      { id: 'luxury_9', name: '豪華9座', maxPax: 8, maxSU: 18.0 },
+      { id: 'luxe_9', name: '豪華9座', maxPax: 8, maxSU: 18.0 },
       { id: 'premium_9', name: '旗艦獨立椅', maxPax: 8, maxSU: 22.0 }
     ];
 
@@ -158,10 +158,8 @@
     let midStopsList = [];
     let RouteClass, SuggestionClass, sessionToken, PlaceClass;
 
-    // 等待 Maps API 載入完成
     async function init() {
       try {
-        // 明確等待兩個 library 載入
         const [places, routes] = await Promise.all([
           google.maps.importLibrary("places"),
           google.maps.importLibrary("routes")
@@ -255,7 +253,6 @@
       document.getElementById('price-preview').style.display = 'block';
     }
 
-    // 以下所有 window. 函式與你原本完全相同
     function setupField(inputId, pacId) {
       const input = document.getElementById(inputId);
       const pac = document.getElementById(pacId);
@@ -447,7 +444,6 @@
       } catch (e) { alert("系統錯誤: " + e.message); btn.disabled = false; }
     };
 
-    // 啟動
     init();
   </script>
 </body>
