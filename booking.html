@@ -113,7 +113,7 @@
   </script>
 
 <script>
-// --- [初始化與全域變數] ---
+// --- [1. 初始化與全域變數] ---
 const SU_WEIGHTS = { lugL: 2.0, lugM: 1.2, lugS: 0.7 };
 const VEHICLE_MASTER = [
     { id: 'eco_5',    name: '經濟五座',   base: 150, maxPax: 4, maxSU: 4.2,  isDynamic: false },
@@ -124,13 +124,14 @@ const VEHICLE_MASTER = [
     { id: 'premium_9',name: '尊榮九座',   base: 650, maxPax: 8, maxSU: 22.0, isDynamic: false }
 ];
 
+// 核心狀態變數 (確保不重複宣告)
+let selectedVehicleId = 'eco_5';
 let tripType = "接機";
 let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
 let currentKm = 0, currentPrice = 0, currentRequiredSU = 0;
-let selectedVehicleId = 'eco_5';
 let RouteClass, SuggestionClass, sessionToken, PlaceClass;
 
-// --- [地圖功能] ---
+// --- [2. 地圖功能] ---
 async function initMap() {
     const [places, routes] = await Promise.all([
       google.maps.importLibrary("places"),
@@ -198,6 +199,7 @@ async function calculateNewRoute() {
             const vehicle = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
             const basePrice = vehicle ? vehicle.base : 150;
             
+            // 基礎計價公式：起步價 + (超過5公里後的里程 * 35)
             currentPrice = Math.round(basePrice + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
 
             document.getElementById('price-preview').style.display = 'block';
@@ -207,18 +209,24 @@ async function calculateNewRoute() {
     } catch (e) { console.error("計算失敗", e); }
 }
 
-// --- [UI 控制函數] ---
+// --- [3. 關鍵修正：將函數掛載到 window 供 HTML onclick 使用] ---
+
 window.setTripType = (t) => {
     tripType = t;
-    document.querySelectorAll('.tab-btn').forEach(b => {
-        if(['接機','送機','市區','包車'].includes(b.innerText)) b.classList.toggle('active', b.id === 'btn-'+t);
+    // 更新 UI 狀態
+    const serviceTypes = ['接機', '送機', '市區', '包車'];
+    serviceTypes.forEach(type => {
+        const btn = document.getElementById(`btn-${type}`);
+        if (btn) btn.classList.toggle('active', type === t);
     });
-    const flightField = document.getElementById('flight-field');
+    // 切換航班號碼欄位顯示
+    const flightField = document.getElementById('flightNo').parentElement;
     if (flightField) flightField.style.display = (t === '接機') ? 'block' : 'none';
 };
 
 window.selectVehicle = (vId) => {
     selectedVehicleId = vId;
+    // 更新 UI 狀態
     VEHICLE_MASTER.forEach(car => {
         const btn = document.getElementById(`btn-${car.id}`);
         if (btn) btn.classList.toggle('active', car.id === vId);
@@ -257,7 +265,6 @@ function updateVehicleFilter() {
         
         if (btn) {
             btn.classList.toggle('disabled-car', isOver);
-            // 如果當前選中的車被禁用了，自動跳轉到下一階(簡易邏輯)
             if (isOver && selectedVehicleId === car.id) {
                 btn.classList.remove('active');
             }
@@ -265,9 +272,13 @@ function updateVehicleFilter() {
     });
 }
 
-window.sendOrder = () => { alert("訂單發送功能對接中..."); };
+window.sendOrder = () => { 
+    alert("訂單已準備封裝，SU 係數: " + currentRequiredSU.toFixed(1)); 
+};
 
+// 執行初始化
 initMap();
+</script>
 </script>
 </body>
 </html>
