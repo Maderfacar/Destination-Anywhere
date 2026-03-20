@@ -99,6 +99,35 @@
   </script>
 
  <script>
+// --- [第一步：物理容量與車種能力矩陣初始化] ---
+
+/**
+ * 行李單位化定義 (SU: Space Unit)
+ * 嚴格遵循計畫書：大箱(2.0), 中箱(1.2), 小箱(0.7)
+ */
+const SU_WEIGHTS = {
+    lugL: 2.0, // 大行李 (28吋+)
+    lugM: 1.2, // 中行李 (20-24吋)
+    lugS: 0.7  // 小行李/登機箱
+};
+
+/**
+ * 車種標定標：對齊 Firebase vehicle_config 欄位
+ * @property {number} maxSU - 該車種在滿載人數下的剩餘行李空間
+ */
+const VEHICLE_MASTER = [
+    { id: 'eco_5',    name: '經濟五座',   maxPax: 4, maxSU: 4.2,  isDynamic: false },
+    { id: 'pro_5',    name: '舒適五座',   maxPax: 4, maxSU: 6.5,  isDynamic: false },
+    { id: 'family_7', name: '家庭七座',   maxPax: 6, maxSU: 9.0,  isDynamic: true  }, // 5+2 d-change logic
+    { id: 'vip_7',    name: '旗艦獨立席', maxPax: 6, maxSU: 5.5,  isDynamic: false },
+    { id: 'std_9',    name: '標準九座',   maxPax: 8, maxSU: 18.0, isDynamic: false },
+    { id: 'premium_9',name: '尊榮九座',   maxPax: 8, maxSU: 22.0, isDynamic: false }
+];
+
+// 用於存儲當前計算出的總 SU 需求
+let currentRequiredSU = 0;
+// ------------------------------------------------
+   
   let tripType = "接機";
   let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0 };
   let currentKm = 0, currentPrice = 0;
