@@ -9,7 +9,7 @@
     :root { --primary: #007AFF; --bg: #F2F2F7; }
     body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1C1C1E; -webkit-tap-highlight-color: transparent; }
     .card { background: #FFF; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    .type-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+    .type-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 20px; }
     .tab-btn { background: #FFF; border: none; padding: 12px 5px; border-radius: 12px; font-size: 13px; font-weight: 600; color: #8E8E93; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
     .tab-btn.active { background: var(--primary); color: #FFF; border-color: var(--primary); }
     .label-row { font-weight: 600; margin-bottom: 8px; display: block; font-size: 15px; }
@@ -27,6 +27,7 @@
     .disabled-car { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
     #night-fee-notice, .addon-notice { display: none; color: #FF9500; font-size: 13px; font-weight: 600; margin-top: 8px; }
     .charter-info { font-size: 12px; color: #007AFF; margin-bottom: 5px; font-weight: bold; }
+    .swap-btn { font-size: 12px; color: var(--primary); cursor: pointer; float: right; font-weight: normal; }
   </style>
 </head>
 <body>
@@ -37,6 +38,7 @@
     <button class="tab-btn" id="btn-送機" onclick="setTripType('送機')">送機</button>
     <button class="tab-btn" id="btn-市區" onclick="setTripType('市區')">市區</button>
     <button class="tab-btn" id="btn-包車" onclick="setTripType('包車')">包車</button>
+    <button class="tab-btn" id="btn-交通趟" onclick="setTripType('交通趟')">交通趟</button>
 </div>
 
 <span class="label-row">選擇車種 <small id="su-hint" style="color:var(--primary); font-weight:normal;"></small></span>
@@ -50,9 +52,14 @@
 </div>
 
 <div class="card">
-    <span class="label-row">服務時間</span>
+    <span class="label-row" id="time-label-1">服務時間</span>
     <input type="datetime-local" id="appointmentTime" onchange="calculateNewRoute()">
     
+    <div id="return-time-box" style="display:none; margin-top:10px;">
+        <span class="label-row">回程預約時間</span>
+        <input type="datetime-local" id="returnTime" onchange="calculateNewRoute()">
+    </div>
+
     <div id="charter-duration-box" style="display:none; margin-top:10px;">
         <span class="label-row">包車時數 (小時)</span>
         <div class="counter-group" style="background:#F9F9F9; padding:10px; border-radius:12px;">
@@ -67,7 +74,7 @@
 
     <hr style="border:0; border-top:1px solid #EEE; margin:20px 0;">
 
-    <span class="label-row">上車地點</span>
+    <span class="label-row">上車地點 <span class="swap-btn" onclick="swapLocations()">🔄 交換起迄點</span></span>
     <div class="pac-box">
       <input type="text" id="pickup" placeholder="輸入起點" autocomplete="off" data-pid="">
       <div id="pac-pickup" class="custom-pac"></div>
@@ -97,6 +104,7 @@
       <div id="night-fee-notice">🌙 已觸發夜間加乘</div>
       <div id="mid-fee-notice" class="addon-notice">📍 停靠點費用 +$0</div>
       <div id="seat-fee-notice" class="addon-notice">👶 安全座椅加乘 +$0</div>
+      <div id="discount-notice" class="addon-notice" style="color:#34C759;">🎉 已套用來回折扣</div>
       <div class="price-text">NT$ <span id="price-val">0</span></div>
     </div>
 </div>
@@ -133,12 +141,12 @@
 
     const SU_WEIGHTS = { lugL: 2.0, lugM: 1.2, lugS: 0.7 };
     let VEHICLE_MASTER = [
-        { id: 'eco_5',     name: '經濟五座',    base: 800,  kmPrice: 35,  maxPax: 4, maxSU: 4.2 },
-        { id: 'pro_5',     name: '舒適五座',    base: 1000, kmPrice: 40,  maxPax: 4, maxSU: 6.5 },
-        { id: 'family_7',  name: '家庭七座',    base: 1200, kmPrice: 45,  maxPax: 6, maxSU: 9.0 },
-        { id: 'vip_7',     name: '尊榮七座',    base: 1800, kmPrice: 60,  maxPax: 6, maxSU: 5.5 },
-        { id: 'std_9',     name: '標準九座',    base: 1500, kmPrice: 50,  maxPax: 8, maxSU: 18.0 },
-        { id: 'premium_9', name: '旗艦獨立席',  base: 2500, kmPrice: 80,  maxPax: 8, maxSU: 22.0 }
+        { id: 'eco_5',     name: '經濟五座',     base: 800,  kmPrice: 35,  maxPax: 4, maxSU: 4.2 },
+        { id: 'pro_5',     name: '舒適五座',     base: 1000, kmPrice: 40,  maxPax: 4, maxSU: 6.5 },
+        { id: 'family_7',  name: '家庭七座',     base: 1200, kmPrice: 45,  maxPax: 6, maxSU: 9.0 },
+        { id: 'vip_7',     name: '尊榮七座',     base: 1800, kmPrice: 60,  maxPax: 6, maxSU: 5.5 },
+        { id: 'std_9',     name: '標準九座',     base: 1500, kmPrice: 50,  maxPax: 8, maxSU: 18.0 },
+        { id: 'premium_9', name: '旗艦獨立席',   base: 2500, kmPrice: 80,  maxPax: 8, maxSU: 22.0 }
     ];
 
     let REMOTE_CONFIG = null;
@@ -206,6 +214,18 @@
         window.calculateNewRoute();
     };
 
+    window.swapLocations = () => {
+        const pInput = document.getElementById('pickup');
+        const dInput = document.getElementById('dropoff');
+        const tempText = pInput.value;
+        const tempPid = pInput.dataset.pid;
+        pInput.value = dInput.value;
+        pInput.dataset.pid = dInput.dataset.pid;
+        dInput.value = tempText;
+        dInput.dataset.pid = tempPid;
+        window.calculateNewRoute();
+    };
+
     window.calculateNewRoute = async () => {
         const p1 = document.getElementById('pickup').dataset.pid;
         const p2 = document.getElementById('dropoff').dataset.pid;
@@ -215,7 +235,6 @@
         if (!p1 || !p2) return;
 
         try {
-            // 1. 計算主里程與分段里程
             const res = await RouteClass.computeRoutes({
                 origin: new PlaceClass({ id: p1 }),
                 destination: new PlaceClass({ id: p2 }),
@@ -227,7 +246,6 @@
             if (res.routes && res.routes[0]) {
                 currentKm = res.routes[0].distanceMeters / 1000;
                 
-                // 若有中途點，額外算起點到中途點的里程，用以精確計算停靠費
                 if (midVisible && mid) {
                     const midRes = await RouteClass.computeRoutes({
                         origin: new PlaceClass({ id: p1 }),
@@ -238,7 +256,6 @@
                 } else {
                     midKm = 0;
                 }
-
                 renderPrice();
             }
         } catch (e) { console.error(e); }
@@ -250,23 +267,29 @@
 
         let finalPrice = 0;
         const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
+        const discountRate = REMOTE_CONFIG?.roundTripDiscount || 0.95;
 
         if (tripType === '包車') {
             finalPrice = calculateCharter(vehicle);
+        } else if (tripType === '交通趟') {
+            // 交通趟公式：((去程Km * 單位價) + (回程Km * 單位價)) * 折扣率
+            // 假設路徑鏡像，回程Km與去程一致
+            const oneWay = Math.max(currentKm * vehicle.kmPrice, vehicle.base);
+            finalPrice = (oneWay + oneWay) * discountRate;
+            document.getElementById('discount-notice').style.display = 'block';
         } else {
-            // 接送機核心邏輯：(里程 * 車種單價) 與 起步價 取大者
             const kmCost = currentKm * vehicle.kmPrice;
             finalPrice = Math.max(kmCost, vehicle.base);
+            document.getElementById('discount-notice').style.display = 'none';
         }
 
-        // 1. 停靠點費用：5公里內 200，之後每 5 公里 +150
+        // 1. 停靠點費用
         let stopFee = 0;
         if (midVisible) {
             stopFee = 200;
-            if (midKm > 5) {
-                stopFee += Math.ceil((midKm - 5) / 5) * 150;
-            }
-            document.getElementById('mid-fee-notice').innerText = `📍 停靠點費用 +$${stopFee} (約 ${midKm.toFixed(1)}km)`;
+            if (midKm > 5) stopFee += Math.ceil((midKm - 5) / 5) * 150;
+            if (tripType === '交通趟') stopFee *= 2; // 來回停靠
+            document.getElementById('mid-fee-notice').innerText = `📍 停靠點費用 +$${stopFee}`;
             document.getElementById('mid-fee-notice').style.display = 'block';
         } else {
             document.getElementById('mid-fee-notice').style.display = 'none';
@@ -278,31 +301,28 @@
         document.getElementById('seat-fee-notice').style.display = seatFee > 0 ? 'block' : 'none';
 
         // 3. 夜間加乘
-        const isNight = checkNightTime(document.getElementById('appointmentTime').value);
-        const nightAdd = isNight ? (REMOTE_CONFIG?.nightFee || 200) : 0;
-        document.getElementById('night-fee-notice').style.display = isNight ? 'block' : 'none';
+        const isNight1 = checkNightTime(document.getElementById('appointmentTime').value);
+        const isNight2 = tripType === '交通趟' ? checkNightTime(document.getElementById('returnTime').value) : false;
+        let nightAdd = isNight1 ? (REMOTE_CONFIG?.nightFee || 200) : 0;
+        if (isNight2) nightAdd += (REMOTE_CONFIG?.nightFee || 200);
+        document.getElementById('night-fee-notice').style.display = (isNight1 || isNight2) ? 'block' : 'none';
 
         currentPrice = Math.round((finalPrice + stopFee + seatFee + nightAdd) / 10) * 10;
         
         document.getElementById('price-preview').style.display = 'block';
-        document.getElementById('dist-val').innerText = currentKm.toFixed(1);
+        document.getElementById('dist-val').innerText = (tripType === '交通趟' ? (currentKm * 2).toFixed(1) : currentKm.toFixed(1));
         document.getElementById('price-val').innerText = currentPrice.toLocaleString();
     }
 
-    // 自動判定包車類型
     function calculateCharter(car) {
         const addrA = document.getElementById('pickup').value;
         const addrB = document.getElementById('dropoff').value;
         const config = REMOTE_CONFIG?.charterConfig?.[car.id] || {};
-
-        // 判斷是否為長途 (簡單邏輯：地址不含 北北桃 關鍵字視為長途)
         const isLong = !addrA.includes("台北") && !addrA.includes("新北") && !addrA.includes("桃園");
         const isSameArea = (addrA.substring(0,2) === addrB.substring(0,2));
-
         let basePrice = 0, freeKm = 0;
 
         if (!isLong) {
-            // 市區包車邏輯
             if (counts.duration <= 4) {
                 basePrice = config.city4hPrice || (car.base * 4);
                 freeKm = config.city4hKm || 40;
@@ -311,13 +331,9 @@
                 basePrice = config.city8hPrice || (car.base * 7);
                 freeKm = config.city8hKm || 80;
                 document.getElementById('charter-mode-label').innerText = "⚡ 市區 8H 包車模式";
-                // 超出 8 小時加收超時費
-                if (counts.duration > 8) {
-                    basePrice += (counts.duration - 8) * (config.overHour || 500);
-                }
+                if (counts.duration > 8) basePrice += (counts.duration - 8) * (config.overHour || 500);
             }
         } else {
-            // 長途模式：AB (單程) 或 AA (回程)
             if (isSameArea) {
                 basePrice = config.longRoundPrice || (car.base * 8);
                 freeKm = config.longRoundKm || 150;
@@ -328,13 +344,8 @@
                 document.getElementById('charter-mode-label').innerText = "⚡ 長途單程 (AB) 模式";
             }
         }
-
-        // 超里程計算
         let overKmFee = 0;
-        if (currentKm > freeKm) {
-            overKmFee = (currentKm - freeKm) * (config.overKm || car.kmPrice);
-        }
-
+        if (currentKm > freeKm) overKmFee = (currentKm - freeKm) * (config.overKm || car.kmPrice);
         return basePrice + overKmFee;
     }
 
@@ -349,6 +360,9 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.id === `btn-${t}`));
         document.getElementById('flight-card').style.display = (t === '接機') ? 'block' : 'none';
         document.getElementById('charter-duration-box').style.display = (t === '包車') ? 'block' : 'none';
+        document.getElementById('return-time-box').style.display = (t === '交通趟') ? 'block' : 'none';
+        document.getElementById('time-label-1').innerText = (t === '交通趟') ? '去程預約時間' : '服務時間';
+        
         if (t !== '包車') document.getElementById('charter-mode-label').innerText = "";
         window.calculateNewRoute();
     };
@@ -386,7 +400,6 @@
         const totalPax = counts.adults + counts.children;
         const currentSU = (counts.lugL * 2) + (counts.lugM * 1.2) + (counts.lugS * 0.7);
         document.getElementById('su-hint').innerText = `(行李係數: ${currentSU.toFixed(1)})`;
-
         VEHICLE_MASTER.forEach(car => {
             const btn = document.getElementById(`btn-${car.id}`);
             const isOver = (totalPax > car.maxPax || currentSU > car.maxSU);
@@ -396,9 +409,16 @@
 
     window.sendOrder = async () => {
         const btn = document.getElementById('submit-btn');
+        const t1 = document.getElementById('appointmentTime').value;
+        const t2 = document.getElementById('returnTime').value;
+
         if(!document.getElementById('pickup').dataset.pid || !document.getElementById('dropoff').dataset.pid) {
             alert("請選擇正確的起迄點地址"); return;
         }
+        if(tripType === '交通趟' && t2 && new Date(t2) <= new Date(t1)) {
+            alert("回程時間不可早於去程時間"); return;
+        }
+
         btn.disabled = true; btn.innerText = "預約傳送中...";
         try {
             const orderData = {
@@ -406,8 +426,9 @@
                 vehicleName: VEHICLE_MASTER.find(v=>v.id===selectedVehicleId).name,
                 pickup: document.getElementById('pickup').value,
                 dropoff: document.getElementById('dropoff').value,
+                returnTime: tripType === '交通趟' ? t2 : null,
                 midStops: document.getElementById('midStops').value,
-                appointmentTime: document.getElementById('appointmentTime').value,
+                appointmentTime: t1,
                 adults: counts.adults,
                 children: counts.children,
                 lugL: counts.lugL, lugM: counts.lugM, lugS: counts.lugS,
