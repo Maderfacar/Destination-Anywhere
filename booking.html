@@ -27,12 +27,23 @@
   </style>
 </head>
 <body>
-  <div class="type-tabs">
-    <button class="tab-btn active" id="btn-接機" onclick="setType('接機')">接機</button>
-    <button class="tab-btn" id="btn-送機" onclick="setType('送機')">送機</button>
-    <button class="tab-btn" id="btn-市區" onclick="setType('市區')">市區</button>
-    <button class="tab-btn" id="btn-包車" onclick="setType('包車')">包車</button>
-  </div>
+<span class="label-row">服務類型</span>
+<div class="type-tabs" style="grid-template-columns: repeat(4, 1fr); scale: 0.9;">
+    <button class="tab-btn active" id="btn-接機" onclick="setTripType('接機')">接機</button>
+    <button class="tab-btn" id="btn-送機" onclick="setTripType('送機')">送機</button>
+    <button class="tab-btn" id="btn-市區" onclick="setTripType('市區')">市區</button>
+    <button class="tab-btn" id="btn-包車" onclick="setTripType('包車')">包車</button>
+</div>
+
+<span class="label-row">選擇車種 <small id="su-hint" style="color:var(--primary); font-weight:normal;"></small></span>
+<div class="type-tabs" id="vehicle-selector" style="grid-template-columns: repeat(3, 1fr);">
+    <button class="tab-btn" id="btn-eco_5" onclick="selectVehicle('eco_5')">經濟五座</button>
+    <button class="tab-btn" id="btn-pro_5" onclick="selectVehicle('pro_5')">舒適五座</button>
+    <button class="tab-btn" id="btn-family_7" onclick="selectVehicle('family_7')">家庭七座</button>
+    <button class="tab-btn" id="btn-std_9" onclick="selectVehicle('std_9')">標準九座</button>
+    <button class="tab-btn" id="btn-premium_9" onclick="selectVehicle('premium_9')">尊榮九座</button>
+    <button class="tab-btn" id="btn-vip_7" onclick="selectVehicle('vip_7')">旗艦獨立席</button>
+</div>
 
   <div class="card">
     <span class="label-row">上車地點</span>
@@ -255,12 +266,167 @@ let currentRequiredSU = 0;
     }
   };
 
-  window.change = (k, d) => {
-    counts[k] = Math.max((k==='adults'?1:0), counts[k]+d);
-    document.getElementById(`val-${k}`).innerText = counts[k];
-  };
+  // --- [第二步：重構計數器與過濾引擎] ---
 
+/**
+ * 更新即時過濾引擎
+ * 核心邏輯：計算需求 -> 判斷動態縮減 -> 比對物理極限
+ */
+function updateVehicleFilter() {
+    // 1. 計算當前行李總需求 SU
+    currentRequiredSU = (counts.lugL * SU_WEIGHTS.lugL) + 
+                        (counts.lugM * SU_WEIGHTS.lugM) + 
+                        (counts.lugS * SU_WEIGHTS.lugS);
+    
+    const totalPax = counts.adults + counts.children;
+
+    console.log(`[DA 系統監測] 當前人數: ${totalPax}, 總行李 SU: ${currentRequiredSU.toFixed(1)}`);
+
+    // 2. 遍歷所有車型進行物理校驗
+    VEHICLE_MASTER.forEach(car => {
+        let maxSU = car.maxSU;
+        let isDisabled = false;
+        let reason = "";
+
+        // --- 核心防禦：家庭七座 (5+2) 動態空間縮減邏輯 ---
+        if (car.isDynamic && car.id === 'family_7') {
+            if (totalPax > 4) {
+                maxSU = 1.5; // 第三排立起，行李空間極速縮減
+            } else {
+                maxSU = 9.0; // 第三排收摺，行李空間極大化
+            }
+        }
+
+        // 3. 執行 Gate 判斷
+        if (totalPax > car.maxPax) {
+            isDisabled = true;
+            reason = "人數超出";
+        } else if (currentRequiredSU > maxSU) {
+            isDisabled = true;
+            reason = "行李過多";
+        }
+
+        // 4. 更新 UI 狀態 (將原本的 tab-btn 進行灰階化)
+        const btn = document.getElementById(`btn-${car.id}`); // 註：需確保按鈕 ID 對齊
+        if (btn) {
+            if (isDisabled) {
+                btn.classList.add('disabled-car');
+                btn.style.opacity = "0.3";
+                btn.style.pointerEvents = "none";
+                btn.title = reason; // 滑鼠懸停顯示原因
+            } else {
+                btn.classList.remove('disabled-car');
+                btn.style.opacity = "1";
+                btn.style.pointerEvents = "auto";
+                btn.title = "";
+            }
+        }
+    });
+}
+
+// --- [第三步：車種選擇與計價邏輯] ---
+
+let selectedVehicleId = 'eco_5'; // 初始預設車種
+
+/**
+ * 車種切換函數
+ * 作用：高亮 UI、更新全域變數、重新計算里程價格
+ */
+window.selectVehicle = (vId) => {
+    // 1. 更新選中的 ID
+    selectedVehicleId = vId;
+
+    // 2. 切換 UI 高亮狀態
+    VEHICLE_MASTER.forEach(car => {
+        const btn = document.getElementById(`btn-${car.id}`);
+        if (btn) {
+            btn.classList.toggle('active', car.id === vId);
+        }
+    });
+
+    console.log(`[DA 系統] 用戶選擇車種: ${vId}`);
+
+    // 3. 觸發重新計價 (核心！)
+    if (typeof calculateNewRoute === "function") {
+        calculateNewRoute(); 
+    }
+};
+
+/**
+ * 服務類型切換函數 (原 setType 改名，避免混淆)
+ */
+window.setTripType = (t) => {
+    tripType = t;
+    const types = ['接機', '送機', '市區', '包車'];
+    types.forEach(type => {
+        const el = document.getElementById(`btn-${type}`);
+        if (el) el.classList.toggle('active', type === t);
+    });
+
+    // 接機顯示航班號，其餘隱藏
+    const flightField = document.getElementById('flightNo')?.parentElement;
+    if (flightField) {
+        flightField.style.display = (t === '接機') ? 'block' : 'none';
+    }
+};
+   
+/**
+ * 重構後的 change 函數
+ * 每次點擊加減號都會觸發過濾引擎
+ */
+window.change = (k, d) => {
+    // 執行原有邏輯
+    counts[k] = Math.max((k === 'adults' ? 1 : 0), counts[k] + d);
+    const displayEl = document.getElementById(`val-${k}`);
+    if (displayEl) displayEl.innerText = counts[k];
+
+    // 觸發物理容量校驗
+    updateVehicleFilter();
+};
+let selectedVehicleId = 'eco_5'; // 預設車種
+
+/**
+ * 訂單類型切換 (保持你原本的功能)
+ */
+window.setTripType = (t) => {
+    tripType = t;
+    // 切換 UI 高亮
+    const types = ['接機', '送機', '市區', '包車'];
+    types.forEach(type => {
+        const el = document.getElementById(`btn-${type}`);
+        if (el) el.classList.toggle('active', type === t);
+    });
+    
+    // 特殊邏輯：接機才顯示航班號輸入框
+    document.getElementById('flightNo').parentElement.style.display = (t === '接機') ? 'block' : 'none';
+};
+
+/**
+ * 車種切換 (新功能：決定起步價)
+ */
+window.selectVehicle = (vId) => {
+    selectedVehicleId = vId;
+    
+    // 1. 切換 UI 高亮
+    VEHICLE_MASTER.forEach(car => {
+        const el = document.getElementById(`btn-${car.id}`);
+        if (el) el.classList.toggle('active', car.id === vId);
+    });
+
+    // 2. 重新計算價格 (因為起步價變了)
+    calculateNewRoute(); 
+};
+
+/**
+ * 修改你原本的價格計算公式 (對齊計畫書)
+ */
+// 在 calculateNewRoute() 內找到價格計算處，修改為：
+const vehicle = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
+const basePrice = vehicle ? vehicle.base : 150;
+currentPrice = Math.round(basePrice + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
   initMap();
+
+   
 </script>
 </body>
 </html>
