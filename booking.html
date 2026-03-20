@@ -9,7 +9,7 @@
     :root { --primary: #007AFF; --bg: #F2F2F7; }
     body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1C1C1E; -webkit-tap-highlight-color: transparent; }
     .card { background: #FFF; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    .type-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 20px; }
+    .type-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 20px; }
     .tab-btn { background: #FFF; border: none; padding: 12px 5px; border-radius: 12px; font-size: 13px; font-weight: 600; color: #8E8E93; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
     .tab-btn.active { background: var(--primary); color: #FFF; border-color: var(--primary); }
     .label-row { font-weight: 600; margin-bottom: 8px; display: block; font-size: 15px; }
@@ -28,17 +28,17 @@
     #night-fee-notice, .addon-notice { display: none; color: #FF9500; font-size: 13px; font-weight: 600; margin-top: 8px; }
     .charter-info { font-size: 12px; color: #007AFF; margin-bottom: 5px; font-weight: bold; }
     .swap-btn { font-size: 12px; color: var(--primary); cursor: pointer; float: right; font-weight: normal; }
+    .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #444; margin-bottom: 10px; }
+    .checkbox-row input { width: 18px; height: 18px; margin: 0; }
   </style>
 </head>
 <body>
 
 <span class="label-row">服務類型</span>
 <div class="type-tabs" style="scale: 0.9;">
-    <button class="tab-btn active" id="btn-接機" onclick="setTripType('接機')">接機</button>
-    <button class="tab-btn" id="btn-送機" onclick="setTripType('送機')">送機</button>
-    <button class="tab-btn" id="btn-市區" onclick="setTripType('市區')">市區</button>
-    <button class="tab-btn" id="btn-包車" onclick="setTripType('包車')">包車</button>
+    <button class="tab-btn active" id="btn-接送機" onclick="setTripType('接送機')">接送機</button>
     <button class="tab-btn" id="btn-交通趟" onclick="setTripType('交通趟')">交通趟</button>
+    <button class="tab-btn" id="btn-包車" onclick="setTripType('包車')">包車</button>
 </div>
 
 <span class="label-row">選擇車種 <small id="su-hint" style="color:var(--primary); font-weight:normal;"></small></span>
@@ -52,6 +52,20 @@
 </div>
 
 <div class="card">
+    <div id="trip-direction-box" style="margin-bottom: 10px;">
+        <span class="label-row">航程類型</span>
+        <div style="display: flex; gap: 15px;">
+            <label><input type="radio" name="air-type" value="接機" checked onclick="setAirType('接機')"> 接機</label>
+            <label><input type="radio" name="air-type" value="送機" onclick="setAirType('送機')"> 送機</label>
+        </div>
+    </div>
+
+    <div id="round-trip-toggle" style="display:none; margin-bottom: 10px;">
+        <label class="checkbox-row">
+            <input type="checkbox" id="isRoundTrip" onchange="toggleRoundTrip()"> 包含回程預約 (來回折扣)
+        </label>
+    </div>
+
     <span class="label-row" id="time-label-1">服務時間</span>
     <input type="datetime-local" id="appointmentTime" onchange="calculateNewRoute()">
     
@@ -109,7 +123,7 @@
     </div>
 </div>
 
-<div class="card" id="flight-card" style="display:none;">
+<div class="card" id="flight-card" style="display:block;">
     <span class="label-row">航班號碼</span>
     <input type="text" id="flightNo" placeholder="如 CX450">
 </div>
@@ -151,7 +165,8 @@
 
     let REMOTE_CONFIG = null;
     let selectedVehicleId = 'eco_5';
-    let tripType = "接機";
+    let tripType = "接送機";
+    let airType = "接機";
     let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0, carSeat: 0, duration: 4 };
     let currentKm = 0, midKm = 0, currentPrice = 0;
     let RouteClass, SuggestionClass, sessionToken, PlaceClass;
@@ -164,6 +179,9 @@
                 VEHICLE_MASTER.forEach(car => {
                     if (REMOTE_CONFIG.basePrices && REMOTE_CONFIG.basePrices[car.id]) {
                         car.base = Number(REMOTE_CONFIG.basePrices[car.id]);
+                    }
+                    if (REMOTE_CONFIG.kmPrices && REMOTE_CONFIG.kmPrices[car.id]) {
+                        car.kmPrice = Number(REMOTE_CONFIG.kmPrices[car.id]);
                     }
                 });
             }
@@ -188,7 +206,7 @@
         setupField('pickup', 'pac-pickup');
         setupField('midStops', 'pac-midStops');
         setupField('dropoff', 'pac-dropoff');
-        setTripType('接機');
+        setTripType('接送機');
     }
 
     function setupField(inputId, pacId) {
@@ -267,28 +285,29 @@
 
         let finalPrice = 0;
         const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
+        const isRound = document.getElementById('isRoundTrip').checked;
         const discountRate = REMOTE_CONFIG?.roundTripDiscount || 0.95;
+
+        // 核心邏輯：里程 * 單位價 與 起步價 進行比對
+        const calcOneWay = (km) => Math.max(km * vehicle.kmPrice, vehicle.base);
 
         if (tripType === '包車') {
             finalPrice = calculateCharter(vehicle);
-        } else if (tripType === '交通趟') {
-            // 交通趟公式：((去程Km * 單位價) + (回程Km * 單位價)) * 折扣率
-            // 假設路徑鏡像，回程Km與去程一致
-            const oneWay = Math.max(currentKm * vehicle.kmPrice, vehicle.base);
+        } else if (tripType === '交通趟' && isRound) {
+            const oneWay = calcOneWay(currentKm);
             finalPrice = (oneWay + oneWay) * discountRate;
             document.getElementById('discount-notice').style.display = 'block';
         } else {
-            const kmCost = currentKm * vehicle.kmPrice;
-            finalPrice = Math.max(kmCost, vehicle.base);
+            finalPrice = calcOneWay(currentKm);
             document.getElementById('discount-notice').style.display = 'none';
         }
 
-        // 1. 停靠點費用
+        // 1. 停靠點費用 (5km內200, 超過每5km+150)
         let stopFee = 0;
         if (midVisible) {
             stopFee = 200;
             if (midKm > 5) stopFee += Math.ceil((midKm - 5) / 5) * 150;
-            if (tripType === '交通趟') stopFee *= 2; // 來回停靠
+            if (tripType === '交通趟' && isRound) stopFee *= 2;
             document.getElementById('mid-fee-notice').innerText = `📍 停靠點費用 +$${stopFee}`;
             document.getElementById('mid-fee-notice').style.display = 'block';
         } else {
@@ -302,7 +321,7 @@
 
         // 3. 夜間加乘
         const isNight1 = checkNightTime(document.getElementById('appointmentTime').value);
-        const isNight2 = tripType === '交通趟' ? checkNightTime(document.getElementById('returnTime').value) : false;
+        const isNight2 = (tripType === '交通趟' && isRound) ? checkNightTime(document.getElementById('returnTime').value) : false;
         let nightAdd = isNight1 ? (REMOTE_CONFIG?.nightFee || 200) : 0;
         if (isNight2) nightAdd += (REMOTE_CONFIG?.nightFee || 200);
         document.getElementById('night-fee-notice').style.display = (isNight1 || isNight2) ? 'block' : 'none';
@@ -310,7 +329,8 @@
         currentPrice = Math.round((finalPrice + stopFee + seatFee + nightAdd) / 10) * 10;
         
         document.getElementById('price-preview').style.display = 'block';
-        document.getElementById('dist-val').innerText = (tripType === '交通趟' ? (currentKm * 2).toFixed(1) : currentKm.toFixed(1));
+        let displayKm = (tripType === '交通趟' && isRound) ? (currentKm * 2) : currentKm;
+        document.getElementById('dist-val').innerText = displayKm.toFixed(1);
         document.getElementById('price-val').innerText = currentPrice.toLocaleString();
     }
 
@@ -358,12 +378,29 @@
     window.setTripType = (t) => {
         tripType = t;
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.id === `btn-${t}`));
-        document.getElementById('flight-card').style.display = (t === '接機') ? 'block' : 'none';
+        
+        document.getElementById('flight-card').style.display = (t === '接送機') ? 'block' : 'none';
+        document.getElementById('trip-direction-box').style.display = (t === '接送機') ? 'block' : 'none';
+        document.getElementById('round-trip-toggle').style.display = (t === '交通趟') ? 'block' : 'none';
         document.getElementById('charter-duration-box').style.display = (t === '包車') ? 'block' : 'none';
-        document.getElementById('return-time-box').style.display = (t === '交通趟') ? 'block' : 'none';
-        document.getElementById('time-label-1').innerText = (t === '交通趟') ? '去程預約時間' : '服務時間';
+        
+        if (t !== '交通趟') {
+            document.getElementById('isRoundTrip').checked = false;
+            document.getElementById('return-time-box').style.display = 'none';
+        }
+        
+        document.getElementById('time-label-1').innerText = (t === '交通趟' && document.getElementById('isRoundTrip').checked) ? '去程預約時間' : '服務時間';
         
         if (t !== '包車') document.getElementById('charter-mode-label').innerText = "";
+        window.calculateNewRoute();
+    };
+
+    window.setAirType = (type) => { airType = type; window.calculateNewRoute(); };
+
+    window.toggleRoundTrip = () => {
+        const isRound = document.getElementById('isRoundTrip').checked;
+        document.getElementById('return-time-box').style.display = isRound ? 'block' : 'none';
+        document.getElementById('time-label-1').innerText = isRound ? '去程預約時間' : '服務時間';
         window.calculateNewRoute();
     };
 
@@ -411,24 +448,26 @@
         const btn = document.getElementById('submit-btn');
         const t1 = document.getElementById('appointmentTime').value;
         const t2 = document.getElementById('returnTime').value;
+        const isRound = document.getElementById('isRoundTrip').checked;
 
         if(!document.getElementById('pickup').dataset.pid || !document.getElementById('dropoff').dataset.pid) {
             alert("請選擇正確的起迄點地址"); return;
         }
-        if(tripType === '交通趟' && t2 && new Date(t2) <= new Date(t1)) {
+        if(tripType === '交通趟' && isRound && t2 && new Date(t2) <= new Date(t1)) {
             alert("回程時間不可早於去程時間"); return;
         }
 
         btn.disabled = true; btn.innerText = "預約傳送中...";
         try {
             const orderData = {
-                tripType,
+                tripType: tripType === '接送機' ? airType : (isRound ? "交通趟(來回)" : "交通趟(單程)"),
                 vehicleName: VEHICLE_MASTER.find(v=>v.id===selectedVehicleId).name,
                 pickup: document.getElementById('pickup').value,
                 dropoff: document.getElementById('dropoff').value,
-                returnTime: tripType === '交通趟' ? t2 : null,
+                returnTime: (tripType === '交通趟' && isRound) ? t2 : null,
                 midStops: document.getElementById('midStops').value,
                 appointmentTime: t1,
+                flightNo: tripType === '接送機' ? document.getElementById('flightNo').value : "",
                 adults: counts.adults,
                 children: counts.children,
                 lugL: counts.lugL, lugM: counts.lugM, lugS: counts.lugS,
