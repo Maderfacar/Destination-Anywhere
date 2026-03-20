@@ -128,9 +128,9 @@
   </div>
   <button id="submit-btn" onclick="sendOrder()">立即發送預約</button>
 
+  <!-- Google Maps loader -->
   <script>
-    // Google Maps loader
-    (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once."):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
+    (function(g){var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once."):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
       key: "AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY",
       v: "beta"
     });
@@ -239,16 +239,25 @@
     function renderPrice() {
       const vehicle = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
       if (!vehicle || !vehicle.base || !vehicle.kmPrice) return;
+
       let finalPrice = currentKm * vehicle.kmPrice;
       if (finalPrice < vehicle.base) finalPrice = vehicle.base;
+
       const isRound = document.getElementById('isRoundTrip')?.checked || false;
       if (isRound) {
         finalPrice *= 2 * (REMOTE_CONFIG.roundTripDiscount || 0.95);
       }
+
       const stopFee = midStopsList.length > 0 ? (REMOTE_CONFIG.midFee || 200) : 0;
       const seatFee = counts.carSeat * (REMOTE_CONFIG.carSeatFee || 200);
       const nightFee = checkNightTime(document.getElementById('appointmentTime').value) ? (REMOTE_CONFIG.nightFee || 200) : 0;
+
       currentPrice = Math.round(finalPrice + stopFee + seatFee + nightFee);
+
+      // 修正距離顯示（來回時 ×2）
+      let displayKm = isRound ? (currentKm * 2) : currentKm;
+      document.getElementById('dist-val').innerText = displayKm.toFixed(1);
+
       document.getElementById('price-val').innerText = currentPrice.toLocaleString();
       document.getElementById('price-preview').style.display = 'block';
     }
