@@ -390,7 +390,7 @@
     window.setTripType = (t) => {
         tripType = t;
         document.querySelectorAll('.tab-btn').forEach(b => {
-            if (b.id.startsWith('btn-接送機') || b.id.startsWith('btn-交通趟') || b.id.startsWith('btn-包車')) {
+            if (b.id === 'btn-接送機' || b.id === 'btn-交通趟' || b.id === 'btn-包車') {
                 b.classList.toggle('active', b.id === `btn-${t}`);
             }
         });
@@ -443,7 +443,7 @@
         const totalPax = counts.adults + counts.children;
         const currentSU = (counts.lugL * 2) + (counts.lugM * 1.2) + (counts.lugS * 0.7);
         const activeCar = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
-        const ratio = Math.min((currentSU / activeCar.maxSU) * 100, 100);
+        const ratio = Math.min((currentSU / (activeCar?.maxSU || 1)) * 100, 100);
         let barColor = '#34C759';
         if (ratio > 95) barColor = '#FF3B30';
         else if (ratio > 75) barColor = '#FF9500';
@@ -475,9 +475,10 @@
         btn.disabled = true; btn.innerText = "預約傳送中...";
         try {
             const allMidTexts = midStopsList.map(m => document.getElementById(m.id).value).filter(v => v !== "").join(' > ');
+            const vehicle = VEHICLE_MASTER.find(v=>v.id===selectedVehicleId);
             const orderData = {
                 tripType: tripType === '接送機' ? airType : (isRound ? "交通趟(來回)" : "交通趟(單程)"),
-                vehicleName: VEHICLE_MASTER.find(v=>v.id===selectedVehicleId).name,
+                vehicleName: vehicle ? vehicle.name : "未知車種",
                 pickup: document.getElementById('pickup').value,
                 dropoff: document.getElementById('dropoff').value,
                 returnTime: (tripType === '交通趟' && isRound) ? t2 : null,
