@@ -79,7 +79,7 @@
       <div id="night-fee-notice">🌙 已觸發夜間加乘 (23:00 - 06:00) +$200</div>
       <div id="mid-fee-notice" class="addon-notice">📍 中途停靠加乘 +$0</div>
       <div id="seat-fee-notice" class="addon-notice">👶 安全座椅加乘 +$0</div>
-      <div class="price-text">$ <span id="price-val">0</span></div>
+      <div class="price-text">NT$ <span id="price-val">0</span></div>
     </div>
   </div>
 
@@ -220,7 +220,9 @@
                 currentKm = response.routes[0].distanceMeters / 1000;
                 const vehicle = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
                 const unitPrice = vehicle ? vehicle.base : 35;
-                let totalPrice = Math.round(currentKm * unitPrice);
+                
+                // 初步計算總價
+                let totalPrice = currentKm * unitPrice;
 
                 // --- 附加費用計算與藍框文字同步 ---
                 
@@ -256,10 +258,14 @@
                     document.getElementById('night-fee-notice').style.display = 'none';
                 }
 
-                currentPrice = totalPrice;
+                // --- 格式化處理：個位數四捨五入（四捨五入到十位數） ---
+                currentPrice = Math.round(totalPrice / 10) * 10;
+
                 document.getElementById('price-preview').style.display = 'block';
                 document.getElementById('dist-val').innerText = currentKm.toFixed(1);
-                document.getElementById('price-val').innerText = currentPrice;
+                
+                // --- 顯示處理：加上 NT$ 並自動加上千分位符號 ---
+                document.getElementById('price-val').innerText = currentPrice.toLocaleString();
             }
         } catch (e) { console.error("計算失敗", e); }
     }
