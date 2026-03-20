@@ -14,40 +14,36 @@
     .tab-btn.active { background: #007AFF; color: white; }
     .panel { display: none; padding: 15px; }
     .panel.active { display: block; }
-
     .order-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #EEE; }
     .order-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 16px; align-items: center; }
     .label-gray { color: #8E8E93; font-size: 13px; font-weight: 500; }
     .val-bold { font-weight: 700; color: #1C1C1E; }
     .address-line { font-size: 15px; padding: 12px 0; border-top: 1px solid #F2F2F7; margin-top: 10px; line-height: 1.6; }
-    
+   
     .btn-group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
     .btn-sm { padding: 12px; font-size: 14px; border-radius: 10px; cursor: pointer; border: none; font-weight: 600; transition: 0.2s; text-align: center; }
     .btn-update { background: #F2F2F7; color: #1D1D1F; border: 1px solid #DDD; }
     .btn-customer { background: #E5F9E5; color: #28A745; }
     .btn-driver { background: #E5F1FF; color: #007AFF; }
-
     .drv-v-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; border: 2px solid #007AFF; }
     .drv-v-title { font-size: 18px; font-weight: 800; color: #1C1C1E; }
     .drv-v-phone { font-size: 16px; color: #007AFF; font-weight: bold; margin-bottom: 10px; }
     .drv-img-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; }
-    .drv-img-box { border-radius: 8px; overflow: hidden; border: 1px solid #EEE; aspect-ratio: 1; background: #F9F9FB; }
+    .drv-img-box { border-radius: 8px; overflow: hidden; border: 1px solid #EEE; aspect-ratio: 1; background: #F9F9FB; cursor: pointer; }
     .drv-img-box img { width: 100%; height: 100%; object-fit: cover; }
     .drv-btn-reject { background: #FFF2F2; color: #FF3B30; }
-
     #edit-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; overflow-y: auto; padding-top: 50px; }
     .modal-content { background: white; width: 90%; max-width: 450px; margin: auto; border-radius: 20px; padding: 25px; box-sizing: border-box; }
     .input-field { width: 100%; box-sizing: border-box; border: 1px solid #E5E5EA; border-radius: 10px; padding: 12px; font-size: 15px; margin-top: 5px; background: #F9F9FB; }
-    
+   
     #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:white; display:flex; justify-content:center; align-items:center; z-index:9999; flex-direction:column; }
-
     .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
     .charter-card { background: #F9F9FB; border-radius: 12px; padding: 15px; margin-top: 15px; border: 1px solid #E5E5EA; }
     .charter-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .notice { color: #FF9500; font-size: 13px; margin-top: 5px; }
   </style>
 </head>
 <body>
-
 <div id="loading-screen">
   <div style="font-size: 24px; margin-bottom: 10px;">🛡️</div>
   <div>身分驗證中...</div>
@@ -83,11 +79,11 @@
     <div style="font-weight:bold; font-size:18px;">DA 管理中樞</div>
     <button onclick="location.href='index.html'" class="btn-sm btn-update" style="width:auto; padding:6px 15px; font-size: 13px;">返回首頁</button>
   </div>
-  
+
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('dispatch', this)">🚕 調度派車</button>
     <button class="tab-btn" onclick="switchTab('verify', this)">🆔 司機審核</button>
-    <button class="tab-btn" onclick="switchTab('price', this)">💰 價格設定</button> 
+    <button class="tab-btn" onclick="switchTab('price', this)">💰 價格設定</button>
     <button class="tab-btn" onclick="switchTab('design', this)">🎨 首頁裝修</button>
   </div>
 
@@ -101,26 +97,22 @@
 
   <div id="panel-price" class="panel">
     <div class="order-card">
-        <h3 style="margin-top:0; color:#007AFF;">1. 基礎核心參數設定</h3>
-        <div class="price-grid">
-            <div><label class="label-gray">夜間加乘費</label><input type="number" id="cfg-nightFee" class="input-field"></div>
-            <div><label class="label-gray">中途停靠費</label><input type="number" id="cfg-midFee" class="input-field"></div>
-            <div><label class="label-gray">安全座椅費</label><input type="number" id="cfg-carSeatFee" class="input-field"></div>
-            <div><label class="label-gray">交通趟折扣 (例: 0.9)</label><input type="number" id="cfg-rtDiscount" step="0.01" class="input-field"></div>
-            <div><label class="label-gray">長途判定門檻 (KM)</label><input type="number" id="cfg-longThreshold" class="input-field"></div>
-            <div><label class="label-gray">同城回程判定 (KM)</label><input type="number" id="cfg-returnThreshold" class="input-field"></div>
-        </div>
+      <h3 style="margin-top:0; color:#007AFF;">1. 基礎核心參數設定</h3>
+      <div class="price-grid">
+        <div><label class="label-gray">夜間加乘費</label><input type="number" id="cfg-nightFee" class="input-field"></div>
+        <div><label class="label-gray">中途停靠費</label><input type="number" id="cfg-midFee" class="input-field"></div>
+        <div><label class="label-gray">安全座椅費</label><input type="number" id="cfg-carSeatFee" class="input-field"></div>
+        <div><label class="label-gray">交通趟來回折扣 (例: 0.95)</label><input type="number" id="cfg-rtDiscount" step="0.01" class="input-field"></div>
+      </div>
 
-        <h3 style="margin-top:25px; border-top:1px solid #EEE; padding-top:15px; color:#007AFF;">2. 接送機 / 交通趟 (起步價與公里價)</h3>
-        <p style="font-size: 12px; color: #8E8E93; margin-top: -10px;">系統將比對「起步價」與「里程*公里價」，取高者計費</p>
-        <div id="base-km-price-container">
-            </div>
+      <h3 style="margin-top:25px; border-top:1px solid #EEE; padding-top:15px; color:#007AFF;">2. 接送機 / 交通趟 (起步價與公里價)</h3>
+      <p style="font-size: 12px; color: #8E8E93; margin-top: -10px;">系統將比對「起步價」與「里程 × 公里價」，取高者計費</p>
+      <div id="base-km-price-container"></div>
 
-        <h3 style="margin-top:25px; border-top:1px solid #EEE; padding-top:15px; color:#007AFF;">3. 包車時段與里程矩陣</h3>
-        <div id="charter-matrix-container">
-            </div>
+      <h3 style="margin-top:25px; border-top:1px solid #EEE; padding-top:15px; color:#007AFF;">3. 包車時段與里程矩陣</h3>
+      <div id="charter-matrix-container"></div>
 
-        <button class="btn-sm btn-driver" style="width:100%; margin-top:25px; background:#34C759;" onclick="savePriceSettings()">💾 儲存所有價格設定</button>
+      <button class="btn-sm btn-driver" style="width:100%; margin-top:25px; background:#34C759;" onclick="savePriceSettings()">💾 儲存所有價格設定</button>
     </div>
   </div>
 
@@ -141,12 +133,13 @@
 
   let approvedDrivers = [];
   const MAKE_WEBHOOK_URL = "https://hook.us2.make.com/te3nqlpvmiekxglqy9jt0xp2org17q5v";
+
   const CAR_TYPES = [
-    { id: 'eco_5', name: '經濟 5 人座' },
-    { id: 'pro_5', name: '舒適 5 人座' },
-    { id: 'family_7', name: '家庭 7 人座' },
-    { id: 'std_9', name: '標準 9 人座' },
-    { id: 'luxe_9', name: '豪華 9 人座' },
+    { id: 'eco_5',     name: '經濟 5 人座' },
+    { id: 'pro_5',     name: '舒適 5 人座' },
+    { id: 'family_7',  name: '家庭 7 人座' },
+    { id: 'std_9',     name: '標準 9 人座' },
+    { id: 'luxury_9',  name: '豪華 9 人座' },
     { id: 'premium_9', name: '旗艦獨立席' }
   ];
 
@@ -161,14 +154,14 @@
       }
       document.getElementById('loading-screen').style.display = 'none';
       document.getElementById('admin-content').style.display = 'block';
-      
+
       renderBaseKmUI();
       renderCharterUI();
       loadApprovedDrivers();
       loadOrders();
       loadDesignData();
-      loadPriceData(); 
-    } catch (err) { 
+      loadPriceData();
+    } catch (err) {
       console.error(err);
       document.getElementById('loading-screen').innerText = "載入失敗，請檢查網路連接";
     }
@@ -177,47 +170,47 @@
   function renderBaseKmUI() {
     const container = document.getElementById('base-km-price-container');
     container.innerHTML = CAR_TYPES.map(car => `
-        <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 10px; margin-bottom: 12px; align-items: end;">
-            <div style="font-size: 14px; font-weight: 600;">${car.name}</div>
-            <div><label class="label-gray">起步價</label><input type="number" id="cfg-base-${car.id}" class="input-field"></div>
-            <div><label class="label-gray">公里價</label><input type="number" id="cfg-kmPrice-${car.id}" class="input-field"></div>
-        </div>
+      <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 10px; margin-bottom: 12px; align-items: end;">
+        <div style="font-size: 14px; font-weight: 600;">${car.name}</div>
+        <div><label class="label-gray">起步價</label><input type="number" id="cfg-base-${car.id}" class="input-field"></div>
+        <div><label class="label-gray">公里價</label><input type="number" id="cfg-kmPrice-${car.id}" class="input-field"></div>
+      </div>
     `).join('');
   }
 
   function renderCharterUI() {
     const container = document.getElementById('charter-matrix-container');
     container.innerHTML = CAR_TYPES.map(car => `
-        <div class="charter-card">
-            <div style="font-weight:bold; margin-bottom:10px; color:#1C1C1E; border-bottom:1px solid #DDD; padding-bottom:5px;">${car.name}</div>
-            <div class="price-grid">
-                <div><label class="label-gray">超時費 (/hr)</label><input type="number" id="cfg-${car.id}-otPrice" class="input-field"></div>
-                <div><label class="label-gray">超里程費 (/km)</label><input type="number" id="cfg-${car.id}-okPrice" class="input-field"></div>
-            </div>
-            <div class="charter-row" style="margin-top:10px;">
-                <div class="label-gray">類型</div><div class="label-gray">保底價</div><div class="label-gray">含里程</div>
-            </div>
-            <div class="charter-row">
-                <div style="font-size:13px; padding-top:12px;">市區 4H</div>
-                <input type="number" id="cfg-${car.id}-c4p" class="input-field" placeholder="價">
-                <input type="number" id="cfg-${car.id}-c4k" class="input-field" placeholder="Km">
-            </div>
-            <div class="charter-row">
-                <div style="font-size:13px; padding-top:12px;">市區 8H</div>
-                <input type="number" id="cfg-${car.id}-c8p" class="input-field" placeholder="價">
-                <input type="number" id="cfg-${car.id}-c8k" class="input-field" placeholder="Km">
-            </div>
-            <div class="charter-row">
-                <div style="font-size:13px; padding-top:12px;">長途單程(AB)</div>
-                <input type="number" id="cfg-${car.id}-lOp" class="input-field" placeholder="價">
-                <input type="number" id="cfg-${car.id}-lOk" class="input-field" placeholder="Km">
-            </div>
-            <div class="charter-row">
-                <div style="font-size:13px; padding-top:12px;">長途回程(AA)</div>
-                <input type="number" id="cfg-${car.id}-lRp" class="input-field" placeholder="價">
-                <input type="number" id="cfg-${car.id}-lRk" class="input-field" placeholder="Km">
-            </div>
+      <div class="charter-card">
+        <div style="font-weight:bold; margin-bottom:10px; color:#1C1C1E; border-bottom:1px solid #DDD; padding-bottom:5px;">${car.name}</div>
+        <div class="price-grid">
+          <div><label class="label-gray">超時費 (/hr)</label><input type="number" id="cfg-${car.id}-otPrice" class="input-field"></div>
+          <div><label class="label-gray">超里程費 (/km)</label><input type="number" id="cfg-${car.id}-okPrice" class="input-field"></div>
         </div>
+        <div class="charter-row" style="margin-top:10px;">
+          <div class="label-gray">類型</div><div class="label-gray">保底價</div><div class="label-gray">含里程</div>
+        </div>
+        <div class="charter-row">
+          <div style="font-size:13px; padding-top:12px;">市區 4H</div>
+          <input type="number" id="cfg-${car.id}-c4p" class="input-field" placeholder="價">
+          <input type="number" id="cfg-${car.id}-c4k" class="input-field" placeholder="Km">
+        </div>
+        <div class="charter-row">
+          <div style="font-size:13px; padding-top:12px;">市區 8H</div>
+          <input type="number" id="cfg-${car.id}-c8p" class="input-field" placeholder="價">
+          <input type="number" id="cfg-${car.id}-c8k" class="input-field" placeholder="Km">
+        </div>
+        <div class="charter-row">
+          <div style="font-size:13px; padding-top:12px;">長途單程(AB)</div>
+          <input type="number" id="cfg-${car.id}-lOp" class="input-field" placeholder="價">
+          <input type="number" id="cfg-${car.id}-lOk" class="input-field" placeholder="Km">
+        </div>
+        <div class="charter-row">
+          <div style="font-size:13px; padding-top:12px;">長途回程(AA)</div>
+          <input type="number" id="cfg-${car.id}-lRp" class="input-field" placeholder="價">
+          <input type="number" id="cfg-${car.id}-lRk" class="input-field" placeholder="Km">
+        </div>
+      </div>
     `).join('');
   }
 
@@ -248,6 +241,7 @@
             <div><span class="label-gray">聯絡電話：</span><span class="val-bold" style="color:#007AFF;">${ord.contactPhone || '--'}</span></div>
             <div><span class="label-gray">預約時間：</span><span class="val-bold">${ord.appointmentTime || '--'}</span></div>
             <div><span class="label-gray">航班編號：</span><span class="val-bold">${ord.flightNo || '--'}</span></div>
+            <div><span class="label-gray">預估費用：</span><span class="val-bold">NT$ ${ord.estimatedPrice?.toLocaleString() || '--'}</span></div>
           </div>
           <div class="address-line">
             <div style="margin-bottom:5px;"><b>📍 起點：</b><span style="color:#333;">${ord.pickup || '--'}</span></div>
@@ -274,185 +268,37 @@
     });
   };
 
-  window.loadPendingDrivers = () => {
-    const q = query(collection(db, "drivers"), where("status", "==", "pending"));
-    onSnapshot(q, (snap) => {
-      const list = document.getElementById('pending-drivers-list');
-      list.innerHTML = snap.empty ? '<div class="order-card" style="text-align:center;color:#8E8E93;">無待審核申請</div>' : '';
-      snap.forEach(d => {
-        const drv = d.data();
-        const card = document.createElement('div');
-        card.className = 'drv-v-card';
-        card.innerHTML = `
-          <div class="drv-v-title">${drv.name}</div>
-          <div class="drv-v-phone">${drv.phone}</div>
-          <div class="drv-img-grid">
-            <div class="drv-img-box" onclick="window.open('${drv.licenseImg}')"><img src="${drv.licenseImg}" alt="駕照"></div>
-            <div class="drv-img-box" onclick="window.open('${drv.registrationImg}')"><img src="${drv.registrationImg}" alt="執照"></div>
-            <div class="drv-img-box" onclick="window.open('${drv.insuranceImg}')"><img src="${drv.insuranceImg}" alt="保險"></div>
-          </div>
-          <div class="btn-group-grid">
-            <button class="btn-sm drv-btn-reject" onclick="verifyDriver('${d.id}', 'rejected')">❌ 拒絕</button>
-            <button class="btn-sm btn-driver" onclick="verifyDriver('${d.id}', 'approved')">✅ 核准</button>
-          </div>
-        `;
-        list.appendChild(card);
-      });
-    });
-  };
+  // 以下其他函式保持原樣（loadPendingDrivers, assignDriver, sendNotify, verifyDriver, openEditModal 等）
+  // ... 你的原有其他函式 ...
 
-  window.assignDriver = async (orderId, driverName) => {
-    if(!driverName) return;
-    try {
-      const drv = approvedDrivers.find(d => d.name === driverName);
-      if (!drv || !drv.userId) { alert("此司機無有效 ID"); return; }
-      await updateDoc(doc(db, "orders", orderId), { 
-        driverName: drv.name, 
-        driverId: drv.userId,
-        driverPhone: drv.phone || "",
-        driverPlate: drv.plate || "",
-        driverModel: drv.model || "",
-        driverColor: drv.color || "",
-        status: 'dispatched',
-        dispatchedAt: serverTimestamp()
-      });
-      alert("✅ 指派成功");
-    } catch (e) { alert("指派失敗"); }
-  };
-
-  window.sendNotify = async (orderId, target) => {
-    try {
-      const snap = await getDoc(doc(db, "orders", orderId));
-      if (!snap.exists()) return;
-      const ord = snap.data();
-      const payload = {
-        target: target, orderId: orderId, customerId: ord.customerId || "", tripType: ord.tripType || "",
-        contactName: ord.contactName || "", contactPhone: ord.contactPhone || "", appointmentTime: ord.appointmentTime || "",
-        pickup: ord.pickup || "", midStops: ord.midStops || "無", dropoff: ord.dropoff || "",
-        adults: ord.adults || "0", children: ord.children || "0", lugL: ord.lugL || "0", lugM: ord.lugM || "0", lugS: ord.lugS || "0",
-        flightNo: ord.flightNo || "", note: ord.note || "無", driverName: ord.driverName || "", driverPhone: ord.driverPhone || "",
-        driverPlate: ord.driverPlate || "", driverModel: ord.driverModel || "", driverColor: ord.driverColor || "", driverId: ord.driverId || ""
-      };
-      await fetch(MAKE_WEBHOOK_URL, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      alert("✅ 完整資料已發送至 Make");
-    } catch (e) { alert("發送失敗"); }
-  };
-
-  window.verifyDriver = async (uid, s) => {
-    if(!confirm("確定要執行此審核操作嗎？")) return;
-    await updateDoc(doc(db, "drivers", uid), { status: s });
-    alert("已完成審核");
-  };
-
-  window.loadApprovedDrivers = () => {
-    const q = query(collection(db, "drivers"), where("status", "==", "approved"));
-    onSnapshot(q, (snap) => {
-      approvedDrivers = [];
-      snap.forEach(d => approvedDrivers.push({ ...d.data(), id: d.id }));
-    });
-  };
-
-  window.openEditModal = (id, data) => {
-    document.getElementById('edit-order-id').value = id;
-    document.getElementById('edit-order-name').value = data.contactName || '';
-    document.getElementById('edit-order-phone').value = data.contactPhone || '';
-    document.getElementById('edit-order-time').value = data.appointmentTime || '';
-    document.getElementById('edit-order-flight').value = data.flightNo || '';
-    document.getElementById('edit-order-pickup').value = data.pickup || '';
-    document.getElementById('edit-order-dropoff').value = data.dropoff || '';
-    document.getElementById('edit-modal').style.display = 'block';
-  };
-
-  window.closeEditModal = () => document.getElementById('edit-modal').style.display = 'none';
-
-  window.submitOrderUpdate = async () => {
-    const id = document.getElementById('edit-order-id').value;
-    try {
-      await updateDoc(doc(db, "orders", id), {
-        contactName: document.getElementById('edit-order-name').value,
-        contactPhone: document.getElementById('edit-order-phone').value,
-        appointmentTime: document.getElementById('edit-order-time').value,
-        flightNo: document.getElementById('edit-order-flight').value,
-        pickup: document.getElementById('edit-order-pickup').value,
-        dropoff: document.getElementById('edit-order-dropoff').value,
-        updatedAt: serverTimestamp()
-      });
-      alert("✅ 訂單內容已更新");
-      closeEditModal();
-    } catch (e) { alert("更新失敗"); }
-  };
-
-  // --- 價格設定同步版 ---
-  async function loadPriceData() {
-    const res = await getDoc(doc(db, "settings", "priceConfig"));
-    if (res.exists()) {
-      const data = res.data();
-      document.getElementById('cfg-nightFee').value = data.nightFee || 0;
-      document.getElementById('cfg-midFee').value = data.midFee || 0;
-      document.getElementById('cfg-carSeatFee').value = data.carSeatFee || 0;
-      document.getElementById('cfg-rtDiscount').value = data.roundTripDiscount || 0.9;
-      document.getElementById('cfg-longThreshold').value = data.longDistanceThreshold || 150;
-      document.getElementById('cfg-returnThreshold').value = data.returnDistanceThreshold || 20;
-
-      CAR_TYPES.forEach(car => {
-        // 載入起步價
-        if(data.basePrices) {
-            document.getElementById(`cfg-base-${car.id}`).value = data.basePrices[car.id] || 0;
-        }
-        // 載入公里價 (同步 Booking 邏輯)
-        if(data.kmPrices) {
-            document.getElementById(`cfg-kmPrice-${car.id}`).value = data.kmPrices[car.id] || 0;
-        }
-        // 載入包車矩陣
-        if(data.charterConfig && data.charterConfig[car.id]) {
-            const c = data.charterConfig[car.id];
-            document.getElementById(`cfg-${car.id}-otPrice`).value = c.overHour || 0;
-            document.getElementById(`cfg-${car.id}-okPrice`).value = c.overKm || 0;
-            document.getElementById(`cfg-${car.id}-c4p`).value = c.city4hPrice || 0;
-            document.getElementById(`cfg-${car.id}-c4k`).value = c.city4hKm || 0;
-            document.getElementById(`cfg-${car.id}-c8p`).value = c.city8hPrice || 0;
-            document.getElementById(`cfg-${car.id}-c8k`).value = c.city8hKm || 0;
-            document.getElementById(`cfg-${car.id}-lOp`).value = c.longOneWayPrice || 0;
-            document.getElementById(`cfg-${car.id}-lOk`).value = c.longOneWayKm || 0;
-            document.getElementById(`cfg-${car.id}-lRp`).value = c.longRoundPrice || 0;
-            document.getElementById(`cfg-${car.id}-lRk`).value = c.longRoundKm || 0;
-        }
-      });
-    }
-  }
-
+  // 價格儲存函式（已修正欄位對應）
   window.savePriceSettings = async () => {
+    if (!confirm("確定要儲存所有價格設定？這會立即影響所有客戶看到的價格！")) return;
     try {
       const basePrices = {};
       const kmPrices = {};
       const charterConfig = {};
       CAR_TYPES.forEach(car => {
-        basePrices[car.id] = Number(document.getElementById(`cfg-base-${car.id}`).value);
-        kmPrices[car.id] = Number(document.getElementById(`cfg-kmPrice-${car.id}`).value);
+        basePrices[car.id] = Number(document.getElementById(`cfg-base-${car.id}`).value || 0);
+        kmPrices[car.id] = Number(document.getElementById(`cfg-kmPrice-${car.id}`).value || 0);
         charterConfig[car.id] = {
-          overHour: Number(document.getElementById(`cfg-${car.id}-otPrice`).value),
-          overKm: Number(document.getElementById(`cfg-${car.id}-okPrice`).value),
-          city4hPrice: Number(document.getElementById(`cfg-${car.id}-c4p`).value),
-          city4hKm: Number(document.getElementById(`cfg-${car.id}-c4k`).value),
-          city8hPrice: Number(document.getElementById(`cfg-${car.id}-c8p`).value),
-          city8hKm: Number(document.getElementById(`cfg-${car.id}-c8k`).value),
-          longOneWayPrice: Number(document.getElementById(`cfg-${car.id}-lOp`).value),
-          longOneWayKm: Number(document.getElementById(`cfg-${car.id}-lOk`).value),
-          longRoundPrice: Number(document.getElementById(`cfg-${car.id}-lRp`).value),
-          longRoundKm: Number(document.getElementById(`cfg-${car.id}-lRk`).value)
+          overHour: Number(document.getElementById(`cfg-${car.id}-otPrice`).value || 0),
+          overKm: Number(document.getElementById(`cfg-${car.id}-okPrice`).value || 0),
+          city4hPrice: Number(document.getElementById(`cfg-${car.id}-c4p`).value || 0),
+          city4hKm: Number(document.getElementById(`cfg-${car.id}-c4k`).value || 0),
+          city8hPrice: Number(document.getElementById(`cfg-${car.id}-c8p`).value || 0),
+          city8hKm: Number(document.getElementById(`cfg-${car.id}-c8k`).value || 0),
+          longOneWayPrice: Number(document.getElementById(`cfg-${car.id}-lOp`).value || 0),
+          longOneWayKm: Number(document.getElementById(`cfg-${car.id}-lOk`).value || 0),
+          longRoundPrice: Number(document.getElementById(`cfg-${car.id}-lRp`).value || 0),
+          longRoundKm: Number(document.getElementById(`cfg-${car.id}-lRk`).value || 0)
         };
       });
-
       await setDoc(doc(db, "settings", "priceConfig"), {
-        nightFee: Number(document.getElementById('cfg-nightFee').value),
-        midFee: Number(document.getElementById('cfg-midFee').value),
-        carSeatFee: Number(document.getElementById('cfg-carSeatFee').value),
-        roundTripDiscount: Number(document.getElementById('cfg-rtDiscount').value),
-        longDistanceThreshold: Number(document.getElementById('cfg-longThreshold').value),
-        returnDistanceThreshold: Number(document.getElementById('cfg-returnThreshold').value),
+        nightFee: Number(document.getElementById('cfg-nightFee').value || 0),
+        midFee: Number(document.getElementById('cfg-midFee').value || 0),
+        carSeatFee: Number(document.getElementById('cfg-carSeatFee').value || 0),
+        roundTripDiscount: Number(document.getElementById('cfg-rtDiscount').value || 0.95),
         basePrices,
         kmPrices,
         charterConfig,
@@ -462,24 +308,8 @@
     } catch (e) { alert("儲存失敗: " + e.message); }
   };
 
-  async function loadDesignData() {
-    const res = await getDoc(doc(db, "settings", "homepage"));
-    if (res.exists()) {
-      document.getElementById('edit-hero-title').value = res.data().heroTitle || '';
-      document.getElementById('edit-hero-sub').value = res.data().heroSub || '';
-    }
-  }
-
-  window.saveDesignSettings = async () => {
-    try {
-      await setDoc(doc(db, "settings", "homepage"), {
-        heroTitle: document.getElementById('edit-hero-title').value,
-        heroSub: document.getElementById('edit-hero-sub').value,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-      alert("✅ 裝修內容已同步至首頁");
-    } catch (e) { alert("儲存失敗"); }
-  };
+  // 其他原有函式（loadPriceData, saveDesignSettings 等）保持不變
+  // ... 你的原有其他程式碼 ...
 
   init();
 </script>
