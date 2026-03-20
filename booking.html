@@ -25,7 +25,8 @@
     .custom-pac { position: absolute; background: white; width: 100%; z-index: 2000; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: none; max-height: 250px; overflow-y: auto; top: 52px; border: 1px solid #EEE; }
     .pac-item { padding: 15px; border-bottom: 1px solid #F2F2F7; cursor: pointer; font-size: 14px; color: #333; text-align: left; }
     .tab-btn.disabled-car { background: #E5E5EA !important; color: #AEAEB2 !important; cursor: not-allowed !important; opacity: 0.3; pointer-events: none; }
-    #night-fee-notice { display: none; color: #FF9500; font-size: 13px; font-weight: 600; margin-top: 8px; }
+    /* 優化加成提示樣式 */
+    #night-fee-notice, .addon-notice { display: none; color: #FF9500; font-size: 13px; font-weight: 600; margin-top: 8px; }
   </style>
 </head>
 <body>
@@ -76,6 +77,8 @@
     <div id="price-preview">
       <div style="font-size: 13px; color: #666;">預估里程：<span id="dist-val">0</span> km</div>
       <div id="night-fee-notice">🌙 已觸發夜間加乘 (23:00 - 06:00) +$200</div>
+      <div id="mid-fee-notice" class="addon-notice">📍 中途停靠加乘 +$0</div>
+      <div id="seat-fee-notice" class="addon-notice">👶 安全座椅加乘 +$0</div>
       <div class="price-text">$ <span id="price-val">0</span></div>
     </div>
   </div>
@@ -112,7 +115,6 @@
     import { db } from './firebase-config.js?v=105';
     import { doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // --- [1. 初始化與變數] ---
     const SU_WEIGHTS = { lugL: 2.0, lugM: 1.2, lugS: 0.7 };
     let VEHICLE_MASTER = [
         { id: 'eco_5',    name: '經濟五座',    base: 35,  maxPax: 4, maxSU: 4.2,  isDynamic: false },
@@ -130,13 +132,11 @@
     let currentKm = 0, currentPrice = 0, currentRequiredSU = 0;
     let RouteClass, SuggestionClass, sessionToken, PlaceClass;
 
-    // 載入 Admin 設定的價格
     async function fetchRemoteConfig() {
         try {
             const snap = await getDoc(doc(db, "settings", "priceConfig"));
             if (snap.exists()) {
                 REMOTE_CONFIG = snap.data();
-                // 同步 VEHICLE_MASTER 中的 base 為資料庫中的價格
                 VEHICLE_MASTER.forEach(car => {
                     if (REMOTE_CONFIG.basePrices && REMOTE_CONFIG.basePrices[car.id]) {
                         car.base = Number(REMOTE_CONFIG.basePrices[car.id]);
@@ -147,34 +147,26 @@
         } catch (e) { console.error("價格載入失敗", e); }
     }
 
-    // --- [2. 地圖功能] ---
     (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once."):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
       key: "AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY",
       v: "beta"
     });
 
-async function init() {
-    await fetchRemoteConfig(); // 1. 先抓雲端價格
-    
-    // 2. 初始化地圖
-    const [places, routes] = await Promise.all([
-      google.maps.importLibrary("places"),
-      google.maps.importLibrary("routes")
-    ]);
-    
-    RouteClass = routes.Route;
-    PlaceClass = places.Place;
-    SuggestionClass = places.AutocompleteSuggestion;
-    sessionToken = new places.AutocompleteSessionToken();
-    
-    setupField('pickup', 'pac-pickup');
-    setupField('midStops', 'pac-midStops');
-    setupField('dropoff', 'pac-dropoff');
-
-    // --- 新增這行 ---
-    // 3. 確保如果地址已經有了，抓完價格立刻更新一次畫面上的金額
-    window.calculateNewRoute(); 
-}
+    async function init() {
+        await fetchRemoteConfig();
+        const [places, routes] = await Promise.all([
+          google.maps.importLibrary("places"),
+          google.maps.importLibrary("routes")
+        ]);
+        RouteClass = routes.Route;
+        PlaceClass = places.Place;
+        SuggestionClass = places.AutocompleteSuggestion;
+        sessionToken = new places.AutocompleteSessionToken();
+        setupField('pickup', 'pac-pickup');
+        setupField('midStops', 'pac-midStops');
+        setupField('dropoff', 'pac-dropoff');
+        window.calculateNewRoute(); 
+    }
 
     function setupField(inputId, pacId) {
         const input = document.getElementById(inputId);
@@ -227,26 +219,38 @@ async function init() {
             if (response.routes && response.routes.length > 0) {
                 currentKm = response.routes[0].distanceMeters / 1000;
                 const vehicle = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
-                
-                // --- 修改後的計價公式 ---
-                // 1. 基礎計費：實際里程 * 車種單價
                 const unitPrice = vehicle ? vehicle.base : 35;
                 let totalPrice = Math.round(currentKm * unitPrice);
 
-                // 2. 中途停靠費 (使用雲端設定或預設 100)
+                // --- 附加費用計算與藍框文字同步 ---
+                
+                // 1. 中途停靠費
+                const midStopFee = (REMOTE_CONFIG ? Number(REMOTE_CONFIG.midStopFee) : 100);
                 if (midVisible) {
-                    totalPrice += (REMOTE_CONFIG ? Number(REMOTE_CONFIG.midStopFee) : 100);
+                    totalPrice += midStopFee;
+                    document.getElementById('mid-fee-notice').innerText = `📍 中途停靠加乘 +$${midStopFee}`;
+                    document.getElementById('mid-fee-notice').style.display = 'block';
+                } else {
+                    document.getElementById('mid-fee-notice').style.display = 'none';
                 }
 
-                // 3. 安全座椅費 (使用雲端設定或預設 200)
+                // 2. 安全座椅費
                 const seatFeeUnit = (REMOTE_CONFIG ? Number(REMOTE_CONFIG.carSeatFee) : 200);
-                totalPrice += (counts.carSeat * seatFeeUnit);
+                const totalSeatFee = counts.carSeat * seatFeeUnit;
+                if (counts.carSeat > 0) {
+                    totalPrice += totalSeatFee;
+                    document.getElementById('seat-fee-notice').innerText = `👶 安全座椅(${counts.carSeat}張) +$${totalSeatFee}`;
+                    document.getElementById('seat-fee-notice').style.display = 'block';
+                } else {
+                    document.getElementById('seat-fee-notice').style.display = 'none';
+                }
 
-                // 4. 夜間加乘 (23:00 - 06:00)
-                const timeVal = document.getElementById('appointmentTime').value;
-                const isNight = checkNightTime(timeVal);
+                // 3. 夜間加乘
+                const nightFee = (REMOTE_CONFIG ? Number(REMOTE_CONFIG.nightFee) : 200);
+                const isNight = checkNightTime(document.getElementById('appointmentTime').value);
                 if (isNight) {
-                    totalPrice += (REMOTE_CONFIG ? Number(REMOTE_CONFIG.nightFee) : 200);
+                    totalPrice += nightFee;
+                    document.getElementById('night-fee-notice').innerText = `🌙 已觸發夜間加乘 +$${nightFee}`;
                     document.getElementById('night-fee-notice').style.display = 'block';
                 } else {
                     document.getElementById('night-fee-notice').style.display = 'none';
@@ -266,7 +270,6 @@ async function init() {
         return (hour >= 23 || hour < 6);
     }
 
-    // --- [3. UI 互動函數] ---
     window.setTripType = (t) => {
         tripType = t;
         ['接機', '送機', '市區', '包車'].forEach(type => {
@@ -291,9 +294,7 @@ async function init() {
         counts[k] = Math.max(minVal, counts[k] + d);
         const el = document.getElementById(`val-${k}`);
         if (el) el.innerText = counts[k];
-        
         updateVehicleFilter();
-        
         window.calculateNewRoute(); 
     };
 
