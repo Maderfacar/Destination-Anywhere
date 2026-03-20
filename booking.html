@@ -153,20 +153,28 @@
       v: "beta"
     });
 
-    async function init() {
-        await fetchRemoteConfig();
-        const [places, routes] = await Promise.all([
-          google.maps.importLibrary("places"),
-          google.maps.importLibrary("routes")
-        ]);
-        RouteClass = routes.Route;
-        PlaceClass = places.Place;
-        SuggestionClass = places.AutocompleteSuggestion;
-        sessionToken = new places.AutocompleteSessionToken();
-        setupField('pickup', 'pac-pickup');
-        setupField('midStops', 'pac-midStops');
-        setupField('dropoff', 'pac-dropoff');
-    }
+async function init() {
+    await fetchRemoteConfig(); // 1. 先抓雲端價格
+    
+    // 2. 初始化地圖
+    const [places, routes] = await Promise.all([
+      google.maps.importLibrary("places"),
+      google.maps.importLibrary("routes")
+    ]);
+    
+    RouteClass = routes.Route;
+    PlaceClass = places.Place;
+    SuggestionClass = places.AutocompleteSuggestion;
+    sessionToken = new places.AutocompleteSessionToken();
+    
+    setupField('pickup', 'pac-pickup');
+    setupField('midStops', 'pac-midStops');
+    setupField('dropoff', 'pac-dropoff');
+
+    // --- 新增這行 ---
+    // 3. 確保如果地址已經有了，抓完價格立刻更新一次畫面上的金額
+    window.calculateNewRoute(); 
+}
 
     function setupField(inputId, pacId) {
         const input = document.getElementById(inputId);
