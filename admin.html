@@ -103,8 +103,6 @@
     <div class="order-card">
         <h3 style="margin-top:0; color:#007AFF;">1. 基礎核心參數設定</h3>
         <div class="price-grid">
-            <div><label class="label-gray">里程單價 (元/KM)</label><input type="number" id="cfg-kmPrice" class="input-field"></div>
-            <div><label class="label-gray">起步內含里程 (KM)</label><input type="number" id="cfg-freeKm" class="input-field"></div>
             <div><label class="label-gray">夜間加乘費</label><input type="number" id="cfg-nightFee" class="input-field"></div>
             <div><label class="label-gray">中途停靠費</label><input type="number" id="cfg-midFee" class="input-field"></div>
             <div><label class="label-gray">安全座椅費</label><input type="number" id="cfg-carSeatFee" class="input-field"></div>
@@ -113,15 +111,10 @@
             <div><label class="label-gray">同城回程判定 (KM)</label><input type="number" id="cfg-returnThreshold" class="input-field"></div>
         </div>
 
-        <h3 style="margin-top:25px; border-top:1px solid #EEE; padding-top:15px; color:#007AFF;">2. 接送機 / 交通趟起步價</h3>
-        <div class="price-grid">
-            <div><label class="label-gray">經濟 5 人座</label><input type="number" id="cfg-base-eco_5" class="input-field"></div>
-            <div><label class="label-gray">舒適 5 人座</label><input type="number" id="cfg-base-pro_5" class="input-field"></div>
-            <div><label class="label-gray">家庭 7 人座</label><input type="number" id="cfg-base-family_7" class="input-field"></div>
-            <div><label class="label-gray">尊榮 7 人座</label><input type="number" id="cfg-base-vip_7" class="input-field"></div>
-            <div><label class="label-gray">標準 9 人座</label><input type="number" id="cfg-base-std_9" class="input-field"></div>
-            <div><label class="label-gray">旗艦獨立席</label><input type="number" id="cfg-base-premium_9" class="input-field"></div>
-        </div>
+        <h3 style="margin-top:25px; border-top:1px solid #EEE; padding-top:15px; color:#007AFF;">2. 接送機 / 交通趟 (起步價與公里價)</h3>
+        <p style="font-size: 12px; color: #8E8E93; margin-top: -10px;">系統將比對「起步價」與「里程*公里價」，取高者計費</p>
+        <div id="base-km-price-container">
+            </div>
 
         <h3 style="margin-top:25px; border-top:1px solid #EEE; padding-top:15px; color:#007AFF;">3. 包車時段與里程矩陣</h3>
         <div id="charter-matrix-container">
@@ -169,6 +162,7 @@
       document.getElementById('loading-screen').style.display = 'none';
       document.getElementById('admin-content').style.display = 'block';
       
+      renderBaseKmUI();
       renderCharterUI();
       loadApprovedDrivers();
       loadOrders();
@@ -178,6 +172,17 @@
       console.error(err);
       document.getElementById('loading-screen').innerText = "載入失敗，請檢查網路連接";
     }
+  }
+
+  function renderBaseKmUI() {
+    const container = document.getElementById('base-km-price-container');
+    container.innerHTML = CAR_TYPES.map(car => `
+        <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 10px; margin-bottom: 12px; align-items: end;">
+            <div style="font-size: 14px; font-weight: 600;">${car.name}</div>
+            <div><label class="label-gray">起步價</label><input type="number" id="cfg-base-${car.id}" class="input-field"></div>
+            <div><label class="label-gray">公里價</label><input type="number" id="cfg-kmPrice-${car.id}" class="input-field"></div>
+        </div>
+    `).join('');
   }
 
   function renderCharterUI() {
@@ -380,13 +385,11 @@
     } catch (e) { alert("更新失敗"); }
   };
 
-  // --- 價格設定加強版 ---
+  // --- 價格設定同步版 ---
   async function loadPriceData() {
     const res = await getDoc(doc(db, "settings", "priceConfig"));
     if (res.exists()) {
       const data = res.data();
-      document.getElementById('cfg-kmPrice').value = data.kmPrice || 0;
-      document.getElementById('cfg-freeKm').value = data.freeKm || 0;
       document.getElementById('cfg-nightFee').value = data.nightFee || 0;
       document.getElementById('cfg-midFee').value = data.midFee || 0;
       document.getElementById('cfg-carSeatFee').value = data.carSeatFee || 0;
@@ -395,9 +398,15 @@
       document.getElementById('cfg-returnThreshold').value = data.returnDistanceThreshold || 20;
 
       CAR_TYPES.forEach(car => {
+        // 載入起步價
         if(data.basePrices) {
             document.getElementById(`cfg-base-${car.id}`).value = data.basePrices[car.id] || 0;
         }
+        // 載入公里價 (同步 Booking 邏輯)
+        if(data.kmPrices) {
+            document.getElementById(`cfg-kmPrice-${car.id}`).value = data.kmPrices[car.id] || 0;
+        }
+        // 載入包車矩陣
         if(data.charterConfig && data.charterConfig[car.id]) {
             const c = data.charterConfig[car.id];
             document.getElementById(`cfg-${car.id}-otPrice`).value = c.overHour || 0;
@@ -418,9 +427,11 @@
   window.savePriceSettings = async () => {
     try {
       const basePrices = {};
+      const kmPrices = {};
       const charterConfig = {};
       CAR_TYPES.forEach(car => {
         basePrices[car.id] = Number(document.getElementById(`cfg-base-${car.id}`).value);
+        kmPrices[car.id] = Number(document.getElementById(`cfg-kmPrice-${car.id}`).value);
         charterConfig[car.id] = {
           overHour: Number(document.getElementById(`cfg-${car.id}-otPrice`).value),
           overKm: Number(document.getElementById(`cfg-${car.id}-okPrice`).value),
@@ -436,8 +447,6 @@
       });
 
       await setDoc(doc(db, "settings", "priceConfig"), {
-        kmPrice: Number(document.getElementById('cfg-kmPrice').value),
-        freeKm: Number(document.getElementById('cfg-freeKm').value),
         nightFee: Number(document.getElementById('cfg-nightFee').value),
         midFee: Number(document.getElementById('cfg-midFee').value),
         carSeatFee: Number(document.getElementById('cfg-carSeatFee').value),
@@ -445,6 +454,7 @@
         longDistanceThreshold: Number(document.getElementById('cfg-longThreshold').value),
         returnDistanceThreshold: Number(document.getElementById('cfg-returnThreshold').value),
         basePrices,
+        kmPrices,
         charterConfig,
         updatedAt: serverTimestamp()
       }, { merge: true });
