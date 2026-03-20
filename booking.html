@@ -25,7 +25,6 @@
     .custom-pac { position: absolute; background: white; width: 100%; z-index: 2000; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: none; max-height: 250px; overflow-y: auto; top: 52px; border: 1px solid #EEE; }
     .pac-item { padding: 15px; border-bottom: 1px solid #F2F2F7; cursor: pointer; font-size: 14px; color: #333; text-align: left; }
     .tab-btn.disabled-car { background: #E5E5EA !important; color: #AEAEB2 !important; cursor: not-allowed !important; opacity: 0.3; pointer-events: none; }
-    /* 新增：夜間加乘提示樣式 */
     #night-fee-notice { display: none; color: #FF9500; font-size: 13px; font-weight: 600; margin-top: 8px; }
   </style>
 </head>
@@ -109,246 +108,259 @@
 
   <button id="submit-btn" onclick="sendOrder()">立即發送預約</button>
 
-  <script>
+  <script type="module">
+    import { db } from './firebase-config.js?v=105';
+    import { doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // --- [1. 初始化與變數] ---
+    const SU_WEIGHTS = { lugL: 2.0, lugM: 1.2, lugS: 0.7 };
+    let VEHICLE_MASTER = [
+        { id: 'eco_5',    name: '經濟五座',    base: 35,  maxPax: 4, maxSU: 4.2,  isDynamic: false },
+        { id: 'pro_5',    name: '舒適五座',    base: 45,  maxPax: 4, maxSU: 6.5,  isDynamic: false },
+        { id: 'family_7', name: '家庭七座',    base: 55,  maxPax: 6, maxSU: 9.0,  isDynamic: true  },
+        { id: 'vip_7',    name: '旗艦獨立席',  base: 100, maxPax: 6, maxSU: 5.5,  isDynamic: false },
+        { id: 'std_9',    name: '標準九座',    base: 65,  maxPax: 8, maxSU: 18.0, isDynamic: false },
+        { id: 'premium_9',name: '尊榮九座',    base: 85,  maxPax: 8, maxSU: 22.0, isDynamic: false }
+    ];
+
+    let REMOTE_CONFIG = null;
+    let selectedVehicleId = 'eco_5';
+    let tripType = "接機";
+    let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0, carSeat: 0 };
+    let currentKm = 0, currentPrice = 0, currentRequiredSU = 0;
+    let RouteClass, SuggestionClass, sessionToken, PlaceClass;
+
+    // 載入 Admin 設定的價格
+    async function fetchRemoteConfig() {
+        try {
+            const snap = await getDoc(doc(db, "settings", "priceConfig"));
+            if (snap.exists()) {
+                REMOTE_CONFIG = snap.data();
+                // 同步 VEHICLE_MASTER 中的 base 為資料庫中的價格
+                VEHICLE_MASTER.forEach(car => {
+                    if (REMOTE_CONFIG.basePrices && REMOTE_CONFIG.basePrices[car.id]) {
+                        car.base = Number(REMOTE_CONFIG.basePrices[car.id]);
+                    }
+                });
+                console.log("✅ 已同步雲端價格", REMOTE_CONFIG);
+            }
+        } catch (e) { console.error("價格載入失敗", e); }
+    }
+
+    // --- [2. 地圖功能] ---
     (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once."):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
       key: "AIzaSyAni5ZB9eIS44B0NaMFCRpzNhFPiBu1MjY",
       v: "beta"
     });
-  </script>
 
-<script>
-// --- [1. 初始化與全域變數] ---
-const SU_WEIGHTS = { lugL: 2.0, lugM: 1.2, lugS: 0.7 };
-const VEHICLE_MASTER = [
-    { id: 'eco_5',    name: '經濟五座',   base: 150, maxPax: 4, maxSU: 4.2,  isDynamic: false },
-    { id: 'pro_5',    name: '舒適五座',   base: 250, maxPax: 4, maxSU: 6.5,  isDynamic: false },
-    { id: 'family_7', name: '家庭七座',   base: 450, maxPax: 6, maxSU: 9.0,  isDynamic: true  },
-    { id: 'vip_7',    name: '旗艦獨立席', base: 800, maxPax: 6, maxSU: 5.5,  isDynamic: false },
-    { id: 'std_9',    name: '標準九座',   base: 450, maxPax: 8, maxSU: 18.0, isDynamic: false },
-    { id: 'premium_9',name: '尊榮九座',   base: 650, maxPax: 8, maxSU: 22.0, isDynamic: false }
-];
+    async function init() {
+        await fetchRemoteConfig();
+        const [places, routes] = await Promise.all([
+          google.maps.importLibrary("places"),
+          google.maps.importLibrary("routes")
+        ]);
+        RouteClass = routes.Route;
+        PlaceClass = places.Place;
+        SuggestionClass = places.AutocompleteSuggestion;
+        sessionToken = new places.AutocompleteSessionToken();
+        setupField('pickup', 'pac-pickup');
+        setupField('midStops', 'pac-midStops');
+        setupField('dropoff', 'pac-dropoff');
+    }
 
-// 核心狀態變數
-let selectedVehicleId = 'eco_5';
-let tripType = "接機";
-let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0, carSeat: 0 };
-let currentKm = 0, currentPrice = 0, currentRequiredSU = 0;
-let RouteClass, SuggestionClass, sessionToken, PlaceClass;
-
-// --- [2. 地圖功能] ---
-async function initMap() {
-    const [places, routes] = await Promise.all([
-      google.maps.importLibrary("places"),
-      google.maps.importLibrary("routes")
-    ]);
-    RouteClass = routes.Route;
-    PlaceClass = places.Place;
-    SuggestionClass = places.AutocompleteSuggestion;
-    sessionToken = new places.AutocompleteSessionToken();
-    setupField('pickup', 'pac-pickup');
-    setupField('midStops', 'pac-midStops');
-    setupField('dropoff', 'pac-dropoff');
-}
-
-function setupField(inputId, pacId) {
-    const input = document.getElementById(inputId);
-    const pac = document.getElementById(pacId);
-    input.addEventListener('input', async () => {
-      const val = input.value;
-      if (val.length < 2) { pac.style.display = 'none'; return; }
-      try {
-        const { suggestions } = await SuggestionClass.fetchAutocompleteSuggestions({
-          input: val, sessionToken: sessionToken, region: 'TW', language: 'zh-TW'
+    function setupField(inputId, pacId) {
+        const input = document.getElementById(inputId);
+        const pac = document.getElementById(pacId);
+        input.addEventListener('input', async () => {
+          const val = input.value;
+          if (val.length < 2) { pac.style.display = 'none'; return; }
+          try {
+            const { suggestions } = await SuggestionClass.fetchAutocompleteSuggestions({
+              input: val, sessionToken: sessionToken, region: 'TW', language: 'zh-TW'
+            });
+            if (suggestions && suggestions.length > 0) {
+              pac.innerHTML = '';
+              suggestions.forEach(s => {
+                const div = document.createElement('div');
+                div.className = 'pac-item';
+                div.innerText = s.placePrediction.text.text;
+                div.onclick = () => {
+                  input.value = s.placePrediction.text.text;
+                  input.dataset.pid = s.placePrediction.placeId;
+                  pac.style.display = 'none';
+                  window.calculateNewRoute();
+                };
+                pac.appendChild(div);
+              });
+              pac.style.display = 'block';
+            }
+          } catch (e) { console.error(e); }
         });
-        if (suggestions && suggestions.length > 0) {
-          pac.innerHTML = '';
-          suggestions.forEach(s => {
-            const div = document.createElement('div');
-            div.className = 'pac-item';
-            div.innerText = s.placePrediction.text.text;
-            div.onclick = () => {
-              input.value = s.placePrediction.text.text;
-              input.dataset.pid = s.placePrediction.placeId;
-              pac.style.display = 'none';
-              calculateNewRoute();
+    }
+
+    window.calculateNewRoute = async () => {
+        const pickupPid = document.getElementById('pickup').dataset.pid;
+        const dropoffPid = document.getElementById('dropoff').dataset.pid;
+        const midPid = document.getElementById('midStops').dataset.pid;
+        const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
+
+        if (!pickupPid || !dropoffPid) return;
+
+        try {
+            const request = {
+                origin: new PlaceClass({ id: pickupPid }),
+                destination: new PlaceClass({ id: dropoffPid }),
+                travelMode: 'DRIVING'
             };
-            pac.appendChild(div);
-          });
-          pac.style.display = 'block';
-        }
-      } catch (e) { console.error("自動完成錯誤：", e); }
-    });
-}
+            if (midVisible && midPid) request.intermediates = [new PlaceClass({ id: midPid })];
 
-window.calculateNewRoute = async () => {
-    const pickupPid = document.getElementById('pickup').dataset.pid;
-    const dropoffPid = document.getElementById('dropoff').dataset.pid;
-    const midPid = document.getElementById('midStops').dataset.pid;
-    const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
+            const response = await RouteClass.computeRoutes({ ...request, fields: ['distanceMeters'] });
 
-    if (!pickupPid || !dropoffPid) return;
+            if (response.routes && response.routes.length > 0) {
+                currentKm = response.routes[0].distanceMeters / 1000;
+                const vehicle = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
+                
+                // --- 修改後的計價公式 ---
+                // 1. 基礎計費：實際里程 * 車種單價
+                const unitPrice = vehicle ? vehicle.base : 35;
+                let totalPrice = Math.round(currentKm * unitPrice);
 
-    try {
-        const request = {
-            origin: new PlaceClass({ id: pickupPid }),
-            destination: new PlaceClass({ id: dropoffPid }),
-            travelMode: 'DRIVING'
-        };
-        if (midVisible && midPid) request.intermediates = [new PlaceClass({ id: midPid })];
+                // 2. 中途停靠費 (使用雲端設定或預設 100)
+                if (midVisible) {
+                    totalPrice += (REMOTE_CONFIG ? Number(REMOTE_CONFIG.midStopFee) : 100);
+                }
 
-        const response = await RouteClass.computeRoutes({ ...request, fields: ['distanceMeters'] });
+                // 3. 安全座椅費 (使用雲端設定或預設 200)
+                const seatFeeUnit = (REMOTE_CONFIG ? Number(REMOTE_CONFIG.carSeatFee) : 200);
+                totalPrice += (counts.carSeat * seatFeeUnit);
 
-        if (response.routes && response.routes.length > 0) {
-            currentKm = response.routes[0].distanceMeters / 1000;
-            const vehicle = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
-            
-            // 1. 基礎計費 (起步價 + 超過5公里加乘)
-            const basePrice = vehicle ? vehicle.base : 150;
-            let totalPrice = Math.round(basePrice + (currentKm > 5 ? (currentKm - 5) * 35 : 0));
+                // 4. 夜間加乘 (23:00 - 06:00)
+                const timeVal = document.getElementById('appointmentTime').value;
+                const isNight = checkNightTime(timeVal);
+                if (isNight) {
+                    totalPrice += (REMOTE_CONFIG ? Number(REMOTE_CONFIG.nightFee) : 200);
+                    document.getElementById('night-fee-notice').style.display = 'block';
+                } else {
+                    document.getElementById('night-fee-notice').style.display = 'none';
+                }
 
-            // 2. 中途停靠費 (+$100)
-            if (midVisible) totalPrice += 100;
-
-            // 3. 安全座椅費 (每張 +$200)
-            totalPrice += (counts.carSeat * 200);
-
-            // 4. 夜間加乘判定 (23:00 - 06:00, +$200)
-            const timeVal = document.getElementById('appointmentTime').value;
-            const isNight = checkNightTime(timeVal);
-            if (isNight) {
-                totalPrice += 200;
-                document.getElementById('night-fee-notice').style.display = 'block';
-            } else {
-                document.getElementById('night-fee-notice').style.display = 'none';
+                currentPrice = totalPrice;
+                document.getElementById('price-preview').style.display = 'block';
+                document.getElementById('dist-val').innerText = currentKm.toFixed(1);
+                document.getElementById('price-val').innerText = currentPrice;
             }
-
-            currentPrice = totalPrice;
-            document.getElementById('price-preview').style.display = 'block';
-            document.getElementById('dist-val').innerText = currentKm.toFixed(1);
-            document.getElementById('price-val').innerText = currentPrice;
-        }
-    } catch (e) { console.error("計算失敗", e); }
-}
-
-function checkNightTime(dtStr) {
-    if (!dtStr) return false;
-    const hour = new Date(dtStr).getHours();
-    return (hour >= 23 || hour < 6);
-}
-
-// --- [3. UI 互動函數] ---
-
-window.setTripType = (t) => {
-    tripType = t;
-    const serviceTypes = ['接機', '送機', '市區', '包車'];
-    serviceTypes.forEach(type => {
-        const btn = document.getElementById(`btn-${type}`);
-        if (btn) btn.classList.toggle('active', type === t);
-    });
-    const flightField = document.getElementById('flight-field');
-    if (flightField) flightField.style.display = (t === '接機') ? 'block' : 'none';
-};
-
-window.selectVehicle = (vId) => {
-    selectedVehicleId = vId;
-    VEHICLE_MASTER.forEach(car => {
-        const btn = document.getElementById(`btn-${car.id}`);
-        if (btn) btn.classList.toggle('active', car.id === vId);
-    });
-    calculateNewRoute();
-};
-
-window.change = (k, d) => {
-    const minVal = (k === 'adults' ? 1 : 0);
-    counts[k] = Math.max(minVal, counts[k] + d);
-    const el = document.getElementById(`val-${k}`);
-    if (el) el.innerText = counts[k];
-    
-    updateVehicleFilter();
-    calculateNewRoute(); // 數量變更（特別是座椅）需重新計算價格
-};
-
-window.toggleMid = (show) => {
-    document.getElementById('mid-wrap').style.display = show ? 'block' : 'none';
-    document.getElementById('add-mid-btn').style.display = show ? 'none' : 'block';
-    if (!show) {
-        document.getElementById('midStops').value = '';
-        document.getElementById('midStops').dataset.pid = '';
+        } catch (e) { console.error("計算失敗", e); }
     }
-    calculateNewRoute();
-};
 
-function updateVehicleFilter() {
-    currentRequiredSU = (counts.lugL * SU_WEIGHTS.lugL) + (counts.lugM * SU_WEIGHTS.lugM) + (counts.lugS * SU_WEIGHTS.lugS);
-    const totalPax = counts.adults + counts.children;
-    document.getElementById('su-hint').innerText = `(行李係數: ${currentRequiredSU.toFixed(1)})`;
+    function checkNightTime(dtStr) {
+        if (!dtStr) return false;
+        const hour = new Date(dtStr).getHours();
+        return (hour >= 23 || hour < 6);
+    }
 
-    VEHICLE_MASTER.forEach(car => {
-        let maxSU = car.maxSU;
-        if (car.id === 'family_7' && totalPax > 4) maxSU = 1.5;
+    // --- [3. UI 互動函數] ---
+    window.setTripType = (t) => {
+        tripType = t;
+        ['接機', '送機', '市區', '包車'].forEach(type => {
+            const btn = document.getElementById(`btn-${type}`);
+            if (btn) btn.classList.toggle('active', type === t);
+        });
+        const flightField = document.getElementById('flight-field');
+        if (flightField) flightField.style.display = (t === '接機') ? 'block' : 'none';
+    };
 
-        const btn = document.getElementById(`btn-${car.id}`);
-        const isOver = (totalPax > car.maxPax || currentRequiredSU > maxSU);
+    window.selectVehicle = (vId) => {
+        selectedVehicleId = vId;
+        VEHICLE_MASTER.forEach(car => {
+            const btn = document.getElementById(`btn-${car.id}`);
+            if (btn) btn.classList.toggle('active', car.id === vId);
+        });
+        window.calculateNewRoute();
+    };
+
+    window.change = (k, d) => {
+        const minVal = (k === 'adults' ? 1 : 0);
+        counts[k] = Math.max(minVal, counts[k] + d);
+        const el = document.getElementById(`val-${k}`);
+        if (el) el.innerText = counts[k];
         
-        if (btn) {
-            btn.classList.toggle('disabled-car', isOver);
-            if (isOver && selectedVehicleId === car.id) {
-                btn.classList.remove('active');
+        updateVehicleFilter();
+        
+        window.calculateNewRoute(); 
+    };
+
+    window.toggleMid = (show) => {
+        document.getElementById('mid-wrap').style.display = show ? 'block' : 'none';
+        document.getElementById('add-mid-btn').style.display = show ? 'none' : 'block';
+        if (!show) {
+            document.getElementById('midStops').value = '';
+            document.getElementById('midStops').dataset.pid = '';
+        }
+        window.calculateNewRoute();
+    };
+
+    function updateVehicleFilter() {
+        currentRequiredSU = (counts.lugL * SU_WEIGHTS.lugL) + (counts.lugM * SU_WEIGHTS.lugM) + (counts.lugS * SU_WEIGHTS.lugS);
+        const totalPax = counts.adults + counts.children;
+        document.getElementById('su-hint').innerText = `(行李係數: ${currentRequiredSU.toFixed(1)})`;
+
+        VEHICLE_MASTER.forEach(car => {
+            let maxSU = car.maxSU;
+            if (car.id === 'family_7' && totalPax > 4) maxSU = 1.5;
+            const btn = document.getElementById(`btn-${car.id}`);
+            const isOver = (totalPax > car.maxPax || currentRequiredSU > maxSU);
+            if (btn) {
+                btn.classList.toggle('disabled-car', isOver);
+                if (isOver && selectedVehicleId === car.id) btn.classList.remove('active');
             }
+        });
+    }
+
+    window.sendOrder = async () => {
+        const btn = document.getElementById('submit-btn');
+        if(!document.getElementById('pickup').value || !document.getElementById('dropoff').value) {
+            alert("請輸入完整的起點與終點");
+            return;
         }
-    });
-}
+        btn.disabled = true; btn.innerText = "處理中...";
 
-window.sendOrder = async () => {
-    const btn = document.getElementById('submit-btn');
-    if(!document.getElementById('pickup').value || !document.getElementById('dropoff').value) {
-        alert("請輸入完整的起點與終點");
-        return;
-    }
-    
-    btn.disabled = true;
-    btn.innerText = "處理中...";
+        try {
+            const vehicleInfo = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
+            const orderData = {
+                tripType: tripType,
+                vehicleId: selectedVehicleId,
+                vehicleName: vehicleInfo ? vehicleInfo.name : "",
+                pickup: document.getElementById('pickup').value,
+                dropoff: document.getElementById('dropoff').value,
+                midStops: document.getElementById('midStops').value,
+                appointmentTime: document.getElementById('appointmentTime').value.replace('T', ' '),
+                flightNo: document.getElementById('flightNo').value,
+                adults: counts.adults,
+                children: counts.children,
+                lugL: counts.lugL,
+                lugM: counts.lugM,
+                lugS: counts.lugS,
+                carSeat: counts.carSeat,
+                contactName: document.getElementById('contactName').value,
+                contactPhone: document.getElementById('contactPhone').value,
+                note: document.getElementById('note').value,
+                estimatedPrice: currentPrice,
+                distanceKm: currentKm.toFixed(1),
+                status: "pending",
+                createdAt: serverTimestamp()
+            };
 
-    try {
-        const vehicleInfo = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
-        const orderData = {
-            tripType: tripType,
-            vehicleId: selectedVehicleId,
-            vehicleName: vehicleInfo ? vehicleInfo.name : "",
-            pickup: document.getElementById('pickup').value,
-            dropoff: document.getElementById('dropoff').value,
-            midStops: document.getElementById('midStops').value,
-            appointmentTime: document.getElementById('appointmentTime').value.replace('T', ' '),
-            flightNo: document.getElementById('flightNo').value,
-            adults: counts.adults,
-            children: counts.children,
-            lugL: counts.lugL,
-            lugM: counts.lugM,
-            lugS: counts.lugS,
-            carSeat: counts.carSeat,
-            contactName: document.getElementById('contactName').value,
-            contactPhone: document.getElementById('contactPhone').value,
-            note: document.getElementById('note').value,
-            estimatedPrice: currentPrice,
-            distanceKm: currentKm.toFixed(1),
-            requiredSU: currentRequiredSU.toFixed(1),
-            status: "pending",
-            createdAt: new Date().toISOString()
-        };
+            await addDoc(collection(db, "orders"), orderData);
+            alert("預約已成功送出！");
+            if(window.liff) liff.closeWindow();
+        } catch (e) {
+            alert("提交失敗: " + e.message);
+        } finally {
+            btn.disabled = false; btn.innerText = "立即發送預約";
+        }
+    };
 
-        console.log("送出訂單：", orderData);
-        // 此處對接您的 Firebase 或 Webhook 邏輯
-        alert("預約已準備送出！金額：$" + currentPrice);
-        
-    } catch (e) {
-        alert("提交失敗: " + e.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerText = "立即發送預約";
-    }
-};
-
-initMap();
-</script>
+    init();
+  </script>
 </body>
 </html>
