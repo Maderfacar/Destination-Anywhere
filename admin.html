@@ -9,8 +9,8 @@
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #F2F2F7; margin: 0; color: #1C1C1E; }
     .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #E5E5EA; background: #FFF; position: sticky; top: 0; z-index: 100; }
-    .tabs { display: flex; gap: 8px; padding: 10px 15px; background: #FFF; border-bottom: 1px solid #E5E5EA; }
-    .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 10px; background: #F2F2F7; font-weight: 600; font-size: 13px; color: #8E8E93; transition: 0.3s; }
+    .tabs { display: flex; gap: 8px; padding: 10px 15px; background: #FFF; border-bottom: 1px solid #E5E5EA; overflow-x: auto; } /* 允許橫向滾動以容納新標籤 */
+    .tab-btn { flex: none; min-width: 90px; padding: 10px; border: none; border-radius: 10px; background: #F2F2F7; font-weight: 600; font-size: 13px; color: #8E8E93; transition: 0.3s; }
     .tab-btn.active { background: #007AFF; color: white; }
     .panel { display: none; padding: 15px; }
     .panel.active { display: block; }
@@ -43,6 +43,9 @@
     .input-field { width: 100%; box-sizing: border-box; border: 1px solid #E5E5EA; border-radius: 10px; padding: 12px; font-size: 15px; margin-top: 5px; background: #F9F9FB; }
     
     #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:white; display:flex; justify-content:center; align-items:center; z-index:9999; flex-direction:column; }
+
+    /* 價格設定專用樣式 */
+    .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -86,7 +89,7 @@
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('dispatch', this)">🚕 調度派車</button>
     <button class="tab-btn" onclick="switchTab('verify', this)">🆔 司機審核</button>
-    <button class="tab-btn" onclick="switchTab('design', this)">🎨 首頁裝修</button>
+    <button class="tab-btn" onclick="switchTab('price', this)">💰 價格設定</button> <button class="tab-btn" onclick="switchTab('design', this)">🎨 首頁裝修</button>
   </div>
 
   <div id="panel-dispatch" class="panel active">
@@ -95,6 +98,30 @@
 
   <div id="panel-verify" class="panel">
     <div id="pending-drivers-list"></div>
+  </div>
+
+  <div id="panel-price" class="panel">
+    <div class="order-card">
+        <h3 style="margin-top:0;">核心計費參數</h3>
+        <div class="price-grid">
+            <div><label class="label-gray">里程單價 (元/KM)</label><input type="number" id="cfg-kmPrice" class="input-field"></div>
+            <div><label class="label-gray">起步內含里程 (KM)</label><input type="number" id="cfg-freeKm" class="input-field"></div>
+            <div><label class="label-gray">夜間加乘費</label><input type="number" id="cfg-nightFee" class="input-field"></div>
+            <div><label class="label-gray">中途停靠費</label><input type="number" id="cfg-midFee" class="input-field"></div>
+            <div><label class="label-gray">安全座椅費</label><input type="number" id="cfg-carSeatFee" class="input-field"></div>
+        </div>
+        
+        <h3 style="margin-top:25px; border-top:1px solid #EEE; padding-top:15px;">車種起步價 (Base Price)</h3>
+        <div class="price-grid">
+            <div><label class="label-gray">經濟5人</label><input type="number" id="cfg-base-eco_5" class="input-field"></div>
+            <div><label class="label-gray">高級5人</label><input type="number" id="cfg-base-pro_5" class="input-field"></div>
+            <div><label class="label-gray">家庭7人</label><input type="number" id="cfg-base-family_7" class="input-field"></div>
+            <div><label class="label-gray">豪華7人</label><input type="number" id="cfg-base-vip_7" class="input-field"></div>
+            <div><label class="label-gray">標準9人</label><input type="number" id="cfg-base-std_9" class="input-field"></div>
+            <div><label class="label-gray">高級9人</label><input type="number" id="cfg-base-premium_9" class="input-field"></div>
+        </div>
+        <button class="btn-sm btn-driver" style="width:100%; margin-top:25px; background:#34C759;" onclick="savePriceSettings()">💾 儲存價格設定</button>
+    </div>
   </div>
 
   <div id="panel-design" class="panel">
@@ -129,6 +156,7 @@
       loadApprovedDrivers();
       loadOrders();
       loadDesignData();
+      loadPriceData(); // 初始化載入價格設定
     } catch (err) { 
       console.error(err);
       document.getElementById('loading-screen').innerText = "載入失敗，請檢查網路連接";
@@ -321,6 +349,50 @@
     } catch (e) {
       alert("更新失敗");
     }
+  };
+
+  // --- 價格設定邏輯 ---
+  async function loadPriceData() {
+    const res = await getDoc(doc(db, "settings", "priceConfig"));
+    if (res.exists()) {
+      const data = res.data();
+      document.getElementById('cfg-kmPrice').value = data.kmPrice || 0;
+      document.getElementById('cfg-freeKm').value = data.freeKm || 0;
+      document.getElementById('cfg-nightFee').value = data.nightFee || 0;
+      document.getElementById('cfg-midFee').value = data.midFee || 0;
+      document.getElementById('cfg-carSeatFee').value = data.carSeatFee || 0;
+      
+      if(data.basePrices) {
+        document.getElementById('cfg-base-eco_5').value = data.basePrices.eco_5 || 0;
+        document.getElementById('cfg-base-pro_5').value = data.basePrices.pro_5 || 0;
+        document.getElementById('cfg-base-family_7').value = data.basePrices.family_7 || 0;
+        document.getElementById('cfg-base-vip_7').value = data.basePrices.vip_7 || 0;
+        document.getElementById('cfg-base-std_9').value = data.basePrices.std_9 || 0;
+        document.getElementById('cfg-base-premium_9').value = data.basePrices.premium_9 || 0;
+      }
+    }
+  }
+
+  window.savePriceSettings = async () => {
+    try {
+      await setDoc(doc(db, "settings", "priceConfig"), {
+        kmPrice: Number(document.getElementById('cfg-kmPrice').value),
+        freeKm: Number(document.getElementById('cfg-freeKm').value),
+        nightFee: Number(document.getElementById('cfg-nightFee').value),
+        midFee: Number(document.getElementById('cfg-midFee').value),
+        carSeatFee: Number(document.getElementById('cfg-carSeatFee').value),
+        basePrices: {
+            eco_5: Number(document.getElementById('cfg-base-eco_5').value),
+            pro_5: Number(document.getElementById('cfg-base-pro_5').value),
+            family_7: Number(document.getElementById('cfg-base-family_7').value),
+            vip_7: Number(document.getElementById('cfg-base-vip_7').value),
+            std_9: Number(document.getElementById('cfg-base-std_9').value),
+            premium_9: Number(document.getElementById('cfg-base-premium_9').value)
+        },
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      alert("✅ 價格設定已儲存並即時生效");
+    } catch (e) { alert("儲存失敗: " + e.message); }
   };
 
   async function loadDesignData() {
