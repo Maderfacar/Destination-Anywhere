@@ -105,3 +105,17 @@ input:focus {
 @media (max-width: 380px) {
     body { padding: 10px; }
 }
+/* 物理容量不足時的按鈕樣式 */
+.tab-btn.disabled-car {
+    background: #E5E5EA !important;
+    color: #AEAEB2 !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* 讓車種選擇區塊排版更整齊 */
+#vehicle-selector {
+    grid-template-columns: repeat(3, 1fr); /* 改為三欄，適合手機顯示 */
+    margin-top: 10px;
+}
