@@ -10,8 +10,8 @@
     body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1C1C1E; -webkit-tap-highlight-color: transparent; }
     .card { background: #FFF; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     .type-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
-    .tab-btn { background: #FFF; border: none; padding: 12px 5px; border-radius: 12px; font-size: 13px; font-weight: 600; color: #8E8E93; cursor: pointer; transition: all 0.2s; }
-    .tab-btn.active { background: var(--primary); color: #FFF; }
+    .tab-btn { background: #FFF; border: none; padding: 12px 5px; border-radius: 12px; font-size: 13px; font-weight: 600; color: #8E8E93; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+    .tab-btn.active { background: var(--primary); color: #FFF; border-color: var(--primary); }
     .label-row { font-weight: 600; margin-bottom: 8px; display: block; font-size: 15px; }
     input, textarea { width: 100%; padding: 14px; border: 1px solid #E5E5EA; border-radius: 12px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; background: #F9F9F9; outline: none; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -19,20 +19,20 @@
     .counter-ctrl { display: flex; align-items: center; gap: 15px; }
     .btn-circle { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--primary); color: var(--primary); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; font-weight: bold; }
     #price-preview { display: none; margin-top: 15px; padding: 15px; background: #F2F9FF; border-radius: 12px; border: 1px dashed var(--primary); text-align: center; }
-    .price-text { color: #D70015; font-size: 26px; font-weight: 800; }
+    .price-text { color: #D70015; font-size: 26px; font-weight: 800; margin-top: 5px; }
     #submit-btn { width: 100%; padding: 18px; background: var(--primary); color: #FFF; border: none; border-radius: 16px; font-size: 18px; font-weight: 700; margin-top: 20px; cursor: pointer; }
     .pac-box { position: relative; width: 100%; }
     .custom-pac { position: absolute; background: white; width: 100%; z-index: 2000; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: none; max-height: 250px; overflow-y: auto; top: 52px; border: 1px solid #EEE; }
     .pac-item { padding: 15px; border-bottom: 1px solid #F2F2F7; cursor: pointer; font-size: 14px; color: #333; text-align: left; }
-    .tab-btn.disabled-car { background: #E5E5EA !important; color: #AEAEB2 !important; cursor: not-allowed !important; opacity: 0.3; pointer-events: none; }
-    /* 優化加成提示樣式 */
+    .disabled-car { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
     #night-fee-notice, .addon-notice { display: none; color: #FF9500; font-size: 13px; font-weight: 600; margin-top: 8px; }
+    .charter-info { font-size: 12px; color: #007AFF; margin-bottom: 5px; font-weight: bold; }
   </style>
 </head>
 <body>
 
 <span class="label-row">服務類型</span>
-<div class="type-tabs" style="grid-template-columns: repeat(4, 1fr); scale: 0.9;">
+<div class="type-tabs" style="scale: 0.9;">
     <button class="tab-btn active" id="btn-接機" onclick="setTripType('接機')">接機</button>
     <button class="tab-btn" id="btn-送機" onclick="setTripType('送機')">送機</button>
     <button class="tab-btn" id="btn-市區" onclick="setTripType('市區')">市區</button>
@@ -44,12 +44,29 @@
     <button class="tab-btn active" id="btn-eco_5" onclick="selectVehicle('eco_5')">經濟五座</button>
     <button class="tab-btn" id="btn-pro_5" onclick="selectVehicle('pro_5')">舒適五座</button>
     <button class="tab-btn" id="btn-family_7" onclick="selectVehicle('family_7')">家庭七座</button>
+    <button class="tab-btn" id="btn-vip_7" onclick="selectVehicle('vip_7')">尊榮七座</button>
     <button class="tab-btn" id="btn-std_9" onclick="selectVehicle('std_9')">標準九座</button>
-    <button class="tab-btn" id="btn-premium_9" onclick="selectVehicle('premium_9')">尊榮九座</button>
-    <button class="tab-btn" id="btn-vip_7" onclick="selectVehicle('vip_7')">旗艦獨立席</button>
+    <button class="tab-btn" id="btn-premium_9" onclick="selectVehicle('premium_9')">旗艦獨立席</button>
 </div>
 
-  <div class="card">
+<div class="card">
+    <span class="label-row">服務時間</span>
+    <input type="datetime-local" id="appointmentTime" onchange="calculateNewRoute()">
+    
+    <div id="charter-duration-box" style="display:none; margin-top:10px;">
+        <span class="label-row">包車時數 (小時)</span>
+        <div class="counter-group" style="background:#F9F9F9; padding:10px; border-radius:12px;">
+            <span>預計使用時間</span>
+            <div class="counter-ctrl">
+                <div class="btn-circle" onclick="changeDuration(-1)">-</div>
+                <span id="val-duration" style="font-weight:bold; font-size:18px;">4</span>
+                <div class="btn-circle" onclick="changeDuration(1)">+</div>
+            </div>
+        </div>
+    </div>
+
+    <hr style="border:0; border-top:1px solid #EEE; margin:20px 0;">
+
     <span class="label-row">上車地點</span>
     <div class="pac-box">
       <input type="text" id="pickup" placeholder="輸入起點" autocomplete="off" data-pid="">
@@ -75,61 +92,60 @@
     </div>
 
     <div id="price-preview">
-      <div style="font-size: 13px; color: #666;">預估里程：<span id="dist-val">0</span> km</div>
-      <div id="night-fee-notice">🌙 已觸發夜間加乘 (23:00 - 06:00) +$200</div>
-      <div id="mid-fee-notice" class="addon-notice">📍 中途停靠加乘 +$0</div>
+      <div id="charter-mode-label" class="charter-info"></div>
+      <div style="font-size: 13px; color: #666;">預估總里程：<span id="dist-val">0</span> km</div>
+      <div id="night-fee-notice">🌙 已觸發夜間加乘</div>
+      <div id="mid-fee-notice" class="addon-notice">📍 停靠點費用 +$0</div>
       <div id="seat-fee-notice" class="addon-notice">👶 安全座椅加乘 +$0</div>
       <div class="price-text">NT$ <span id="price-val">0</span></div>
     </div>
-  </div>
+</div>
 
-  <div class="card">
-    <div class="grid-2">
-      <div><span class="label-row">日期時間</span><input type="datetime-local" id="appointmentTime" onchange="calculateNewRoute()"></div>
-      <div id="flight-field"><span class="label-row">航班號碼</span><input type="text" id="flightNo" placeholder="如 CX450"></div>
-    </div>
-  </div>
+<div class="card" id="flight-card" style="display:none;">
+    <span class="label-row">航班號碼</span>
+    <input type="text" id="flightNo" placeholder="如 CX450">
+</div>
 
-  <div class="card">
+<div class="card">
     <div class="counter-group"><span>成人人數</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('adults',-1)">-</div><span id="val-adults">1</span><div class="btn-circle" onclick="change('adults',1)">+</div></div></div>
     <div class="counter-group"><span>兒童人數</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('children',-1)">-</div><span id="val-children">0</span><div class="btn-circle" onclick="change('children',1)">+</div></div></div>
+    <div class="counter-group"><span>安全座椅 (+$200)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('carSeat',-1)">-</div><span id="val-carSeat">0</span><div class="btn-circle" onclick="change('carSeat',1)">+</div></div></div>
+    <hr style="border:0; border-top:1px solid #EEE; margin:15px 0;">
     <div class="counter-group"><span>大行李 (28吋+)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugL',-1)">-</div><span id="val-lugL">0</span><div class="btn-circle" onclick="change('lugL',1)">+</div></div></div>
     <div class="counter-group"><span>中行李 (20-24吋)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugM',-1)">-</div><span id="val-lugM">0</span><div class="btn-circle" onclick="change('lugM',1)">+</div></div></div>
     <div class="counter-group"><span>小行李/手提</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('lugS',-1)">-</div><span id="val-lugS">0</span><div class="btn-circle" onclick="change('lugS',1)">+</div></div></div>
-    <hr style="border:0; border-top:1px solid #EEE; margin:15px 0;">
-    <div class="counter-group"><span>安全座椅 (+$200)</span><div class="counter-ctrl"><div class="btn-circle" onclick="change('carSeat',-1)">-</div><span id="val-carSeat">0</span><div class="btn-circle" onclick="change('carSeat',1)">+</div></div></div>
-  </div>
+</div>
 
-  <div class="card">
+<div class="card">
     <div class="grid-2">
       <div><span class="label-row">聯絡姓名</span><input type="text" id="contactName"></div>
       <div><span class="label-row">電話號碼</span><input type="tel" id="contactPhone"></div>
     </div>
     <span class="label-row">備註需求</span>
-    <textarea id="note" rows="2" placeholder="特殊需求（如：需要舉牌、攜帶寵物等）"></textarea>
-  </div>
+    <textarea id="note" rows="2" placeholder="特殊需求或細節說明"></textarea>
+</div>
 
-  <button id="submit-btn" onclick="sendOrder()">立即發送預約</button>
+<button id="submit-btn" onclick="sendOrder()">立即發送預約</button>
 
-  <script type="module">
+<script type="module">
     import { db } from './firebase-config.js?v=105';
     import { doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const SU_WEIGHTS = { lugL: 2.0, lugM: 1.2, lugS: 0.7 };
     let VEHICLE_MASTER = [
-        { id: 'eco_5',    name: '經濟五座',    base: 35,  maxPax: 4, maxSU: 4.2,  isDynamic: false },
-        { id: 'pro_5',    name: '舒適五座',    base: 45,  maxPax: 4, maxSU: 6.5,  isDynamic: false },
-        { id: 'family_7', name: '家庭七座',    base: 55,  maxPax: 6, maxSU: 9.0,  isDynamic: true  },
-        { id: 'vip_7',    name: '旗艦獨立席',  base: 100, maxPax: 6, maxSU: 5.5,  isDynamic: false },
-        { id: 'std_9',    name: '標準九座',    base: 65,  maxPax: 8, maxSU: 18.0, isDynamic: false },
-        { id: 'premium_9',name: '尊榮九座',    base: 85,  maxPax: 8, maxSU: 22.0, isDynamic: false }
+        { id: 'eco_5',     name: '經濟五座',    base: 800,  kmPrice: 35,  maxPax: 4, maxSU: 4.2 },
+        { id: 'pro_5',     name: '舒適五座',    base: 1000, kmPrice: 40,  maxPax: 4, maxSU: 6.5 },
+        { id: 'family_7',  name: '家庭七座',    base: 1200, kmPrice: 45,  maxPax: 6, maxSU: 9.0 },
+        { id: 'vip_7',     name: '尊榮七座',    base: 1800, kmPrice: 60,  maxPax: 6, maxSU: 5.5 },
+        { id: 'std_9',     name: '標準九座',    base: 1500, kmPrice: 50,  maxPax: 8, maxSU: 18.0 },
+        { id: 'premium_9', name: '旗艦獨立席',  base: 2500, kmPrice: 80,  maxPax: 8, maxSU: 22.0 }
     ];
 
     let REMOTE_CONFIG = null;
     let selectedVehicleId = 'eco_5';
     let tripType = "接機";
-    let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0, carSeat: 0 };
-    let currentKm = 0, currentPrice = 0, currentRequiredSU = 0;
+    let counts = { adults: 1, children: 0, lugL: 0, lugM: 0, lugS: 0, carSeat: 0, duration: 4 };
+    let currentKm = 0, midKm = 0, currentPrice = 0;
     let RouteClass, SuggestionClass, sessionToken, PlaceClass;
 
     async function fetchRemoteConfig() {
@@ -142,9 +158,8 @@
                         car.base = Number(REMOTE_CONFIG.basePrices[car.id]);
                     }
                 });
-                console.log("✅ 已同步雲端價格", REMOTE_CONFIG);
             }
-        } catch (e) { console.error("價格載入失敗", e); }
+        } catch (e) { console.error("價格同步失敗", e); }
     }
 
     (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once."):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
@@ -165,217 +180,251 @@
         setupField('pickup', 'pac-pickup');
         setupField('midStops', 'pac-midStops');
         setupField('dropoff', 'pac-dropoff');
-        window.calculateNewRoute(); 
+        setTripType('接機');
     }
 
     function setupField(inputId, pacId) {
         const input = document.getElementById(inputId);
         const pac = document.getElementById(pacId);
         input.addEventListener('input', async () => {
-          const val = input.value;
-          if (val.length < 2) { pac.style.display = 'none'; return; }
-          try {
-            const { suggestions } = await SuggestionClass.fetchAutocompleteSuggestions({
-              input: val, sessionToken: sessionToken, region: 'TW', language: 'zh-TW'
-            });
-            if (suggestions && suggestions.length > 0) {
-              pac.innerHTML = '';
-              suggestions.forEach(s => {
-                const div = document.createElement('div');
-                div.className = 'pac-item';
-                div.innerText = s.placePrediction.text.text;
-                div.onclick = () => {
-                  input.value = s.placePrediction.text.text;
-                  input.dataset.pid = s.placePrediction.placeId;
-                  pac.style.display = 'none';
-                  window.calculateNewRoute();
-                };
-                pac.appendChild(div);
-              });
-              pac.style.display = 'block';
-            }
-          } catch (e) { console.error(e); }
+          if (input.value.length < 2) { pac.style.display = 'none'; return; }
+          const { suggestions } = await SuggestionClass.fetchAutocompleteSuggestions({
+            input: input.value, sessionToken: sessionToken, region: 'TW', language: 'zh-TW'
+          });
+          if (suggestions) {
+            pac.innerHTML = suggestions.map(s => `<div class="pac-item" onclick="selectPlace('${inputId}','${s.placePrediction.text.text}','${s.placePrediction.placeId}')">${s.placePrediction.text.text}</div>`).join('');
+            pac.style.display = 'block';
+          }
         });
     }
 
+    window.selectPlace = (id, text, pid) => {
+        const el = document.getElementById(id);
+        el.value = text;
+        el.dataset.pid = pid;
+        document.getElementById('pac-' + id).style.display = 'none';
+        window.calculateNewRoute();
+    };
+
     window.calculateNewRoute = async () => {
-        const pickupPid = document.getElementById('pickup').dataset.pid;
-        const dropoffPid = document.getElementById('dropoff').dataset.pid;
-        const midPid = document.getElementById('midStops').dataset.pid;
+        const p1 = document.getElementById('pickup').dataset.pid;
+        const p2 = document.getElementById('dropoff').dataset.pid;
+        const mid = document.getElementById('midStops').dataset.pid;
         const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
 
-        if (!pickupPid || !dropoffPid) return;
+        if (!p1 || !p2) return;
 
         try {
-            const request = {
-                origin: new PlaceClass({ id: pickupPid }),
-                destination: new PlaceClass({ id: dropoffPid }),
-                travelMode: 'DRIVING'
-            };
-            if (midVisible && midPid) request.intermediates = [new PlaceClass({ id: midPid })];
+            // 1. 計算主里程與分段里程
+            const res = await RouteClass.computeRoutes({
+                origin: new PlaceClass({ id: p1 }),
+                destination: new PlaceClass({ id: p2 }),
+                intermediates: (midVisible && mid) ? [new PlaceClass({ id: mid })] : [],
+                travelMode: 'DRIVING',
+                fields: ['distanceMeters']
+            });
 
-            const response = await RouteClass.computeRoutes({ ...request, fields: ['distanceMeters'] });
-
-            if (response.routes && response.routes.length > 0) {
-                currentKm = response.routes[0].distanceMeters / 1000;
-                const vehicle = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
-                const unitPrice = vehicle ? vehicle.base : 35;
+            if (res.routes && res.routes[0]) {
+                currentKm = res.routes[0].distanceMeters / 1000;
                 
-                // 初步計算總價
-                let totalPrice = currentKm * unitPrice;
-
-                // --- 附加費用計算與藍框文字同步 ---
-                
-                // 1. 中途停靠費
-                const midStopFee = (REMOTE_CONFIG ? Number(REMOTE_CONFIG.midStopFee) : 100);
-                if (midVisible) {
-                    totalPrice += midStopFee;
-                    document.getElementById('mid-fee-notice').innerText = `📍 中途停靠加乘 +$${midStopFee}`;
-                    document.getElementById('mid-fee-notice').style.display = 'block';
+                // 若有中途點，額外算起點到中途點的里程，用以精確計算停靠費
+                if (midVisible && mid) {
+                    const midRes = await RouteClass.computeRoutes({
+                        origin: new PlaceClass({ id: p1 }),
+                        destination: new PlaceClass({ id: mid }),
+                        travelMode: 'DRIVING', fields: ['distanceMeters']
+                    });
+                    midKm = midRes.routes[0].distanceMeters / 1000;
                 } else {
-                    document.getElementById('mid-fee-notice').style.display = 'none';
+                    midKm = 0;
                 }
 
-                // 2. 安全座椅費
-                const seatFeeUnit = (REMOTE_CONFIG ? Number(REMOTE_CONFIG.carSeatFee) : 200);
-                const totalSeatFee = counts.carSeat * seatFeeUnit;
-                if (counts.carSeat > 0) {
-                    totalPrice += totalSeatFee;
-                    document.getElementById('seat-fee-notice').innerText = `👶 安全座椅(${counts.carSeat}張) +$${totalSeatFee}`;
-                    document.getElementById('seat-fee-notice').style.display = 'block';
-                } else {
-                    document.getElementById('seat-fee-notice').style.display = 'none';
-                }
-
-                // 3. 夜間加乘
-                const nightFee = (REMOTE_CONFIG ? Number(REMOTE_CONFIG.nightFee) : 200);
-                const isNight = checkNightTime(document.getElementById('appointmentTime').value);
-                if (isNight) {
-                    totalPrice += nightFee;
-                    document.getElementById('night-fee-notice').innerText = `🌙 已觸發夜間加乘 +$${nightFee}`;
-                    document.getElementById('night-fee-notice').style.display = 'block';
-                } else {
-                    document.getElementById('night-fee-notice').style.display = 'none';
-                }
-
-                // --- 格式化處理：個位數四捨五入（四捨五入到十位數） ---
-                currentPrice = Math.round(totalPrice / 10) * 10;
-
-                document.getElementById('price-preview').style.display = 'block';
-                document.getElementById('dist-val').innerText = currentKm.toFixed(1);
-                
-                // --- 顯示處理：加上 NT$ 並自動加上千分位符號 ---
-                document.getElementById('price-val').innerText = currentPrice.toLocaleString();
+                renderPrice();
             }
-        } catch (e) { console.error("計算失敗", e); }
+        } catch (e) { console.error(e); }
+    };
+
+    function renderPrice() {
+        const vehicle = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
+        if (!vehicle) return;
+
+        let finalPrice = 0;
+        const midVisible = document.getElementById('mid-wrap').style.display !== 'none';
+
+        if (tripType === '包車') {
+            finalPrice = calculateCharter(vehicle);
+        } else {
+            // 接送機核心邏輯：(里程 * 車種單價) 與 起步價 取大者
+            const kmCost = currentKm * vehicle.kmPrice;
+            finalPrice = Math.max(kmCost, vehicle.base);
+        }
+
+        // 1. 停靠點費用：5公里內 200，之後每 5 公里 +150
+        let stopFee = 0;
+        if (midVisible) {
+            stopFee = 200;
+            if (midKm > 5) {
+                stopFee += Math.ceil((midKm - 5) / 5) * 150;
+            }
+            document.getElementById('mid-fee-notice').innerText = `📍 停靠點費用 +$${stopFee} (約 ${midKm.toFixed(1)}km)`;
+            document.getElementById('mid-fee-notice').style.display = 'block';
+        } else {
+            document.getElementById('mid-fee-notice').style.display = 'none';
+        }
+
+        // 2. 安全座椅
+        const seatFee = counts.carSeat * (REMOTE_CONFIG?.carSeatFee || 200);
+        document.getElementById('seat-fee-notice').innerText = `👶 安全座椅 +$${seatFee}`;
+        document.getElementById('seat-fee-notice').style.display = seatFee > 0 ? 'block' : 'none';
+
+        // 3. 夜間加乘
+        const isNight = checkNightTime(document.getElementById('appointmentTime').value);
+        const nightAdd = isNight ? (REMOTE_CONFIG?.nightFee || 200) : 0;
+        document.getElementById('night-fee-notice').style.display = isNight ? 'block' : 'none';
+
+        currentPrice = Math.round((finalPrice + stopFee + seatFee + nightAdd) / 10) * 10;
+        
+        document.getElementById('price-preview').style.display = 'block';
+        document.getElementById('dist-val').innerText = currentKm.toFixed(1);
+        document.getElementById('price-val').innerText = currentPrice.toLocaleString();
     }
 
-    function checkNightTime(dtStr) {
-        if (!dtStr) return false;
-        const hour = new Date(dtStr).getHours();
-        return (hour >= 23 || hour < 6);
+    // 自動判定包車類型
+    function calculateCharter(car) {
+        const addrA = document.getElementById('pickup').value;
+        const addrB = document.getElementById('dropoff').value;
+        const config = REMOTE_CONFIG?.charterConfig?.[car.id] || {};
+
+        // 判斷是否為長途 (簡單邏輯：地址不含 北北桃 關鍵字視為長途)
+        const isLong = !addrA.includes("台北") && !addrA.includes("新北") && !addrA.includes("桃園");
+        const isSameArea = (addrA.substring(0,2) === addrB.substring(0,2));
+
+        let basePrice = 0, freeKm = 0;
+
+        if (!isLong) {
+            // 市區包車邏輯
+            if (counts.duration <= 4) {
+                basePrice = config.city4hPrice || (car.base * 4);
+                freeKm = config.city4hKm || 40;
+                document.getElementById('charter-mode-label').innerText = "⚡ 市區 4H 包車模式";
+            } else {
+                basePrice = config.city8hPrice || (car.base * 7);
+                freeKm = config.city8hKm || 80;
+                document.getElementById('charter-mode-label').innerText = "⚡ 市區 8H 包車模式";
+                // 超出 8 小時加收超時費
+                if (counts.duration > 8) {
+                    basePrice += (counts.duration - 8) * (config.overHour || 500);
+                }
+            }
+        } else {
+            // 長途模式：AB (單程) 或 AA (回程)
+            if (isSameArea) {
+                basePrice = config.longRoundPrice || (car.base * 8);
+                freeKm = config.longRoundKm || 150;
+                document.getElementById('charter-mode-label').innerText = "⚡ 長途回程 (AA) 模式";
+            } else {
+                basePrice = config.longOneWayPrice || (car.base * 6);
+                freeKm = config.longOneWayKm || 100;
+                document.getElementById('charter-mode-label').innerText = "⚡ 長途單程 (AB) 模式";
+            }
+        }
+
+        // 超里程計算
+        let overKmFee = 0;
+        if (currentKm > freeKm) {
+            overKmFee = (currentKm - freeKm) * (config.overKm || car.kmPrice);
+        }
+
+        return basePrice + overKmFee;
+    }
+
+    function checkNightTime(dt) {
+        if (!dt) return false;
+        const h = new Date(dt).getHours();
+        return (h >= 23 || h < 6);
     }
 
     window.setTripType = (t) => {
         tripType = t;
-        ['接機', '送機', '市區', '包車'].forEach(type => {
-            const btn = document.getElementById(`btn-${type}`);
-            if (btn) btn.classList.toggle('active', type === t);
-        });
-        const flightField = document.getElementById('flight-field');
-        if (flightField) flightField.style.display = (t === '接機') ? 'block' : 'none';
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.id === `btn-${t}`));
+        document.getElementById('flight-card').style.display = (t === '接機') ? 'block' : 'none';
+        document.getElementById('charter-duration-box').style.display = (t === '包車') ? 'block' : 'none';
+        if (t !== '包車') document.getElementById('charter-mode-label').innerText = "";
+        window.calculateNewRoute();
     };
 
-    window.selectVehicle = (vId) => {
-        selectedVehicleId = vId;
-        VEHICLE_MASTER.forEach(car => {
-            const btn = document.getElementById(`btn-${car.id}`);
-            if (btn) btn.classList.toggle('active', car.id === vId);
-        });
+    window.selectVehicle = (id) => {
+        selectedVehicleId = id;
+        VEHICLE_MASTER.forEach(v => document.getElementById(`btn-${v.id}`).classList.toggle('active', v.id === id));
         window.calculateNewRoute();
     };
 
     window.change = (k, d) => {
-        const minVal = (k === 'adults' ? 1 : 0);
-        counts[k] = Math.max(minVal, counts[k] + d);
-        const el = document.getElementById(`val-${k}`);
-        if (el) el.innerText = counts[k];
+        counts[k] = Math.max((k==='adults'?1:0), counts[k] + d);
+        document.getElementById(`val-${k}`).innerText = counts[k];
         updateVehicleFilter();
-        window.calculateNewRoute(); 
+        window.calculateNewRoute();
+    };
+
+    window.changeDuration = (d) => {
+        counts.duration = Math.max(1, counts.duration + d);
+        document.getElementById('val-duration').innerText = counts.duration;
+        window.calculateNewRoute();
     };
 
     window.toggleMid = (show) => {
         document.getElementById('mid-wrap').style.display = show ? 'block' : 'none';
         document.getElementById('add-mid-btn').style.display = show ? 'none' : 'block';
-        if (!show) {
-            document.getElementById('midStops').value = '';
-            document.getElementById('midStops').dataset.pid = '';
+        if(!show) { 
+            document.getElementById('midStops').value = ''; 
+            document.getElementById('midStops').dataset.pid = ''; 
         }
         window.calculateNewRoute();
     };
 
     function updateVehicleFilter() {
-        currentRequiredSU = (counts.lugL * SU_WEIGHTS.lugL) + (counts.lugM * SU_WEIGHTS.lugM) + (counts.lugS * SU_WEIGHTS.lugS);
         const totalPax = counts.adults + counts.children;
-        document.getElementById('su-hint').innerText = `(行李係數: ${currentRequiredSU.toFixed(1)})`;
+        const currentSU = (counts.lugL * 2) + (counts.lugM * 1.2) + (counts.lugS * 0.7);
+        document.getElementById('su-hint').innerText = `(行李係數: ${currentSU.toFixed(1)})`;
 
         VEHICLE_MASTER.forEach(car => {
-            let maxSU = car.maxSU;
-            if (car.id === 'family_7' && totalPax > 4) maxSU = 1.5;
             const btn = document.getElementById(`btn-${car.id}`);
-            const isOver = (totalPax > car.maxPax || currentRequiredSU > maxSU);
-            if (btn) {
-                btn.classList.toggle('disabled-car', isOver);
-                if (isOver && selectedVehicleId === car.id) btn.classList.remove('active');
-            }
+            const isOver = (totalPax > car.maxPax || currentSU > car.maxSU);
+            btn.classList.toggle('disabled-car', isOver);
         });
     }
 
     window.sendOrder = async () => {
         const btn = document.getElementById('submit-btn');
-        if(!document.getElementById('pickup').value || !document.getElementById('dropoff').value) {
-            alert("請輸入完整的起點與終點");
-            return;
+        if(!document.getElementById('pickup').dataset.pid || !document.getElementById('dropoff').dataset.pid) {
+            alert("請選擇正確的起迄點地址"); return;
         }
-        btn.disabled = true; btn.innerText = "處理中...";
-
+        btn.disabled = true; btn.innerText = "預約傳送中...";
         try {
-            const vehicleInfo = VEHICLE_MASTER.find(v => v.id === selectedVehicleId);
             const orderData = {
-                tripType: tripType,
-                vehicleId: selectedVehicleId,
-                vehicleName: vehicleInfo ? vehicleInfo.name : "",
+                tripType,
+                vehicleName: VEHICLE_MASTER.find(v=>v.id===selectedVehicleId).name,
                 pickup: document.getElementById('pickup').value,
                 dropoff: document.getElementById('dropoff').value,
                 midStops: document.getElementById('midStops').value,
-                appointmentTime: document.getElementById('appointmentTime').value.replace('T', ' '),
-                flightNo: document.getElementById('flightNo').value,
+                appointmentTime: document.getElementById('appointmentTime').value,
                 adults: counts.adults,
                 children: counts.children,
-                lugL: counts.lugL,
-                lugM: counts.lugM,
-                lugS: counts.lugS,
+                lugL: counts.lugL, lugM: counts.lugM, lugS: counts.lugS,
                 carSeat: counts.carSeat,
                 contactName: document.getElementById('contactName').value,
                 contactPhone: document.getElementById('contactPhone').value,
-                note: document.getElementById('note').value,
                 estimatedPrice: currentPrice,
-                distanceKm: currentKm.toFixed(1),
                 status: "pending",
                 createdAt: serverTimestamp()
             };
-
             await addDoc(collection(db, "orders"), orderData);
-            alert("預約已成功送出！");
-            if(window.liff) liff.closeWindow();
-        } catch (e) {
-            alert("提交失敗: " + e.message);
-        } finally {
-            btn.disabled = false; btn.innerText = "立即發送預約";
-        }
+            alert("預約成功！專員將盡快聯繫您。");
+            liff.closeWindow();
+        } catch (e) { alert("系統錯誤: " + e.message); btn.disabled = false; }
     };
 
     init();
-  </script>
+</script>
 </body>
 </html>
