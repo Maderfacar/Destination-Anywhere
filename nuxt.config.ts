@@ -40,8 +40,8 @@ export default defineNuxtConfig({
       }
     ],
     defaultLocale: 'zh-TW',
-    langDir: 'locales',
-    lazy: true,
+    langDir: './i18n/locales',
+    lazy: false,
     detectBrowserLanguage: {
       useCookie: true,
       cookieKey: 'i18n_redirected',
