@@ -62,11 +62,7 @@ export default defineNuxtConfig({
     }
   },
 
-  // CSS configuration
-  css: [
-    '~/assets/css/main.css'
-  ],
-
+  
   // Build configuration
   build: {
     transpile: ['@headlessui/vue']
