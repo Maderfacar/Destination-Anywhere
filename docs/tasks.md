@@ -27,7 +27,7 @@
 - [ ] 設定 Firebase 與 LINE LIFF 基礎配置
 - [✅] 建立所有 docs/ MD 規則檔案
 - [✅] 設定 .env.example
-- [✅] **驗證**：執行 `pnpm dev`，開瀏覽器看到 Nuxt 預設歡迎頁面即算通過
+- [🔄] **驗證**：執行 `pnpm dev`，開瀏覽器看到 Nuxt 預設歡迎頁面即算通過
 
 ## Stage 2：基礎原子組件開發（The Atoms）
 **驗證時機**：每完成 3~4 個元件後
