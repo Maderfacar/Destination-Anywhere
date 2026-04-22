@@ -1,32 +1,32 @@
 # 專案任務清單 (Project Tasks & Backlog)
 
-**總進度**：Stage 0 / 7  
-**已完成任務**：0/48  
-**最後更新**：2026/04/22
+**總進度**：Stage 1 / 7  
+**已完成任務**：8/48  
+**最後更新**：2026/04/23
 
 ---
 
 ## Stage 0：需求與規則最終確認（The Constitution）
 （此階段無需開瀏覽器，主要用文字確認）
 
-- [ ] 完成 prd.md 撰寫與確認
-- [ ] 完成 tech-stack.md 撰寫與確認
-- [ ] 完成 style-guide.md 撰寫與確認
-- [ ] 完成 folder-structure.md 撰寫與確認
-- [ ] 完成 agent-protocols.md 撰寫與確認
-- [ ] 產生 tasks.md 初稿並經人類審核
-- [ ] 完成 .cursorrules 撰寫與確認
-- [ ] 一致性檢查報告（所有 MD 文件無衝突）
+- [✅] 完成 prd.md 撰寫與確認
+- [✅] 完成 tech-stack.md 撰寫與確認
+- [✅] 完成 style-guide.md 撰寫與確認
+- [✅] 完成 folder-structure.md 撰寫與確認
+- [✅] 完成 agent-protocols.md 撰寫與確認
+- [✅] 產生 tasks.md 初稿並經人類審核
+- [✅] 完成 .cursorrules 撰寫與確認
+- [✅] 一致性檢查報告（所有 MD 文件無衝突）
 
 ## Stage 1：環境初始化與規則設定（The Law）
 **驗證時機**：Stage 1 完成後立即
 
-- [ ] 建立 Nuxt 3 專案
-- [ ] 初始化 Git 並設定 .gitignore
-- [ ] 安裝核心套件（Tailwind、TypeScript、Pinia、i18n 等）
+- [✅] 建立 Nuxt 3 專案
+- [✅] 初始化 Git 並設定 .gitignore
+- [✅] 安裝核心套件（Tailwind、TypeScript、Pinia、i18n 等）
 - [ ] 設定 Firebase 與 LINE LIFF 基礎配置
-- [ ] 建立所有 docs/ MD 規則檔案
-- [ ] 設定 .env.example
+- [✅] 建立所有 docs/ MD 規則檔案
+- [✅] 設定 .env.example
 - [ ] **驗證**：執行 `pnpm dev`，開瀏覽器看到 Nuxt 預設歡迎頁面即算通過
 
 ## Stage 2：基礎原子組件開發（The Atoms）
