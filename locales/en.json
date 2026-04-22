@@ -1,0 +1,63 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "reset": "Reset",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "open": "Open",
+    "view": "View",
+    "download": "Download",
+    "upload": "Upload",
+    "copy": "Copy",
+    "share": "Share",
+    "refresh": "Refresh",
+    "settings": "Settings"
+  },
+  "navigation": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "about": "About",
+    "contact": "Contact",
+    "help": "Help",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register"
+  },
+  "messages": {
+    "success": "Operation successful",
+    "error": "Operation failed",
+    "networkError": "Network error, please try again later",
+    "notFound": "Page not found",
+    "unauthorized": "Unauthorized access",
+    "validationError": "Validation error",
+    "required": "This field is required",
+    "invalidEmail": "Please enter a valid email",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "passwordMismatch": "Passwords do not match"
+  },
+  "theme": {
+    "light": "Light Mode",
+    "dark": "Dark Mode",
+    "system": "Follow System",
+    "toggleTheme": "Toggle Theme"
+  },
+  "language": {
+    "select": "Select Language",
+    "chinese": "Traditional Chinese",
+    "english": "English"
+  }
+}

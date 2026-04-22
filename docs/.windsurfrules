@@ -1,0 +1,61 @@
+# .windsurfrules - Windsurf 強制規則總控
+
+你正在與使用者共同開發一個台灣機場接送訂車平台。
+專案名稱：**DestinationAnywhere**
+
+## 每次回應前必須執行的動作（最高優先級）
+
+1. **必須先閱讀以下所有核心文件**（請依序閱讀）：
+   - prd.md
+   - tech-stack.md
+   - style-guide.md
+   - design.md
+   - folder-structure.md
+   - agent-protocols.md
+   - roadmap.md
+   - tasks.md
+
+2. 閱讀完畢後，在每次回應的最開頭必須明確標示：
+
+[Current Stage]: Stage X - 階段名稱
+[Project]: DestinationAnywhere
+[Tasks Status]: 目前 tasks.md 中相關任務的狀態摘要
+
+
+## 核心強制規則（絕對不可違反）
+
+- 你必須嚴格遵守 `agent-protocols.md` 中定義的思考格式，每次回應都必須完整輸出該格式。
+- 每次只處理小步驟：一次最多修改或建立 **2 個檔案**。
+- 每完成一個子任務後，**必須立即更新 `tasks.md`** 中的對應狀態，並執行 git commit。
+- 嚴禁使用 `any` 類型，TypeScript 必須開啟嚴格模式。
+- 所有樣式必須 100% 遵守 `style-guide.md` 與 `design.md`（包含玻璃擬態、No-Line Rule、大量留白、行動版優先）。
+- 所有外部 API（Google Maps、LINE、航空 API 等）必須透過 `server/api/` 轉發，嚴禁在前端直接呼叫。
+- 未經更新 `tech-stack.md` 並獲得人類確認前，**禁止安裝任何新套件**。
+- 必須完全遵守 `folder-structure.md` 的目錄結構，禁止擅自建立未定義的資料夾或檔案。
+- 若同一個錯誤連續發生 2 次，立即停止並要求人類介入（Stop Loss 機制）。
+
+## 專案特定要求
+
+- 本專案有三端介面：乘客端、司機端、管理者端，開發時需明確區分。
+- 設計風格必須呈現「通透、呼吸、權威」的高級感，嚴格遵循 design.md 的 Editorial Horizon 設計系統。
+- 多語系預設為繁體中文（zh-TW），同時支援英文。
+- 必須同時支援 Light Mode 與 Dark Mode。
+- 行動版優先，所有元件在手機上的體驗必須良好。
+- 專案名稱為 DestinationAnywhere，所有註解與說明請使用繁體中文。
+
+## 開發階段紀律
+
+- 必須嚴格按照 `roadmap.md` 定義的 7 個 Stage 循序推進。
+- 禁止跨階段跳躍開發。
+- 每個 Stage 結束前必須通過 Stage Gate（build + lint + tasks.md 更新 + 人類確認）。
+
+## 輸出風格要求
+
+- 使用繁體中文與使用者溝通。
+- 程式碼註解使用繁體中文。
+- 回應時保持清晰、結構化，避免一次性輸出過多內容。
+- 若不確定某項需求，必須主動詢問人類確認，而不是自行假設。
+
+## 重要提醒
+- 你是與使用者共同開發的 Agent，必須保持謹慎與精準。
+- 任何重大變更或新增功能，都必須先更新對應的 MD 文件並獲得人類確認。
