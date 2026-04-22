@@ -28,11 +28,40 @@ export default defineNuxtConfig({
   // i18n configuration
   i18n: {
     locales: [
-      { code: 'zh-TW', language: 'zh-TW', name: 'Traditional Chinese', file: 'zh-TW.json' },
-      { code: 'en', language: 'en-US', name: 'English', file: 'en.json' }
+      {
+        code: 'zh-TW',
+        language: 'zh-TW',
+        name: 'Traditional Chinese',
+        file: 'zh-TW.json'
+      },
+      {
+        code: 'en',
+        language: 'en-US',
+        name: 'English',
+        file: 'en.json'
+      }
     ],
     defaultLocale: 'zh-TW',
     strategy: 'no_prefix'
+    // langDir: './i18n/locales',   // temporarily commented out to avoid any path issues
+  },
+
+  // Nitro configuration for Vercel deployment
+  nitro: {
+    externals: {
+      inline: [
+        '@intlify/utils',
+        '@intlify/core',
+        '@intlify/h3',
+        '@intlify/shared',
+        '@intlify/message-compiler',
+        '@nuxtjs/i18n',
+        'vue-i18n'
+      ]
+    },
+    experimental: {
+      wasm: false
+    }
   },
 
   // App configuration
