@@ -24,13 +24,11 @@ export default defineNuxtConfig({
     viewer: true,
   },
 
-  // Nitro configuration for Vercel deployment
+  // Nitro 設定 - 重要！改成 Vercel 專用 preset
   nitro: {
+    preset: 'vercel',   // ← 這一行最重要
     externals: {
       inline: ['@intlify/h3']
-    },
-    experimental: {
-      wasm: false
     }
   },
 
