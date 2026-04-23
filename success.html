@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>預訂成功 - Destination Anywhere</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-map-marked-alt me-2"></i>Destination Anywhere
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="index.html">首頁</a>
+                <a class="nav-link" href="booking.html">預訂行程</a>
+                <a class="nav-link" href="admin.html">管理員</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card text-center">
+                    <div class="card-body p-5">
+                        <div class="success-animation mb-4">
+                            <i class="fas fa-check-circle fa-5x text-success"></i>
+                        </div>
+                        
+                        <h1 class="display-4 fw-bold text-success mb-4">預訂成功！</h1>
+                        
+                        <p class="lead mb-4">
+                            感謝您的預訂，我們已收到您的訂單並正在處理中。
+                        </p>
+                        
+                        <div class="alert alert-info mb-4">
+                            <h5 class="alert-heading">
+                                <i class="fas fa-info-circle me-2"></i>預訂資訊
+                            </h5>
+                            <hr>
+                            <div class="row text-start">
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>預訂編號：</strong> <span id="bookingId">#20240424001</span></p>
+                                    <p class="mb-2"><strong>客戶姓名：</strong> <span id="customerName">張三</span></p>
+                                    <p class="mb-2"><strong>聯絡電話：</strong> <span id="customerPhone">0911-222-333</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>上車地點：</strong> <span id="pickup">台北車站</span></p>
+                                    <p class="mb-2"><strong>目的地：</strong> <span id="destination">桃園機場</span></p>
+                                    <p class="mb-2"><strong>預訂時間：</strong> <span id="bookingTime">2024-04-24 14:30</span></p>
+                                </div>
+                            </div>
+                            <hr>
+                            <p class="mb-0"><strong>總金額：</strong> <span class="text-primary fs-4">$800</span></p>
+                        </div>
+                        
+                        <div class="alert alert-warning mb-4">
+                            <h5 class="alert-heading">
+                                <i class="fas fa-exclamation-triangle me-2"></i>重要提醒
+                            </h5>
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <i class="fas fa-check me-2"></i>
+                                    司機將在出發前30分鐘與您聯絡確認
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check me-2"></i>
+                                    請準時到達上車地點等候
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check me-2"></i>
+                                    如需更改或取消預訂，請提前2小時通知
+                                </li>
+                                <li class="mb-0">
+                                    <i class="fas fa-check me-2"></i>
+                                    如有緊急情況，請立即聯絡客服：+886-2-1234-5678
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5 class="mb-3">後續步驟</h5>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="step-item">
+                                        <div class="step-icon">
+                                            <i class="fas fa-phone fa-2x text-primary"></i>
+                                        </div>
+                                        <h6>司機聯絡</h6>
+                                            <p class="text-muted small">出發前30分鐘</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="step-item">
+                                        <div class="step-icon">
+                                            <i class="fas fa-car fa-2x text-success"></i>
+                                        </div>
+                                        <h6>準時接送</h6>
+                                        <p class="text-muted small">預訂時間</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="step-item">
+                                        <div class="step-icon">
+                                            <i class="fas fa-star fa-2x text-warning"></i>
+                                        </div>
+                                        <h6>服務評價</h6>
+                                        <p class="text-muted small">行程結束後</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="index.html" class="btn btn-primary btn-lg">
+                                <i class="fas fa-home me-2"></i>返回首頁
+                            </a>
+                            <button class="btn btn-outline-primary btn-lg" onclick="window.print()">
+                                <i class="fas fa-print me-2"></i>列印預訂單
+                            </button>
+                            <button class="btn btn-success btn-lg" onclick="shareBooking()">
+                                <i class="fas fa-share me-2"></i>分享預訂
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-headset me-2"></i>需要協助？
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <div class="contact-icon mb-3">
+                                        <i class="fas fa-phone fa-2x text-primary"></i>
+                                    </div>
+                                    <h6>電話客服</h6>
+                                    <p class="text-muted">+886-2-1234-5678</p>
+                                    <p class="small text-muted">週一至週日 24小時</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <div class="contact-icon mb-3">
+                                        <i class="fas fa-envelope fa-2x text-success"></i>
+                                    </div>
+                                    <h6>電子郵件</h6>
+                                    <p class="text-muted">info@destination-anywhere.com</p>
+                                    <p class="small text-muted">24小時內回覆</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <div class="contact-icon mb-3">
+                                        <i class="fab fa-line fa-2x text-warning"></i>
+                                    </div>
+                                    <h6>LINE客服</h6>
+                                    <p class="text-muted">@destination-anywhere</p>
+                                    <p class="small text-muted">即時回覆</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="config.js"></script>
+    <script src="firebase-config.js"></script>
+    <script>
+        // 獲取URL參數
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+
+        // 分享預訂資訊
+        function shareBooking() {
+            const bookingId = document.getElementById('bookingId').textContent;
+            const customerName = document.getElementById('customerName').textContent;
+            const pickup = document.getElementById('pickup').textContent;
+            const destination = document.getElementById('destination').textContent;
+            const bookingTime = document.getElementById('bookingTime').textContent;
+            
+            const shareText = `預訂成功！\n預訂編號：${bookingId}\n客戶：${customerName}\n行程：${pickup} → ${destination}\n時間：${bookingTime}\n\nDestination Anywhere 專業包車服務`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: '預訂成功 - Destination Anywhere',
+                    text: shareText,
+                    url: window.location.href
+                }).then(() => {
+                    console.log('分享成功');
+                }).catch((error) => {
+                    console.log('分享失敗:', error);
+                    // 備用方案：複製到剪貼板
+                    copyToClipboard(shareText);
+                });
+            } else {
+                // 備用方案：複製到剪貼板
+                copyToClipboard(shareText);
+            }
+        }
+
+        // 複製到剪貼板
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                alert('預訂資訊已複製到剪貼板');
+            } catch (err) {
+                console.error('複製失敗:', err);
+                alert('複製失敗，請手動複製預訂資訊');
+            }
+            
+            document.body.removeChild(textarea);
+        }
+
+        // 初始化頁面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 從URL參數或本地存儲獲取預訂資訊
+            const bookingData = localStorage.getItem('lastBooking');
+            if (bookingData) {
+                try {
+                    const booking = JSON.parse(bookingData);
+                    document.getElementById('bookingId').textContent = booking.id || '#20240424001';
+                    document.getElementById('customerName').textContent = booking.name || '張三';
+                    document.getElementById('customerPhone').textContent = booking.phone || '0911-222-333';
+                    document.getElementById('pickup').textContent = booking.pickup || '台北車站';
+                    document.getElementById('destination').textContent = booking.destination || '桃園機場';
+                    document.getElementById('bookingTime').textContent = booking.date + ' ' + booking.time || '2024-04-24 14:30';
+                } catch (error) {
+                    console.error('解析預訂資料失敗:', error);
+                }
+            }
+            
+            // 生成預訂編號
+            const today = new Date();
+            const bookingNumber = today.getFullYear() + 
+                              String(today.getMonth() + 1).padStart(2, '0') + 
+                              String(today.getDate()).padStart(2, '0') + 
+                              String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+            document.getElementById('bookingId').textContent = '#' + bookingNumber;
+        });
+
+        // 步驟項目樣式
+        const style = document.createElement('style');
+        style.textContent = `
+            .step-item {
+                text-align: center;
+                padding: 1rem;
+                border-radius: 10px;
+                transition: all 0.3s ease;
+            }
+            
+            .step-item:hover {
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                transform: translateY(-3px);
+            }
+            
+            .step-icon {
+                width: 60px;
+                height: 60px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 1rem;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .step-icon:hover {
+                transform: scale(1.1);
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

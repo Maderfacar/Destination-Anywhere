@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>預訂行程 - Destination Anywhere</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-map-marked-alt me-2"></i>Destination Anywhere
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="index.html">首頁</a>
+                <a class="nav-link active" href="#">預訂行程</a>
+                <a class="nav-link" href="admin.html">管理員</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="mb-4">
+            <i class="fas fa-calendar-plus me-2"></i>預訂行程
+        </h1>
+
+        <div class="row">
+            <div class="col-md-8">
+                <form id="bookingForm">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">行程資訊</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="pickup" class="form-label">上車地點</label>
+                                <input type="text" class="form-control" id="pickup" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="destination" class="form-label">目的地</label>
+                                <input type="text" class="form-control" id="destination" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="date" class="form-label">日期</label>
+                                        <input type="date" class="form-control" id="date" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="time" class="form-label">時間</label>
+                                        <input type="time" class="form-control" id="time" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="passengers" class="form-label">乘客人數</label>
+                                <select class="form-control" id="passengers" required>
+                                    <option value="">請選擇</option>
+                                    <option value="1">1人</option>
+                                    <option value="2">2人</option>
+                                    <option value="3">3人</option>
+                                    <option value="4">4人</option>
+                                    <option value="5">5人以上</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">乘客資訊</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">姓名</label>
+                                <input type="text" class="form-control" id="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">電話</label>
+                                <input type="tel" class="form-control" id="phone" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">電子郵件</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">備註</label>
+                                <textarea class="form-control" id="notes" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">車輛選擇</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="card vehicle-option">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-car fa-2x mb-2"></i>
+                                            <h6>標準轎車</h6>
+                                            <p class="text-muted">適合1-4人</p>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="vehicle" id="sedan" value="sedan" checked>
+                                                <label class="form-check-label" for="sedan">選擇</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card vehicle-option">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-van-shuttle fa-2x mb-2"></i>
+                                            <h6>廂型車</h6>
+                                            <p class="text-muted">適合5-8人</p>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="vehicle" id="van" value="van">
+                                                <label class="form-check-label" for="van">選擇</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card vehicle-option">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-bus fa-2x mb-2"></i>
+                                            <h6>大巴</h6>
+                                            <p class="text-muted">適合9人以上</p>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="vehicle" id="bus" value="bus">
+                                                <label class="form-check-label" for="bus">選擇</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-check me-2"></i>確認預訂
+                    </button>
+                </form>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">價格估算</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>基礎費用</span>
+                            <span id="basePrice">$300</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>距離費用</span>
+                            <span id="distancePrice">$0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>車輛附加費</span>
+                            <span id="vehiclePrice">$0</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <strong>總計</strong>
+                            <strong id="totalPrice">$300</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">服務特色</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                24小時服務
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                專業司機
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                免費WiFi
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                行李運送
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="config.js"></script>
+    <script src="firebase-config.js"></script>
+    <script>
+        // 預訂表單處理
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                pickup: document.getElementById('pickup').value,
+                destination: document.getElementById('destination').value,
+                date: document.getElementById('date').value,
+                time: document.getElementById('time').value,
+                passengers: document.getElementById('passengers').value,
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                notes: document.getElementById('notes').value,
+                vehicle: document.querySelector('input[name="vehicle"]:checked').value
+            };
+            
+            // 保存到Firebase
+            if (window.db) {
+                window.db.collection('bookings').add(formData)
+                    .then(() => {
+                        window.location.href = 'success.html';
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('預訂失敗，請稍後再試');
+                    });
+            } else {
+                // 模擬提交
+                console.log('預訂資料:', formData);
+                window.location.href = 'success.html';
+            }
+        });
+
+        // 價格計算
+        function updatePrice() {
+            const vehicle = document.querySelector('input[name="vehicle"]:checked').value;
+            const basePrice = 300;
+            let vehiclePrice = 0;
+            
+            switch(vehicle) {
+                case 'van':
+                    vehiclePrice = 100;
+                    break;
+                case 'bus':
+                    vehiclePrice = 200;
+                    break;
+            }
+            
+            document.getElementById('basePrice').textContent = `$${basePrice}`;
+            document.getElementById('vehiclePrice').textContent = `$${vehiclePrice}`;
+            document.getElementById('totalPrice').textContent = `$${basePrice + vehiclePrice}`;
+        }
+
+        document.querySelectorAll('input[name="vehicle"]').forEach(radio => {
+            radio.addEventListener('change', updatePrice);
+        });
+
+        // 初始化價格
+        updatePrice();
+    </script>
+</body>
+</html>
