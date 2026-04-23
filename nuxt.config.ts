@@ -3,12 +3,10 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  // TypeScript strict mode
   typescript: {
     strict: true
   },
 
-  // Modules
   modules: [
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
@@ -17,22 +15,20 @@ export default defineNuxtConfig({
     '@nuxt/image'
   ],
 
-  // Tailwind CSS
   tailwindcss: {
     cssPath: '~/assets/css/tailwind.css',
     configPath: 'tailwind.config.js',
     viewer: true,
   },
 
-  // Nitro 設定 - 先改回 node-server（Vercel 相容性較好）
+  // Vercel 專用設定（最重要）
   nitro: {
-    preset: 'node-server',
+    preset: 'vercel',
     externals: {
-      inline: ['@intlify/h3']
+      inline: ['@intlify/h3', 'vue']
     }
   },
 
-  // App configuration
   app: {
     head: {
       title: 'DestinationAnywhere',
@@ -47,7 +43,6 @@ export default defineNuxtConfig({
     }
   },
 
-  // Runtime config
   runtimeConfig: {
     public: {
       lineLiffId: process.env.NUXT_PUBLIC_LINE_LIFF_ID || 'placeholder',
