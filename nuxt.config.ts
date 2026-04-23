@@ -24,9 +24,9 @@ export default defineNuxtConfig({
     viewer: true,
   },
 
-  // Nitro 設定 - 重要！改成 Vercel 專用 preset
+  // Nitro 設定 - 先改回 node-server（Vercel 相容性較好）
   nitro: {
-    preset: 'vercel',   // ← 這一行最重要
+    preset: 'node-server',
     externals: {
       inline: ['@intlify/h3']
     }
