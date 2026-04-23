@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  
+
   // TypeScript strict mode
   typescript: {
     strict: true
@@ -12,7 +12,6 @@ export default defineNuxtConfig({
   modules: [
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
-    '@nuxtjs/i18n',
     '@nuxt/icon',
     '@vueuse/nuxt',
     '@nuxt/image'
@@ -25,39 +24,10 @@ export default defineNuxtConfig({
     viewer: true,
   },
 
-  // i18n configuration
-  i18n: {
-    locales: [
-      {
-        code: 'zh-TW',
-        language: 'zh-TW',
-        name: 'Traditional Chinese',
-        file: 'zh-TW.json'
-      },
-      {
-        code: 'en',
-        language: 'en-US',
-        name: 'English',
-        file: 'en.json'
-      }
-    ],
-    defaultLocale: 'zh-TW',
-    strategy: 'no_prefix'
-    // langDir: './i18n/locales',   // temporarily commented out to avoid any path issues
-  },
-
   // Nitro configuration for Vercel deployment
   nitro: {
     externals: {
-      inline: [
-        '@intlify/utils',
-        '@intlify/core',
-        '@intlify/h3',
-        '@intlify/shared',
-        '@intlify/message-compiler',
-        '@nuxtjs/i18n',
-        'vue-i18n'
-      ]
+      inline: ['@intlify/h3']
     },
     experimental: {
       wasm: false
@@ -67,11 +37,11 @@ export default defineNuxtConfig({
   // App configuration
   app: {
     head: {
-      title: 'DA - Digital Assistant',
+      title: 'DestinationAnywhere',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'A modern digital assistant application' }
+        { name: 'description', content: '台灣機場接送訂車平台' }
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
@@ -81,19 +51,10 @@ export default defineNuxtConfig({
 
   // Runtime config
   runtimeConfig: {
-    // Private keys (only available on server-side)
-    apiSecret: process.env.API_SECRET,
-    
-    // Public keys (exposed to client-side)
     public: {
-      apiBase: process.env.API_BASE || '/api',
-      appName: process.env.APP_NAME || 'DA'
+      lineLiffId: process.env.NUXT_PUBLIC_LINE_LIFF_ID || 'placeholder',
+      firebaseApiKey: process.env.NUXT_PUBLIC_FIREBASE_API_KEY || 'placeholder',
+      googleMapsApiKey: process.env.NUXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'placeholder'
     }
-  },
-
-  
-  // Build configuration
-  build: {
-    transpile: ['@headlessui/vue']
   }
 })

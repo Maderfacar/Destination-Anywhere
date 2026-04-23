@@ -64,7 +64,6 @@ Stop Loss 機制（鬼打牆防護）
 更新 decision-log.md
 經人類確認後才能執行
 
-
 樣式與設計鐵律
 所有樣式必須嚴格遵守 style-guide.md 與 design.md
 禁止自行創作 Tailwind 類別或破壞 No-Line Rule
@@ -72,7 +71,6 @@ Stop Loss 機制（鬼打牆防護）
 TypeScript 鐵律
 嚴禁使用 any 類型
 所有變數、元件 props、API 回應必須有明確型別
-
 
 3. 階段開發紀律
 

@@ -94,3 +94,61 @@
 3. Wait for human decision before proceeding
 
 ---
+
+## Original Windsurf Rules (Merged from docs/.windsurfrules)
+
+### Every Response Must Include This Header (Highest Priority)
+
+1. **Must read all core documents first** (in order):
+   - prd.md
+   - tech-stack.md
+   - style-guide.md
+   - design.md
+   - folder-structure.md
+   - agent-protocols.md
+   - roadmap.md
+   - tasks.md
+
+2. After reading, clearly indicate at the start of every response:
+
+[Current Stage]: Stage X - Stage Name
+[Project]: DestinationAnywhere
+[Tasks Status]: Summary of related tasks status in tasks.md
+
+### Core Mandatory Rules (Absolutely Cannot Violate)
+
+- You must strictly follow the thinking format defined in `agent-protocols.md`, output the complete format in every response.
+- Handle small steps only: modify or create **maximum 2 files** at a time.
+- After completing each subtask, **must immediately update `tasks.md`** corresponding status, and tell human to commit.
+- Strictly prohibit using `any` type, TypeScript must enable strict mode.
+- All styles must 100% follow `style-guide.md` and `design.md` (including glass morphism, No-Line Rule, lots of whitespace, mobile-first).
+- All external APIs (Google Maps, LINE, aviation APIs, etc.) must be forwarded through `server/api/`, strictly prohibit direct frontend calls.
+- Before updating `tech-stack.md` and getting human confirmation, **prohibit installing any new packages**.
+- Must completely follow `folder-structure.md` directory structure, prohibit creating undefined folders or files.
+- If the same error occurs 2 times consecutively, stop immediately and request human intervention (Stop Loss mechanism).
+
+### Project Specific Requirements
+
+- This project has three interfaces: passenger, driver, admin, must clearly distinguish during development.
+- Design style must present "transparent, breathing, authoritative" high-end feel, strictly follow design.md's Editorial Horizon design system.
+- Multi-language default is Traditional Chinese (zh-TW), also support English.
+- Must support both Light Mode and Dark Mode.
+- Mobile-first, all components must have good experience on mobile.
+- Project name is DestinationAnywhere, all comments and explanations use Traditional Chinese.
+
+### Development Stage Discipline
+
+- Must strictly follow the 7 Stages defined in `roadmap.md` in sequence.
+- Prohibit cross-stage jumping development.
+- Each Stage must pass Stage Gate before ending (build + lint + tasks.md update + human confirmation).
+
+### Output Style Requirements
+
+- Use Traditional Chinese to communicate with users.
+- Code comments use Traditional Chinese.
+- Maintain clear, structured responses, avoid outputting too much content at once.
+- If uncertain about any requirement, must actively ask human for confirmation instead of assuming.
+
+### Important Reminders
+- You are an Agent developing with users, must maintain caution and precision.
+- Any major changes or new features must first update corresponding MD documents and get human confirmation.

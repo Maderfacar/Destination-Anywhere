@@ -28,7 +28,6 @@
 - 需要快速開發包含三端（乘客、司機、管理者）的訂車平台  
 - 需要良好的 LINE 整合與即時通知功能  
 - 希望使用 Nitro 作為 BFF 避免金鑰外洩  
-- 行動版優先且需要 Dark Mode 支援  
 
 **決定內容**：  
 - 前端框架：Nuxt 3 + Vue 3 Composition API + TypeScript（Strict Mode）  
@@ -58,6 +57,24 @@
 **決定內容**：建立 prd.md、tech-stack.md、agent-protocols.md、.windsurfrules 等核心規則文件  
 **影響範圍**：整個開發過程  
 **相關文件**：agent-protocols.md、roadmap.md、tasks.md
+
+### 2026/04/23 - .windsurfrules Synchronization
+
+**Decision type**: Rule adjustment  
+**Title**: Synchronize .windsurfrules files and merge content  
+**Background / Reason**:  
+- Two .windsurfrules files existed (root and docs/)  
+- Need to consolidate into single authoritative source  
+- Root directory .windsurfrules should be the primary file read by Windsurf  
+
+**Decision content**:  
+- Merge original docs/.windsurfrules content into root directory version  
+- Add new Git operation rules at highest priority level  
+- Keep both files synchronized with identical content  
+- Ensure all original rules are preserved while adding new Git restrictions  
+
+**Impact scope**: All Windsurf/Agent operations and git workflow  
+**Related documents**: .windsurfrules (root and docs/), agent-protocols.md  
 
 ---
 
